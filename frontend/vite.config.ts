@@ -1,0 +1,23 @@
+/// <reference types="vitest/config" />
+import { defineConfig } from "vite";
+import solid from "vite-plugin-solid";
+import wails from "@wailsio/runtime/plugins/vite";
+
+// https://vitejs.dev/config/
+export default defineConfig({
+  server: {
+    host: "127.0.0.1",
+    port: Number(process.env.WAILS_VITE_PORT) || 9245,
+    strictPort: true,
+  },
+  plugins: [solid({ hot: !process.env.VITEST }), wails("./bindings")],
+  resolve: {
+    conditions: ["development", "browser"],
+  },
+  test: {
+    environment: "jsdom",
+    globals: true,
+    setupFiles: ["./src/test-setup.ts"],
+    exclude: ["e2e/**", "node_modules/**"],
+  },
+});

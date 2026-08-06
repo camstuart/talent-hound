@@ -1,0 +1,65 @@
+:root {
+    color-scheme: light dark;
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    padding: 3rem 1rem;
+}
+
+.container {
+    width: 100%;
+    max-width: 28rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+h1 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.greet-row {
+    display: flex;
+    gap: 0.5rem;
+}
+
+input {
+    flex: 1;
+    padding: 0.5rem 0.65rem;
+    font: inherit;
+    border: 1px solid light-dark(#c9c9c9, #444);
+    border-radius: 4px;
+    background: light-dark(#fff, #1e1e1e);
+    color: inherit;
+}
+
+button {
+    padding: 0.5rem 0.9rem;
+    font: inherit;
+    border: 1px solid light-dark(#c9c9c9, #444);
+    border-radius: 4px;
+    background: light-dark(#f0f0f0, #2a2a2a);
+    color: inherit;
+    cursor: pointer;
+}
+
+button:hover {
+    background: light-dark(#e4e4e4, #333);
+}
+
+.greeting {
+    margin: 0;
+    padding: 0.6rem 0.75rem;
+    border-radius: 4px;
+    background: light-dark(#f5f5f5, #242424);
+}
