@@ -1,0 +1,30 @@
+version: "2"
+
+linters:
+  # standard = govet, errcheck, staticcheck, ineffassign, unused
+  default: standard
+  enable:
+    - bodyclose
+    - copyloopvar
+    - errorlint
+    - gocritic
+    - gosec
+    - misspell
+    - nilerr
+    - noctx
+    - revive
+    - unconvert
+    - unparam
+  exclusions:
+    generated: lax
+    paths:
+      # Wails-generated platform scaffolding (mobile stubs, dep installers)
+      - ^build/
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  exclusions:
+    paths:
+      - ^build/

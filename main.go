@@ -1,3 +1,5 @@
+// Talent Hound is a local-first AI desktop app built with Wails v3 (Go backend)
+// and SolidJS (TypeScript frontend).
 package main
 
 import (
@@ -5,6 +7,8 @@ import (
 	"log"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
+
+	"camstuart/talent-hound/internal/db"
 )
 
 // Wails uses Go's `embed` package to embed the frontend files into the binary.
@@ -19,6 +23,15 @@ var assets embed.FS
 // and runs the application, logging any error that might occur.
 func main() {
 
+	dbPath, err := db.DefaultPath()
+	if err != nil {
+		log.Fatal(err)
+	}
+	gdb, err := db.Open(dbPath)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	// Create a new Wails application by providing the necessary options.
 	// Variables 'Name' and 'Description' are for application metadata.
 	// 'Assets' configures the asset server with the 'FS' variable pointing to the frontend files.
@@ -29,6 +42,7 @@ func main() {
 		Description: "A local-first AI desktop app",
 		Services: []application.Service{
 			application.NewService(&GreetService{}),
+			application.NewService(NewInitiativeService(gdb)),
 		},
 		Assets: application.AssetOptions{
 			Handler: application.AssetFileServerFS(assets),
@@ -58,7 +72,7 @@ func main() {
 	})
 
 	// Run the application. This blocks until the application has been exited.
-	err := app.Run()
+	err = app.Run()
 
 	// If an error occurred while running the application, log it and exit.
 	if err != nil {

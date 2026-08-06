@@ -1,0 +1,16 @@
+{
+  "threshold": 3,
+  "minTokens": 50,
+  "reporters": ["consoleFull"],
+  "format": ["go", "typescript", "tsx", "javascript", "jsx", "css"],
+  "gitignore": true,
+  "ignore": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/bindings/**",
+    "**/bin/**",
+    "**/.task/**",
+    "**/build/**",
+    "**/test-results/**"
+  ]
+}

@@ -12,6 +12,7 @@ build/android/overlay.json
 build/android/gen/
 
 # Playwright
+frontend/.e2e-db
 frontend/test-results
 frontend/playwright-report
 frontend/blob-report
