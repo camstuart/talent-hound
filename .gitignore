@@ -1,25 +1,50 @@
-.task
-bin
-frontend/dist
-frontend/node_modules
-frontend/bindings
-build/linux/appimage/build
-build/windows/nsis/MicrosoftEdgeWebview2Setup.exe
-# Mobile generated (per-machine; overlays hold absolute paths)
-build/ios/xcode/overlay.json
-build/ios/xcode/gen/
-build/android/overlay.json
-build/android/gen/
+# Task and application build output
+/.task/
+/bin/
+/frontend/dist/
+/frontend/node_modules/
+/frontend/bindings/
+
+# Generated desktop build assets
+/build/darwin/Assets.car
+/build/darwin/icons.icns
+/build/windows/icon.ico
+/build/windows/nsis/MicrosoftEdgeWebview2Setup.exe
+/wails_windows_*.syso
+
+# Generated Linux packaging workspace
+/build/linux/*.desktop
+/build/linux/appimage/*
+!/build/linux/appimage/build.sh
+
+# Generated mobile build files
+/build/ios/xcode/
+/build/android/.gradle/
+/build/android/.kotlin/
+/build/android/build/
+/build/android/app/build/
+/build/android/app/src/main/jniLibs/
+/build/android/local.properties
+/build/android/overlay.json
+/build/android/gen/
+
+# Local SQLite data and sidecars
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.sqlite3-*
 
 # Playwright
-frontend/.e2e-db
-frontend/test-results
-frontend/playwright-report
-frontend/blob-report
+/frontend/.e2e-db/
+/frontend/test-results/
+/frontend/playwright-report/
+/frontend/blob-report/
 
 # OS junk
 .DS_Store
 Thumbs.db
 
 # Local tooling config (Claude Code)
-.claude/
+/.claude/
