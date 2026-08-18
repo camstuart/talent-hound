@@ -1,4 +1,4 @@
-import { createEffect, createSignal, For, onMount, Show } from "solid-js";
+import { createEffect, createSignal, For, Show } from "solid-js";
 import { bumpWorkspace, workspaceRevision } from "../workspaceRevision";
 import { RecordService } from "../../bindings/camstuart/talent-hound";
 import type { Candidate, Company, Contact, Role } from "../../bindings/camstuart/talent-hound/internal/models";
@@ -39,12 +39,23 @@ export default function RecordsPanel() {
   const [contactsAt, setContactsAt] = createSignal<{ count: number; contacts: Contact[] } | null>(null);
   const [lookupError, setLookupError] = createSignal("");
 
+  // Two reloads can be in flight at once — the mount and a create both start
+  // one — and the slower of them used to land last, putting a list back the way
+  // it was before the record the recruiter just added. Only the newest reload
+  // is allowed to write.
+  let latest = 0;
   const reload = async () => {
-    setCandidates((await RecordService.ListCandidates()) ?? []);
-    setCompanies((await RecordService.ListCompanies()) ?? []);
-    setRoles((await RecordService.ListRoles()) ?? []);
+    const mine = ++latest;
+    const [candidates, companies, roles] = await Promise.all([
+      RecordService.ListCandidates(),
+      RecordService.ListCompanies(),
+      RecordService.ListRoles(),
+    ]);
+    if (mine !== latest) return;
+    setCandidates(candidates ?? []);
+    setCompanies(companies ?? []);
+    setRoles(roles ?? []);
   };
-  onMount(reload);
   // Records are created elsewhere too — a new initiative can create its
   // candidate, and a dropped resume creates one — so this list follows the
   // workspace revision rather than only its own actions.

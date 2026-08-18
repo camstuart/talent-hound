@@ -3,7 +3,6 @@ import { CloudService, ModelService, SetupService } from "../../bindings/camstua
 import type { ScopeState } from "../../bindings/camstuart/talent-hound";
 import type { Status, TaskState } from "../../bindings/camstuart/talent-hound";
 import { Scope } from "../../bindings/camstuart/talent-hound/internal/setup";
-import { workspaceRevision } from "../workspaceRevision";
 
 // What is true right now, kept on screen: which initiative, what scope, which
 // models, whether a cloud override is in force, and whether anything local is
@@ -27,8 +26,10 @@ export default function StatusStrip(props: { initiativeId?: number; initiativeNa
     }
   };
 
+  // Deliberately not tied to the workspace revision: none of what the strip
+  // shows changes when a candidate is added, and re-reading model availability
+  // on every edit is a dependency check per keystroke.
   createEffect(() => {
-    workspaceRevision();
     void props.initiativeId;
     void reload();
   });

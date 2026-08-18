@@ -1,0 +1,2222 @@
+{
+  "synthetic": true,
+  "note": "Every candidate, company, role, and rating in this corpus is invented. It exists so the benchmark harness, its thresholds, and its record can be exercised end to end before the recruiter's real frozen corpus arrives, and it is not a substitute for that corpus. No real candidate information appears in this repository.",
+  "scenarios": [
+    {
+      "id": "go-platform-melbourne",
+      "resume": "# Candidate profile — invented\n\nSeven years building backend services in Go, most recently on a platform team\nrunning multi-region infrastructure. Strong SQLite and PostgreSQL. Based in\nMelbourne, wants hybrid work, permanent, expects around AUD 180,000.\n",
+      "ratings": [
+        {
+          "roleId": "platform-engineer-melbourne",
+          "plausible": true
+        },
+        {
+          "roleId": "principal-engineer-melbourne",
+          "plausible": true
+        },
+        {
+          "roleId": "platform-engineer-remote",
+          "plausible": true
+        },
+        {
+          "roleId": "backend-contract-melbourne",
+          "plausible": false
+        },
+        {
+          "roleId": "junior-backend-melbourne",
+          "plausible": false
+        },
+        {
+          "roleId": "qa-engineer-brisbane",
+          "plausible": false
+        },
+        {
+          "roleId": "engineering-manager-melbourne",
+          "plausible": false
+        }
+      ]
+    },
+    {
+      "id": "data-python-melbourne",
+      "resume": "# Candidate profile — invented\n\nFive years in data engineering: Python, dbt, dimensional modelling, and a year\nrunning Spark pipelines. Melbourne, prefers remote, permanent, around AUD\n155,000.\n",
+      "ratings": [
+        {
+          "roleId": "data-engineer-melbourne",
+          "plausible": true
+        },
+        {
+          "roleId": "data-platform-sydney",
+          "plausible": true
+        },
+        {
+          "roleId": "ml-engineer-melbourne",
+          "plausible": true
+        },
+        {
+          "roleId": "junior-backend-melbourne",
+          "plausible": false
+        },
+        {
+          "roleId": "embedded-engineer-perth",
+          "plausible": false
+        },
+        {
+          "roleId": "security-engineer-canberra",
+          "plausible": false
+        }
+      ]
+    },
+    {
+      "id": "frontend-accessibility-sydney",
+      "resume": "# Candidate profile — invented\n\nSix years of frontend work in TypeScript, with a focus on accessibility and\ndesign systems. Sydney, hybrid, permanent, around AUD 145,000.\n",
+      "ratings": [
+        {
+          "roleId": "frontend-engineer-sydney",
+          "plausible": true
+        },
+        {
+          "roleId": "mobile-engineer-sydney",
+          "plausible": true
+        },
+        {
+          "roleId": "solutions-architect-sydney",
+          "plausible": false
+        },
+        {
+          "roleId": "qa-engineer-brisbane",
+          "plausible": true
+        },
+        {
+          "roleId": "embedded-engineer-perth",
+          "plausible": false
+        },
+        {
+          "roleId": "security-engineer-canberra",
+          "plausible": false
+        }
+      ]
+    },
+    {
+      "id": "sre-kubernetes-brisbane",
+      "resume": "# Candidate profile — invented\n\nEight years in operations, four of them as an SRE: Kubernetes, Prometheus, and\nincident command for a health platform. Brisbane, hybrid, permanent, around AUD\n170,000.\n",
+      "ratings": [
+        {
+          "roleId": "site-reliability-brisbane",
+          "plausible": true
+        },
+        {
+          "roleId": "devops-engineer-adelaide",
+          "plausible": true
+        },
+        {
+          "roleId": "platform-engineer-remote",
+          "plausible": true
+        },
+        {
+          "roleId": "integration-engineer-hobart",
+          "plausible": false
+        },
+        {
+          "roleId": "junior-backend-melbourne",
+          "plausible": false
+        },
+        {
+          "roleId": "frontend-engineer-sydney",
+          "plausible": false
+        }
+      ]
+    },
+    {
+      "id": "embedded-c-perth",
+      "resume": "# Candidate profile — invented\n\nNine years of embedded development in C for industrial equipment, with\nreal-time constraints and direct hardware interfaces. Perth, onsite, permanent,\naround AUD 160,000.\n",
+      "ratings": [
+        {
+          "roleId": "embedded-engineer-perth",
+          "plausible": true
+        },
+        {
+          "roleId": "staff-engineer-perth",
+          "plausible": true
+        },
+        {
+          "roleId": "integration-engineer-hobart",
+          "plausible": false
+        },
+        {
+          "roleId": "backend-engineer-sydney",
+          "plausible": false
+        },
+        {
+          "roleId": "ml-engineer-melbourne",
+          "plausible": false
+        },
+        {
+          "roleId": "junior-backend-melbourne",
+          "plausible": false
+        }
+      ]
+    }
+  ],
+  "listings": [
+    {
+      "id": "platform-engineer-melbourne",
+      "title": "Senior platform engineer",
+      "markdown": "# Senior platform engineer — Northwind Robotics\n\n## About the role\n\nNorthwind Robotics is hiring a senior platform engineer in Melbourne. This is a hybrid role,\noffered as permanent work at AUD 180,000 base plus superannuation.\n\n## Requirements\n\n- Must have Go.\n- Must have experience with SQLite.\n- Experience with multi-region systems is essential.\n- Postgraduate qualification is nice to have.\n- You must have existing Australian work rights; we do not sponsor.\n",
+      "material": [
+        {
+          "type": "skill",
+          "wording": "Go",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "SQLite",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "multi-region systems",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "postgraduate qualification",
+          "priority": "nice_to_have"
+        },
+        {
+          "type": "location",
+          "wording": "Melbourne",
+          "structured": {
+            "place": "Melbourne"
+          }
+        },
+        {
+          "type": "work_arrangement",
+          "wording": "hybrid",
+          "structured": {
+            "arrangement": "hybrid"
+          }
+        },
+        {
+          "type": "employment_type",
+          "wording": "permanent",
+          "structured": {
+            "employmentType": "permanent"
+          }
+        },
+        {
+          "type": "work_rights",
+          "wording": "existing Australian work rights",
+          "structured": {
+            "rights": "australian work rights"
+          }
+        },
+        {
+          "type": "compensation",
+          "wording": "AUD 180,000 base plus superannuation",
+          "structured": {
+            "currency": "AUD",
+            "amount": 180000,
+            "basis": "annual"
+          }
+        }
+      ],
+      "structured": [
+        {
+          "type": "location",
+          "wording": "Melbourne",
+          "structured": {
+            "place": "Melbourne"
+          }
+        },
+        {
+          "type": "work_arrangement",
+          "wording": "hybrid",
+          "structured": {
+            "arrangement": "hybrid"
+          }
+        },
+        {
+          "type": "employment_type",
+          "wording": "permanent",
+          "structured": {
+            "employmentType": "permanent"
+          }
+        },
+        {
+          "type": "work_rights",
+          "wording": "existing Australian work rights",
+          "structured": {
+            "rights": "australian work rights"
+          }
+        },
+        {
+          "type": "compensation",
+          "wording": "AUD 180,000 base plus superannuation",
+          "structured": {
+            "currency": "AUD",
+            "amount": 180000,
+            "basis": "annual"
+          }
+        }
+      ]
+    },
+    {
+      "id": "backend-engineer-sydney",
+      "title": "Backend engineer",
+      "markdown": "# Backend engineer — Harbourline Freight\n\n## About the role\n\nHarbourline Freight is hiring a backend engineer in Sydney. This is a onsite role,\noffered as permanent work at AUD 150,000 base plus superannuation.\n\n## Requirements\n\n- Must have Go.\n- Must have experience with PostgreSQL.\n- Experience with event-driven systems is essential.\n- Aws certification is nice to have.\n- You must have existing Australian work rights; we do not sponsor.\n",
+      "material": [
+        {
+          "type": "skill",
+          "wording": "Go",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "PostgreSQL",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "event-driven systems",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "AWS certification",
+          "priority": "nice_to_have"
+        },
+        {
+          "type": "location",
+          "wording": "Sydney",
+          "structured": {
+            "place": "Sydney"
+          }
+        },
+        {
+          "type": "work_arrangement",
+          "wording": "onsite",
+          "structured": {
+            "arrangement": "onsite"
+          }
+        },
+        {
+          "type": "employment_type",
+          "wording": "permanent",
+          "structured": {
+            "employmentType": "permanent"
+          }
+        },
+        {
+          "type": "work_rights",
+          "wording": "existing Australian work rights",
+          "structured": {
+            "rights": "australian work rights"
+          }
+        },
+        {
+          "type": "compensation",
+          "wording": "AUD 150,000 base plus superannuation",
+          "structured": {
+            "currency": "AUD",
+            "amount": 150000,
+            "basis": "annual"
+          }
+        }
+      ],
+      "structured": [
+        {
+          "type": "location",
+          "wording": "Sydney",
+          "structured": {
+            "place": "Sydney"
+          }
+        },
+        {
+          "type": "work_arrangement",
+          "wording": "onsite",
+          "structured": {
+            "arrangement": "onsite"
+          }
+        },
+        {
+          "type": "employment_type",
+          "wording": "permanent",
+          "structured": {
+            "employmentType": "permanent"
+          }
+        },
+        {
+          "type": "work_rights",
+          "wording": "existing Australian work rights",
+          "structured": {
+            "rights": "australian work rights"
+          }
+        },
+        {
+          "type": "compensation",
+          "wording": "AUD 150,000 base plus superannuation",
+          "structured": {
+            "currency": "AUD",
+            "amount": 150000,
+            "basis": "annual"
+          }
+        }
+      ]
+    },
+    {
+      "id": "site-reliability-brisbane",
+      "title": "Site reliability engineer",
+      "markdown": "# Site reliability engineer — Fernway Health\n\n## About the role\n\nFernway Health is hiring a site reliability engineer in Brisbane. This is a hybrid role,\noffered as permanent work at AUD 165,000 base plus superannuation.\n\n## Requirements\n\n- Must have Kubernetes.\n- Must have experience with Prometheus.\n- Experience with incident response is essential.\n- On-call leadership is nice to have.\n- You must have existing Australian work rights; we do not sponsor.\n",
+      "material": [
+        {
+          "type": "skill",
+          "wording": "Kubernetes",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "Prometheus",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "incident response",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "on-call leadership",
+          "priority": "nice_to_have"
+        },
+        {
+          "type": "location",
+          "wording": "Brisbane",
+          "structured": {
+            "place": "Brisbane"
+          }
+        },
+        {
+          "type": "work_arrangement",
+          "wording": "hybrid",
+          "structured": {
+            "arrangement": "hybrid"
+          }
+        },
+        {
+          "type": "employment_type",
+          "wording": "permanent",
+          "structured": {
+            "employmentType": "permanent"
+          }
+        },
+        {
+          "type": "work_rights",
+          "wording": "existing Australian work rights",
+          "structured": {
+            "rights": "australian work rights"
+          }
+        },
+        {
+          "type": "compensation",
+          "wording": "AUD 165,000 base plus superannuation",
+          "structured": {
+            "currency": "AUD",
+            "amount": 165000,
+            "basis": "annual"
+          }
+        }
+      ],
+      "structured": [
+        {
+          "type": "location",
+          "wording": "Brisbane",
+          "structured": {
+            "place": "Brisbane"
+          }
+        },
+        {
+          "type": "work_arrangement",
+          "wording": "hybrid",
+          "structured": {
+            "arrangement": "hybrid"
+          }
+        },
+        {
+          "type": "employment_type",
+          "wording": "permanent",
+          "structured": {
+            "employmentType": "permanent"
+          }
+        },
+        {
+          "type": "work_rights",
+          "wording": "existing Australian work rights",
+          "structured": {
+            "rights": "australian work rights"
+          }
+        },
+        {
+          "type": "compensation",
+          "wording": "AUD 165,000 base plus superannuation",
+          "structured": {
+            "currency": "AUD",
+            "amount": 165000,
+            "basis": "annual"
+          }
+        }
+      ]
+    },
+    {
+      "id": "data-engineer-melbourne",
+      "title": "Data engineer",
+      "markdown": "# Data engineer — Quokkastack Analytics\n\n## About the role\n\nQuokkastack Analytics is hiring a data engineer in Melbourne. This is a remote role,\noffered as permanent work at AUD 155,000 base plus superannuation.\n\n## Requirements\n\n- Must have Python.\n- Must have experience with dbt.\n- Experience with data modelling is essential.\n- Snowflake experience is nice to have.\n- You must have existing Australian work rights; we do not sponsor.\n",
+      "material": [
+        {
+          "type": "skill",
+          "wording": "Python",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "dbt",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "data modelling",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "Snowflake experience",
+          "priority": "nice_to_have"
+        },
+        {
+          "type": "location",
+          "wording": "Melbourne",
+          "structured": {
+            "place": "Melbourne"
+          }
+        },
+        {
+          "type": "work_arrangement",
+          "wording": "remote",
+          "structured": {
+            "arrangement": "remote"
+          }
+        },
+        {
+          "type": "employment_type",
+          "wording": "permanent",
+          "structured": {
+            "employmentType": "permanent"
+          }
+        },
+        {
+          "type": "work_rights",
+          "wording": "existing Australian work rights",
+          "structured": {
+            "rights": "australian work rights"
+          }
+        },
+        {
+          "type": "compensation",
+          "wording": "AUD 155,000 base plus superannuation",
+          "structured": {
+            "currency": "AUD",
+            "amount": 155000,
+            "basis": "annual"
+          }
+        }
+      ],
+      "structured": [
+        {
+          "type": "location",
+          "wording": "Melbourne",
+          "structured": {
+            "place": "Melbourne"
+          }
+        },
+        {
+          "type": "work_arrangement",
+          "wording": "remote",
+          "structured": {
+            "arrangement": "remote"
+          }
+        },
+        {
+          "type": "employment_type",
+          "wording": "permanent",
+          "structured": {
+            "employmentType": "permanent"
+          }
+        },
+        {
+          "type": "work_rights",
+          "wording": "existing Australian work rights",
+          "structured": {
+            "rights": "australian work rights"
+          }
+        },
+        {
+          "type": "compensation",
+          "wording": "AUD 155,000 base plus superannuation",
+          "structured": {
+            "currency": "AUD",
+            "amount": 155000,
+            "basis": "annual"
+          }
+        }
+      ]
+    },
+    {
+      "id": "staff-engineer-perth",
+      "title": "Staff engineer",
+      "markdown": "# Staff engineer — Redgum Mining Tech\n\n## About the role\n\nRedgum Mining Tech is hiring a staff engineer in Perth. This is a onsite role,\noffered as permanent work at AUD 210,000 base plus superannuation.\n\n## Requirements\n\n- Must have distributed systems.\n- Must have experience with technical leadership.\n- Experience with Go is essential.\n- Mining domain experience is nice to have.\n- You must have existing Australian work rights; we do not sponsor.\n",
+      "material": [
+        {
+          "type": "skill",
+          "wording": "distributed systems",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "technical leadership",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "Go",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "mining domain experience",
+          "priority": "nice_to_have"
+        },
+        {
+          "type": "location",
+          "wording": "Perth",
+          "structured": {
+            "place": "Perth"
+          }
+        },
+        {
+          "type": "work_arrangement",
+          "wording": "onsite",
+          "structured": {
+            "arrangement": "onsite"
+          }
+        },
+        {
+          "type": "employment_type",
+          "wording": "permanent",
+          "structured": {
+            "employmentType": "permanent"
+          }
+        },
+        {
+          "type": "work_rights",
+          "wording": "existing Australian work rights",
+          "structured": {
+            "rights": "australian work rights"
+          }
+        },
+        {
+          "type": "compensation",
+          "wording": "AUD 210,000 base plus superannuation",
+          "structured": {
+            "currency": "AUD",
+            "amount": 210000,
+            "basis": "annual"
+          }
+        }
+      ],
+      "structured": [
+        {
+          "type": "location",
+          "wording": "Perth",
+          "structured": {
+            "place": "Perth"
+          }
+        },
+        {
+          "type": "work_arrangement",
+          "wording": "onsite",
+          "structured": {
+            "arrangement": "onsite"
+          }
+        },
+        {
+          "type": "employment_type",
+          "wording": "permanent",
+          "structured": {
+            "employmentType": "permanent"
+          }
+        },
+        {
+          "type": "work_rights",
+          "wording": "existing Australian work rights",
+          "structured": {
+            "rights": "australian work rights"
+          }
+        },
+        {
+          "type": "compensation",
+          "wording": "AUD 210,000 base plus superannuation",
+          "structured": {
+            "currency": "AUD",
+            "amount": 210000,
+            "basis": "annual"
+          }
+        }
+      ]
+    },
+    {
+      "id": "frontend-engineer-sydney",
+      "title": "Frontend engineer",
+      "markdown": "# Frontend engineer — Tidewater Retail\n\n## About the role\n\nTidewater Retail is hiring a frontend engineer in Sydney. This is a hybrid role,\noffered as permanent work at AUD 140,000 base plus superannuation.\n\n## Requirements\n\n- Must have TypeScript.\n- Must have experience with accessibility.\n- Experience with design systems is essential.\n- Solidjs experience is nice to have.\n- You must have existing Australian work rights; we do not sponsor.\n",
+      "material": [
+        {
+          "type": "skill",
+          "wording": "TypeScript",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "accessibility",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "design systems",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "SolidJS experience",
+          "priority": "nice_to_have"
+        },
+        {
+          "type": "location",
+          "wording": "Sydney",
+          "structured": {
+            "place": "Sydney"
+          }
+        },
+        {
+          "type": "work_arrangement",
+          "wording": "hybrid",
+          "structured": {
+            "arrangement": "hybrid"
+          }
+        },
+        {
+          "type": "employment_type",
+          "wording": "permanent",
+          "structured": {
+            "employmentType": "permanent"
+          }
+        },
+        {
+          "type": "work_rights",
+          "wording": "existing Australian work rights",
+          "structured": {
+            "rights": "australian work rights"
+          }
+        },
+        {
+          "type": "compensation",
+          "wording": "AUD 140,000 base plus superannuation",
+          "structured": {
+            "currency": "AUD",
+            "amount": 140000,
+            "basis": "annual"
+          }
+        }
+      ],
+      "structured": [
+        {
+          "type": "location",
+          "wording": "Sydney",
+          "structured": {
+            "place": "Sydney"
+          }
+        },
+        {
+          "type": "work_arrangement",
+          "wording": "hybrid",
+          "structured": {
+            "arrangement": "hybrid"
+          }
+        },
+        {
+          "type": "employment_type",
+          "wording": "permanent",
+          "structured": {
+            "employmentType": "permanent"
+          }
+        },
+        {
+          "type": "work_rights",
+          "wording": "existing Australian work rights",
+          "structured": {
+            "rights": "australian work rights"
+          }
+        },
+        {
+          "type": "compensation",
+          "wording": "AUD 140,000 base plus superannuation",
+          "structured": {
+            "currency": "AUD",
+            "amount": 140000,
+            "basis": "annual"
+          }
+        }
+      ]
+    },
+    {
+      "id": "security-engineer-canberra",
+      "title": "Security engineer",
+      "markdown": "# Security engineer — Bellbird Systems\n\n## About the role\n\nBellbird Systems is hiring a security engineer in Canberra. This is a onsite role,\noffered as permanent work at AUD 175,000 base plus superannuation.\n\n## Requirements\n\n- Must have threat modelling.\n- Must have experience with cryptography.\n- Experience with incident response is essential.\n- Government clearance is nice to have.\n- You must have existing Australian work rights; we do not sponsor.\n",
+      "material": [
+        {
+          "type": "skill",
+          "wording": "threat modelling",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "cryptography",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "incident response",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "government clearance",
+          "priority": "nice_to_have"
+        },
+        {
+          "type": "location",
+          "wording": "Canberra",
+          "structured": {
+            "place": "Canberra"
+          }
+        },
+        {
+          "type": "work_arrangement",
+          "wording": "onsite",
+          "structured": {
+            "arrangement": "onsite"
+          }
+        },
+        {
+          "type": "employment_type",
+          "wording": "permanent",
+          "structured": {
+            "employmentType": "permanent"
+          }
+        },
+        {
+          "type": "work_rights",
+          "wording": "existing Australian work rights",
+          "structured": {
+            "rights": "australian work rights"
+          }
+        },
+        {
+          "type": "compensation",
+          "wording": "AUD 175,000 base plus superannuation",
+          "structured": {
+            "currency": "AUD",
+            "amount": 175000,
+            "basis": "annual"
+          }
+        }
+      ],
+      "structured": [
+        {
+          "type": "location",
+          "wording": "Canberra",
+          "structured": {
+            "place": "Canberra"
+          }
+        },
+        {
+          "type": "work_arrangement",
+          "wording": "onsite",
+          "structured": {
+            "arrangement": "onsite"
+          }
+        },
+        {
+          "type": "employment_type",
+          "wording": "permanent",
+          "structured": {
+            "employmentType": "permanent"
+          }
+        },
+        {
+          "type": "work_rights",
+          "wording": "existing Australian work rights",
+          "structured": {
+            "rights": "australian work rights"
+          }
+        },
+        {
+          "type": "compensation",
+          "wording": "AUD 175,000 base plus superannuation",
+          "structured": {
+            "currency": "AUD",
+            "amount": 175000,
+            "basis": "annual"
+          }
+        }
+      ]
+    },
+    {
+      "id": "ml-engineer-melbourne",
+      "title": "Machine learning engineer",
+      "markdown": "# Machine learning engineer — Saltbush Labs\n\n## About the role\n\nSaltbush Labs is hiring a machine learning engineer in Melbourne. This is a hybrid role,\noffered as permanent work at AUD 185,000 base plus superannuation.\n\n## Requirements\n\n- Must have PyTorch.\n- Must have experience with model evaluation.\n- Experience with Python is essential.\n- Publication record is nice to have.\n- You must have existing Australian work rights; we do not sponsor.\n",
+      "material": [
+        {
+          "type": "skill",
+          "wording": "PyTorch",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "model evaluation",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "Python",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "publication record",
+          "priority": "nice_to_have"
+        },
+        {
+          "type": "location",
+          "wording": "Melbourne",
+          "structured": {
+            "place": "Melbourne"
+          }
+        },
+        {
+          "type": "work_arrangement",
+          "wording": "hybrid",
+          "structured": {
+            "arrangement": "hybrid"
+          }
+        },
+        {
+          "type": "employment_type",
+          "wording": "permanent",
+          "structured": {
+            "employmentType": "permanent"
+          }
+        },
+        {
+          "type": "work_rights",
+          "wording": "existing Australian work rights",
+          "structured": {
+            "rights": "australian work rights"
+          }
+        },
+        {
+          "type": "compensation",
+          "wording": "AUD 185,000 base plus superannuation",
+          "structured": {
+            "currency": "AUD",
+            "amount": 185000,
+            "basis": "annual"
+          }
+        }
+      ],
+      "structured": [
+        {
+          "type": "location",
+          "wording": "Melbourne",
+          "structured": {
+            "place": "Melbourne"
+          }
+        },
+        {
+          "type": "work_arrangement",
+          "wording": "hybrid",
+          "structured": {
+            "arrangement": "hybrid"
+          }
+        },
+        {
+          "type": "employment_type",
+          "wording": "permanent",
+          "structured": {
+            "employmentType": "permanent"
+          }
+        },
+        {
+          "type": "work_rights",
+          "wording": "existing Australian work rights",
+          "structured": {
+            "rights": "australian work rights"
+          }
+        },
+        {
+          "type": "compensation",
+          "wording": "AUD 185,000 base plus superannuation",
+          "structured": {
+            "currency": "AUD",
+            "amount": 185000,
+            "basis": "annual"
+          }
+        }
+      ]
+    },
+    {
+      "id": "devops-engineer-adelaide",
+      "title": "DevOps engineer",
+      "markdown": "# DevOps engineer — Coastline Logistics\n\n## About the role\n\nCoastline Logistics is hiring a devops engineer in Adelaide. This is a hybrid role,\noffered as permanent work at AUD 145,000 base plus superannuation.\n\n## Requirements\n\n- Must have Terraform.\n- Must have experience with CI pipelines.\n- Experience with AWS is essential.\n- Kubernetes operators is nice to have.\n- You must have existing Australian work rights; we do not sponsor.\n",
+      "material": [
+        {
+          "type": "skill",
+          "wording": "Terraform",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "CI pipelines",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "AWS",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "Kubernetes operators",
+          "priority": "nice_to_have"
+        },
+        {
+          "type": "location",
+          "wording": "Adelaide",
+          "structured": {
+            "place": "Adelaide"
+          }
+        },
+        {
+          "type": "work_arrangement",
+          "wording": "hybrid",
+          "structured": {
+            "arrangement": "hybrid"
+          }
+        },
+        {
+          "type": "employment_type",
+          "wording": "permanent",
+          "structured": {
+            "employmentType": "permanent"
+          }
+        },
+        {
+          "type": "work_rights",
+          "wording": "existing Australian work rights",
+          "structured": {
+            "rights": "australian work rights"
+          }
+        },
+        {
+          "type": "compensation",
+          "wording": "AUD 145,000 base plus superannuation",
+          "structured": {
+            "currency": "AUD",
+            "amount": 145000,
+            "basis": "annual"
+          }
+        }
+      ],
+      "structured": [
+        {
+          "type": "location",
+          "wording": "Adelaide",
+          "structured": {
+            "place": "Adelaide"
+          }
+        },
+        {
+          "type": "work_arrangement",
+          "wording": "hybrid",
+          "structured": {
+            "arrangement": "hybrid"
+          }
+        },
+        {
+          "type": "employment_type",
+          "wording": "permanent",
+          "structured": {
+            "employmentType": "permanent"
+          }
+        },
+        {
+          "type": "work_rights",
+          "wording": "existing Australian work rights",
+          "structured": {
+            "rights": "australian work rights"
+          }
+        },
+        {
+          "type": "compensation",
+          "wording": "AUD 145,000 base plus superannuation",
+          "structured": {
+            "currency": "AUD",
+            "amount": 145000,
+            "basis": "annual"
+          }
+        }
+      ]
+    },
+    {
+      "id": "mobile-engineer-sydney",
+      "title": "Mobile engineer",
+      "markdown": "# Mobile engineer — Wattlebank\n\n## About the role\n\nWattlebank is hiring a mobile engineer in Sydney. This is a hybrid role,\noffered as permanent work at AUD 150,000 base plus superannuation.\n\n## Requirements\n\n- Must have Swift.\n- Must have experience with Kotlin.\n- Experience with release engineering is essential.\n- Fintech experience is nice to have.\n- You must have existing Australian work rights; we do not sponsor.\n",
+      "material": [
+        {
+          "type": "skill",
+          "wording": "Swift",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "Kotlin",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "release engineering",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "fintech experience",
+          "priority": "nice_to_have"
+        },
+        {
+          "type": "location",
+          "wording": "Sydney",
+          "structured": {
+            "place": "Sydney"
+          }
+        },
+        {
+          "type": "work_arrangement",
+          "wording": "hybrid",
+          "structured": {
+            "arrangement": "hybrid"
+          }
+        },
+        {
+          "type": "employment_type",
+          "wording": "permanent",
+          "structured": {
+            "employmentType": "permanent"
+          }
+        },
+        {
+          "type": "work_rights",
+          "wording": "existing Australian work rights",
+          "structured": {
+            "rights": "australian work rights"
+          }
+        },
+        {
+          "type": "compensation",
+          "wording": "AUD 150,000 base plus superannuation",
+          "structured": {
+            "currency": "AUD",
+            "amount": 150000,
+            "basis": "annual"
+          }
+        }
+      ],
+      "structured": [
+        {
+          "type": "location",
+          "wording": "Sydney",
+          "structured": {
+            "place": "Sydney"
+          }
+        },
+        {
+          "type": "work_arrangement",
+          "wording": "hybrid",
+          "structured": {
+            "arrangement": "hybrid"
+          }
+        },
+        {
+          "type": "employment_type",
+          "wording": "permanent",
+          "structured": {
+            "employmentType": "permanent"
+          }
+        },
+        {
+          "type": "work_rights",
+          "wording": "existing Australian work rights",
+          "structured": {
+            "rights": "australian work rights"
+          }
+        },
+        {
+          "type": "compensation",
+          "wording": "AUD 150,000 base plus superannuation",
+          "structured": {
+            "currency": "AUD",
+            "amount": 150000,
+            "basis": "annual"
+          }
+        }
+      ]
+    },
+    {
+      "id": "principal-engineer-melbourne",
+      "title": "Principal engineer",
+      "markdown": "# Principal engineer — Northwind Robotics\n\n## About the role\n\nNorthwind Robotics is hiring a principal engineer in Melbourne. This is a hybrid role,\noffered as permanent work at AUD 240,000 base plus superannuation.\n\n## Requirements\n\n- Must have architecture.\n- Must have experience with mentoring.\n- Experience with distributed systems is essential.\n- Hardware experience is nice to have.\n- You must have existing Australian work rights; we do not sponsor.\n",
+      "material": [
+        {
+          "type": "skill",
+          "wording": "architecture",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "mentoring",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "distributed systems",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "hardware experience",
+          "priority": "nice_to_have"
+        },
+        {
+          "type": "location",
+          "wording": "Melbourne",
+          "structured": {
+            "place": "Melbourne"
+          }
+        },
+        {
+          "type": "work_arrangement",
+          "wording": "hybrid",
+          "structured": {
+            "arrangement": "hybrid"
+          }
+        },
+        {
+          "type": "employment_type",
+          "wording": "permanent",
+          "structured": {
+            "employmentType": "permanent"
+          }
+        },
+        {
+          "type": "work_rights",
+          "wording": "existing Australian work rights",
+          "structured": {
+            "rights": "australian work rights"
+          }
+        },
+        {
+          "type": "compensation",
+          "wording": "AUD 240,000 base plus superannuation",
+          "structured": {
+            "currency": "AUD",
+            "amount": 240000,
+            "basis": "annual"
+          }
+        }
+      ],
+      "structured": [
+        {
+          "type": "location",
+          "wording": "Melbourne",
+          "structured": {
+            "place": "Melbourne"
+          }
+        },
+        {
+          "type": "work_arrangement",
+          "wording": "hybrid",
+          "structured": {
+            "arrangement": "hybrid"
+          }
+        },
+        {
+          "type": "employment_type",
+          "wording": "permanent",
+          "structured": {
+            "employmentType": "permanent"
+          }
+        },
+        {
+          "type": "work_rights",
+          "wording": "existing Australian work rights",
+          "structured": {
+            "rights": "australian work rights"
+          }
+        },
+        {
+          "type": "compensation",
+          "wording": "AUD 240,000 base plus superannuation",
+          "structured": {
+            "currency": "AUD",
+            "amount": 240000,
+            "basis": "annual"
+          }
+        }
+      ]
+    },
+    {
+      "id": "backend-contract-melbourne",
+      "title": "Backend engineer (contract)",
+      "markdown": "# Backend engineer (contract) — Silverleaf Consulting\n\n## About the role\n\nSilverleaf Consulting is hiring a backend engineer (contract) in Melbourne. This is a remote role,\noffered as contract work at AUD 900 per day.\n\n## Requirements\n\n- Must have Go.\n- Must have experience with REST APIs.\n- Experience with SQL is essential.\n- Consulting background is nice to have.\n- You must have existing Australian work rights; we do not sponsor.\n",
+      "material": [
+        {
+          "type": "skill",
+          "wording": "Go",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "REST APIs",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "SQL",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "consulting background",
+          "priority": "nice_to_have"
+        },
+        {
+          "type": "location",
+          "wording": "Melbourne",
+          "structured": {
+            "place": "Melbourne"
+          }
+        },
+        {
+          "type": "work_arrangement",
+          "wording": "remote",
+          "structured": {
+            "arrangement": "remote"
+          }
+        },
+        {
+          "type": "employment_type",
+          "wording": "contract",
+          "structured": {
+            "employmentType": "contract"
+          }
+        },
+        {
+          "type": "work_rights",
+          "wording": "existing Australian work rights",
+          "structured": {
+            "rights": "australian work rights"
+          }
+        },
+        {
+          "type": "compensation",
+          "wording": "AUD 900 per day",
+          "structured": {
+            "currency": "AUD",
+            "amount": 900,
+            "basis": "per day"
+          }
+        }
+      ],
+      "structured": [
+        {
+          "type": "location",
+          "wording": "Melbourne",
+          "structured": {
+            "place": "Melbourne"
+          }
+        },
+        {
+          "type": "work_arrangement",
+          "wording": "remote",
+          "structured": {
+            "arrangement": "remote"
+          }
+        },
+        {
+          "type": "employment_type",
+          "wording": "contract",
+          "structured": {
+            "employmentType": "contract"
+          }
+        },
+        {
+          "type": "work_rights",
+          "wording": "existing Australian work rights",
+          "structured": {
+            "rights": "australian work rights"
+          }
+        },
+        {
+          "type": "compensation",
+          "wording": "AUD 900 per day",
+          "structured": {
+            "currency": "AUD",
+            "amount": 900,
+            "basis": "per day"
+          }
+        }
+      ]
+    },
+    {
+      "id": "platform-engineer-remote",
+      "title": "Platform engineer",
+      "markdown": "# Platform engineer — Kelpie Software\n\n## About the role\n\nKelpie Software is hiring a platform engineer in Remote (Australia). This is a remote role,\noffered as permanent work at AUD 170,000 base plus superannuation.\n\n## Requirements\n\n- Must have Go.\n- Must have experience with Kubernetes.\n- Experience with observability is essential.\n- Open-source contributions is nice to have.\n- You must have existing Australian work rights; we do not sponsor.\n",
+      "material": [
+        {
+          "type": "skill",
+          "wording": "Go",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "Kubernetes",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "observability",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "open-source contributions",
+          "priority": "nice_to_have"
+        },
+        {
+          "type": "location",
+          "wording": "Remote (Australia)",
+          "structured": {
+            "place": "Remote (Australia)"
+          }
+        },
+        {
+          "type": "work_arrangement",
+          "wording": "remote",
+          "structured": {
+            "arrangement": "remote"
+          }
+        },
+        {
+          "type": "employment_type",
+          "wording": "permanent",
+          "structured": {
+            "employmentType": "permanent"
+          }
+        },
+        {
+          "type": "work_rights",
+          "wording": "existing Australian work rights",
+          "structured": {
+            "rights": "australian work rights"
+          }
+        },
+        {
+          "type": "compensation",
+          "wording": "AUD 170,000 base plus superannuation",
+          "structured": {
+            "currency": "AUD",
+            "amount": 170000,
+            "basis": "annual"
+          }
+        }
+      ],
+      "structured": [
+        {
+          "type": "location",
+          "wording": "Remote (Australia)",
+          "structured": {
+            "place": "Remote (Australia)"
+          }
+        },
+        {
+          "type": "work_arrangement",
+          "wording": "remote",
+          "structured": {
+            "arrangement": "remote"
+          }
+        },
+        {
+          "type": "employment_type",
+          "wording": "permanent",
+          "structured": {
+            "employmentType": "permanent"
+          }
+        },
+        {
+          "type": "work_rights",
+          "wording": "existing Australian work rights",
+          "structured": {
+            "rights": "australian work rights"
+          }
+        },
+        {
+          "type": "compensation",
+          "wording": "AUD 170,000 base plus superannuation",
+          "structured": {
+            "currency": "AUD",
+            "amount": 170000,
+            "basis": "annual"
+          }
+        }
+      ]
+    },
+    {
+      "id": "qa-engineer-brisbane",
+      "title": "Quality engineer",
+      "markdown": "# Quality engineer — Fernway Health\n\n## About the role\n\nFernway Health is hiring a quality engineer in Brisbane. This is a hybrid role,\noffered as permanent work at AUD 130,000 base plus superannuation.\n\n## Requirements\n\n- Must have test automation.\n- Must have experience with Playwright.\n- Experience with test strategy is essential.\n- Medical device experience is nice to have.\n- You must have existing Australian work rights; we do not sponsor.\n",
+      "material": [
+        {
+          "type": "skill",
+          "wording": "test automation",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "Playwright",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "test strategy",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "medical device experience",
+          "priority": "nice_to_have"
+        },
+        {
+          "type": "location",
+          "wording": "Brisbane",
+          "structured": {
+            "place": "Brisbane"
+          }
+        },
+        {
+          "type": "work_arrangement",
+          "wording": "hybrid",
+          "structured": {
+            "arrangement": "hybrid"
+          }
+        },
+        {
+          "type": "employment_type",
+          "wording": "permanent",
+          "structured": {
+            "employmentType": "permanent"
+          }
+        },
+        {
+          "type": "work_rights",
+          "wording": "existing Australian work rights",
+          "structured": {
+            "rights": "australian work rights"
+          }
+        },
+        {
+          "type": "compensation",
+          "wording": "AUD 130,000 base plus superannuation",
+          "structured": {
+            "currency": "AUD",
+            "amount": 130000,
+            "basis": "annual"
+          }
+        }
+      ],
+      "structured": [
+        {
+          "type": "location",
+          "wording": "Brisbane",
+          "structured": {
+            "place": "Brisbane"
+          }
+        },
+        {
+          "type": "work_arrangement",
+          "wording": "hybrid",
+          "structured": {
+            "arrangement": "hybrid"
+          }
+        },
+        {
+          "type": "employment_type",
+          "wording": "permanent",
+          "structured": {
+            "employmentType": "permanent"
+          }
+        },
+        {
+          "type": "work_rights",
+          "wording": "existing Australian work rights",
+          "structured": {
+            "rights": "australian work rights"
+          }
+        },
+        {
+          "type": "compensation",
+          "wording": "AUD 130,000 base plus superannuation",
+          "structured": {
+            "currency": "AUD",
+            "amount": 130000,
+            "basis": "annual"
+          }
+        }
+      ]
+    },
+    {
+      "id": "data-platform-sydney",
+      "title": "Data platform engineer",
+      "markdown": "# Data platform engineer — Harbourline Freight\n\n## About the role\n\nHarbourline Freight is hiring a data platform engineer in Sydney. This is a hybrid role,\noffered as permanent work at AUD 175,000 base plus superannuation.\n\n## Requirements\n\n- Must have Spark.\n- Must have experience with data pipelines.\n- Experience with Python is essential.\n- Streaming systems is nice to have.\n- You must have existing Australian work rights; we do not sponsor.\n",
+      "material": [
+        {
+          "type": "skill",
+          "wording": "Spark",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "data pipelines",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "Python",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "streaming systems",
+          "priority": "nice_to_have"
+        },
+        {
+          "type": "location",
+          "wording": "Sydney",
+          "structured": {
+            "place": "Sydney"
+          }
+        },
+        {
+          "type": "work_arrangement",
+          "wording": "hybrid",
+          "structured": {
+            "arrangement": "hybrid"
+          }
+        },
+        {
+          "type": "employment_type",
+          "wording": "permanent",
+          "structured": {
+            "employmentType": "permanent"
+          }
+        },
+        {
+          "type": "work_rights",
+          "wording": "existing Australian work rights",
+          "structured": {
+            "rights": "australian work rights"
+          }
+        },
+        {
+          "type": "compensation",
+          "wording": "AUD 175,000 base plus superannuation",
+          "structured": {
+            "currency": "AUD",
+            "amount": 175000,
+            "basis": "annual"
+          }
+        }
+      ],
+      "structured": [
+        {
+          "type": "location",
+          "wording": "Sydney",
+          "structured": {
+            "place": "Sydney"
+          }
+        },
+        {
+          "type": "work_arrangement",
+          "wording": "hybrid",
+          "structured": {
+            "arrangement": "hybrid"
+          }
+        },
+        {
+          "type": "employment_type",
+          "wording": "permanent",
+          "structured": {
+            "employmentType": "permanent"
+          }
+        },
+        {
+          "type": "work_rights",
+          "wording": "existing Australian work rights",
+          "structured": {
+            "rights": "australian work rights"
+          }
+        },
+        {
+          "type": "compensation",
+          "wording": "AUD 175,000 base plus superannuation",
+          "structured": {
+            "currency": "AUD",
+            "amount": 175000,
+            "basis": "annual"
+          }
+        }
+      ]
+    },
+    {
+      "id": "engineering-manager-melbourne",
+      "title": "Engineering manager",
+      "markdown": "# Engineering manager — Quokkastack Analytics\n\n## About the role\n\nQuokkastack Analytics is hiring a engineering manager in Melbourne. This is a hybrid role,\noffered as permanent work at AUD 200,000 base plus superannuation.\n\n## Requirements\n\n- Must have people leadership.\n- Must have experience with delivery.\n- Experience with hiring is essential.\n- Data domain experience is nice to have.\n- You must have existing Australian work rights; we do not sponsor.\n",
+      "material": [
+        {
+          "type": "skill",
+          "wording": "people leadership",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "delivery",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "hiring",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "data domain experience",
+          "priority": "nice_to_have"
+        },
+        {
+          "type": "location",
+          "wording": "Melbourne",
+          "structured": {
+            "place": "Melbourne"
+          }
+        },
+        {
+          "type": "work_arrangement",
+          "wording": "hybrid",
+          "structured": {
+            "arrangement": "hybrid"
+          }
+        },
+        {
+          "type": "employment_type",
+          "wording": "permanent",
+          "structured": {
+            "employmentType": "permanent"
+          }
+        },
+        {
+          "type": "work_rights",
+          "wording": "existing Australian work rights",
+          "structured": {
+            "rights": "australian work rights"
+          }
+        },
+        {
+          "type": "compensation",
+          "wording": "AUD 200,000 base plus superannuation",
+          "structured": {
+            "currency": "AUD",
+            "amount": 200000,
+            "basis": "annual"
+          }
+        }
+      ],
+      "structured": [
+        {
+          "type": "location",
+          "wording": "Melbourne",
+          "structured": {
+            "place": "Melbourne"
+          }
+        },
+        {
+          "type": "work_arrangement",
+          "wording": "hybrid",
+          "structured": {
+            "arrangement": "hybrid"
+          }
+        },
+        {
+          "type": "employment_type",
+          "wording": "permanent",
+          "structured": {
+            "employmentType": "permanent"
+          }
+        },
+        {
+          "type": "work_rights",
+          "wording": "existing Australian work rights",
+          "structured": {
+            "rights": "australian work rights"
+          }
+        },
+        {
+          "type": "compensation",
+          "wording": "AUD 200,000 base plus superannuation",
+          "structured": {
+            "currency": "AUD",
+            "amount": 200000,
+            "basis": "annual"
+          }
+        }
+      ]
+    },
+    {
+      "id": "integration-engineer-hobart",
+      "title": "Integration engineer",
+      "markdown": "# Integration engineer — Derwent Utilities\n\n## About the role\n\nDerwent Utilities is hiring a integration engineer in Hobart. This is a onsite role,\noffered as permanent work at AUD 135,000 base plus superannuation.\n\n## Requirements\n\n- Must have SOAP and REST integration.\n- Must have experience with message queues.\n- Experience with SQL is essential.\n- Utilities experience is nice to have.\n- You must have existing Australian work rights; we do not sponsor.\n",
+      "material": [
+        {
+          "type": "skill",
+          "wording": "SOAP and REST integration",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "message queues",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "SQL",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "utilities experience",
+          "priority": "nice_to_have"
+        },
+        {
+          "type": "location",
+          "wording": "Hobart",
+          "structured": {
+            "place": "Hobart"
+          }
+        },
+        {
+          "type": "work_arrangement",
+          "wording": "onsite",
+          "structured": {
+            "arrangement": "onsite"
+          }
+        },
+        {
+          "type": "employment_type",
+          "wording": "permanent",
+          "structured": {
+            "employmentType": "permanent"
+          }
+        },
+        {
+          "type": "work_rights",
+          "wording": "existing Australian work rights",
+          "structured": {
+            "rights": "australian work rights"
+          }
+        },
+        {
+          "type": "compensation",
+          "wording": "AUD 135,000 base plus superannuation",
+          "structured": {
+            "currency": "AUD",
+            "amount": 135000,
+            "basis": "annual"
+          }
+        }
+      ],
+      "structured": [
+        {
+          "type": "location",
+          "wording": "Hobart",
+          "structured": {
+            "place": "Hobart"
+          }
+        },
+        {
+          "type": "work_arrangement",
+          "wording": "onsite",
+          "structured": {
+            "arrangement": "onsite"
+          }
+        },
+        {
+          "type": "employment_type",
+          "wording": "permanent",
+          "structured": {
+            "employmentType": "permanent"
+          }
+        },
+        {
+          "type": "work_rights",
+          "wording": "existing Australian work rights",
+          "structured": {
+            "rights": "australian work rights"
+          }
+        },
+        {
+          "type": "compensation",
+          "wording": "AUD 135,000 base plus superannuation",
+          "structured": {
+            "currency": "AUD",
+            "amount": 135000,
+            "basis": "annual"
+          }
+        }
+      ]
+    },
+    {
+      "id": "embedded-engineer-perth",
+      "title": "Embedded engineer",
+      "markdown": "# Embedded engineer — Redgum Mining Tech\n\n## About the role\n\nRedgum Mining Tech is hiring a embedded engineer in Perth. This is a onsite role,\noffered as permanent work at AUD 160,000 base plus superannuation.\n\n## Requirements\n\n- Must have C.\n- Must have experience with real-time systems.\n- Experience with hardware interfaces is essential.\n- Rust is nice to have.\n- You must have existing Australian work rights; we do not sponsor.\n",
+      "material": [
+        {
+          "type": "skill",
+          "wording": "C",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "real-time systems",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "hardware interfaces",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "Rust",
+          "priority": "nice_to_have"
+        },
+        {
+          "type": "location",
+          "wording": "Perth",
+          "structured": {
+            "place": "Perth"
+          }
+        },
+        {
+          "type": "work_arrangement",
+          "wording": "onsite",
+          "structured": {
+            "arrangement": "onsite"
+          }
+        },
+        {
+          "type": "employment_type",
+          "wording": "permanent",
+          "structured": {
+            "employmentType": "permanent"
+          }
+        },
+        {
+          "type": "work_rights",
+          "wording": "existing Australian work rights",
+          "structured": {
+            "rights": "australian work rights"
+          }
+        },
+        {
+          "type": "compensation",
+          "wording": "AUD 160,000 base plus superannuation",
+          "structured": {
+            "currency": "AUD",
+            "amount": 160000,
+            "basis": "annual"
+          }
+        }
+      ],
+      "structured": [
+        {
+          "type": "location",
+          "wording": "Perth",
+          "structured": {
+            "place": "Perth"
+          }
+        },
+        {
+          "type": "work_arrangement",
+          "wording": "onsite",
+          "structured": {
+            "arrangement": "onsite"
+          }
+        },
+        {
+          "type": "employment_type",
+          "wording": "permanent",
+          "structured": {
+            "employmentType": "permanent"
+          }
+        },
+        {
+          "type": "work_rights",
+          "wording": "existing Australian work rights",
+          "structured": {
+            "rights": "australian work rights"
+          }
+        },
+        {
+          "type": "compensation",
+          "wording": "AUD 160,000 base plus superannuation",
+          "structured": {
+            "currency": "AUD",
+            "amount": 160000,
+            "basis": "annual"
+          }
+        }
+      ]
+    },
+    {
+      "id": "solutions-architect-sydney",
+      "title": "Solutions architect",
+      "markdown": "# Solutions architect — Tidewater Retail\n\n## About the role\n\nTidewater Retail is hiring a solutions architect in Sydney. This is a hybrid role,\noffered as permanent work at AUD 195,000 base plus superannuation.\n\n## Requirements\n\n- Must have solution design.\n- Must have experience with stakeholder management.\n- Experience with cloud architecture is essential.\n- Retail domain experience is nice to have.\n- You must have existing Australian work rights; we do not sponsor.\n",
+      "material": [
+        {
+          "type": "skill",
+          "wording": "solution design",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "stakeholder management",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "cloud architecture",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "retail domain experience",
+          "priority": "nice_to_have"
+        },
+        {
+          "type": "location",
+          "wording": "Sydney",
+          "structured": {
+            "place": "Sydney"
+          }
+        },
+        {
+          "type": "work_arrangement",
+          "wording": "hybrid",
+          "structured": {
+            "arrangement": "hybrid"
+          }
+        },
+        {
+          "type": "employment_type",
+          "wording": "permanent",
+          "structured": {
+            "employmentType": "permanent"
+          }
+        },
+        {
+          "type": "work_rights",
+          "wording": "existing Australian work rights",
+          "structured": {
+            "rights": "australian work rights"
+          }
+        },
+        {
+          "type": "compensation",
+          "wording": "AUD 195,000 base plus superannuation",
+          "structured": {
+            "currency": "AUD",
+            "amount": 195000,
+            "basis": "annual"
+          }
+        }
+      ],
+      "structured": [
+        {
+          "type": "location",
+          "wording": "Sydney",
+          "structured": {
+            "place": "Sydney"
+          }
+        },
+        {
+          "type": "work_arrangement",
+          "wording": "hybrid",
+          "structured": {
+            "arrangement": "hybrid"
+          }
+        },
+        {
+          "type": "employment_type",
+          "wording": "permanent",
+          "structured": {
+            "employmentType": "permanent"
+          }
+        },
+        {
+          "type": "work_rights",
+          "wording": "existing Australian work rights",
+          "structured": {
+            "rights": "australian work rights"
+          }
+        },
+        {
+          "type": "compensation",
+          "wording": "AUD 195,000 base plus superannuation",
+          "structured": {
+            "currency": "AUD",
+            "amount": 195000,
+            "basis": "annual"
+          }
+        }
+      ]
+    },
+    {
+      "id": "junior-backend-melbourne",
+      "title": "Backend engineer",
+      "markdown": "# Backend engineer — Saltbush Labs\n\n## About the role\n\nSaltbush Labs is hiring a backend engineer in Melbourne. This is a onsite role,\noffered as permanent work at AUD 110,000 base plus superannuation.\n\n## Requirements\n\n- Must have Python.\n- Must have experience with SQL.\n- Experience with testing is essential.\n- Research background is nice to have.\n- You must have existing Australian work rights; we do not sponsor.\n",
+      "material": [
+        {
+          "type": "skill",
+          "wording": "Python",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "SQL",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "testing",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "research background",
+          "priority": "nice_to_have"
+        },
+        {
+          "type": "location",
+          "wording": "Melbourne",
+          "structured": {
+            "place": "Melbourne"
+          }
+        },
+        {
+          "type": "work_arrangement",
+          "wording": "onsite",
+          "structured": {
+            "arrangement": "onsite"
+          }
+        },
+        {
+          "type": "employment_type",
+          "wording": "permanent",
+          "structured": {
+            "employmentType": "permanent"
+          }
+        },
+        {
+          "type": "work_rights",
+          "wording": "existing Australian work rights",
+          "structured": {
+            "rights": "australian work rights"
+          }
+        },
+        {
+          "type": "compensation",
+          "wording": "AUD 110,000 base plus superannuation",
+          "structured": {
+            "currency": "AUD",
+            "amount": 110000,
+            "basis": "annual"
+          }
+        }
+      ],
+      "structured": [
+        {
+          "type": "location",
+          "wording": "Melbourne",
+          "structured": {
+            "place": "Melbourne"
+          }
+        },
+        {
+          "type": "work_arrangement",
+          "wording": "onsite",
+          "structured": {
+            "arrangement": "onsite"
+          }
+        },
+        {
+          "type": "employment_type",
+          "wording": "permanent",
+          "structured": {
+            "employmentType": "permanent"
+          }
+        },
+        {
+          "type": "work_rights",
+          "wording": "existing Australian work rights",
+          "structured": {
+            "rights": "australian work rights"
+          }
+        },
+        {
+          "type": "compensation",
+          "wording": "AUD 110,000 base plus superannuation",
+          "structured": {
+            "currency": "AUD",
+            "amount": 110000,
+            "basis": "annual"
+          }
+        }
+      ]
+    }
+  ]
+}
