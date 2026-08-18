@@ -3,24 +3,27 @@
 package main
 
 import (
+	"context"
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"camstuart/talent-hound/internal/bench"
 	"camstuart/talent-hound/internal/platform"
 	"camstuart/talent-hound/internal/profile"
 )
 
-// Why citations fail, in the model's own output.
+// Why the contract rejects a profile, in the model's own output.
 //
-// The benchmark reports "quotes wording that does not appear in chunk N" and
-// deliberately does not log the quote — a citation quotes the document, and the
-// document is the thing logs must never carry. This runs against the synthetic
-// corpus only, where the "document" is invented, so the quote can be shown.
+// This calls the model directly with the product's prompt and schema and runs
+// the product's validator over the answer, so a rejected profile can be
+// inspected — which the service deliberately does not allow, because its errors
+// must not quote the document. The corpus here is the synthetic one, where the
+// "document" is invented.
 //
-//	go test -tags livemodel -run TestDiagnoseCitations -v .
-func TestDiagnoseCitations(t *testing.T) {
+//	go test -tags livemodel -run TestDiagnoseRejections -v .
+func TestDiagnoseRejections(t *testing.T) {
 	model := os.Getenv("TH_CLASSIFY_MODEL")
 	if model == "" {
 		t.Skip("set TH_CLASSIFY_MODEL")
@@ -29,49 +32,62 @@ func TestDiagnoseCitations(t *testing.T) {
 	if err != nil {
 		t.Fatalf("loading the corpus: %v", err)
 	}
+	ollama := platform.NewOllama()
 
-	exact, caseOnly, spaceOnly, absent := 0, 0, 0, 0
-	for _, listing := range corpus.Listings[:4] {
-		e := newClassifyEnv(t)
-		e.classify = NewClassifyService(e.db, e.registry, platform.NewOllama())
-		e.assignClassify(t, model)
-		ids := e.withSource(t, listing.ID, listing.Markdown)
-		sources := map[uint]string{}
-		for _, chunk := range e.chunks2 {
-			sources[chunk.ID] = chunk.Text
-		}
-
-		p, err := e.classify.Classify(ClassifyInput{
-			SubjectKind: profile.SubjectRole, SubjectID: 1, ChunkIDs: ids,
-		})
+	kinds := map[string]int{}
+	for _, listing := range corpus.Listings[:6] {
+		// One chunk, so a citation can only resolve against this text.
+		sources := []profile.Source{{ChunkID: 1, Text: listing.Markdown}}
+		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
+		raw, err := ollama.Chat(ctx, model, profile.Prompt(profile.SubjectRole, sources),
+			profile.Schema(profile.SubjectRole))
+		cancel()
 		if err != nil {
-			t.Logf("%s: refused (%v)", listing.ID, err)
+			kinds["endpoint: "+err.Error()]++
 			continue
 		}
-		aspects, err := e.classify.Aspects(p.ID)
-		if err != nil {
-			t.Fatalf("reading aspects: %v", err)
+		proposal, problems := profile.ParseProposal(raw)
+		if len(problems) > 0 {
+			kinds["unparsable"]++
+			continue
 		}
-		for _, a := range aspects {
+		problems = profile.Validate(profile.SubjectRole, proposal, sources)
+		if len(problems) == 0 {
+			kinds["accepted"]++
+			continue
+		}
+		for _, p := range problems {
+			kinds[classify(p)]++
+			t.Logf("%s: %s", listing.ID, p)
+		}
+		// And the quotes themselves, so a mismatch can be read rather than
+		// guessed at.
+		for _, a := range proposal.Aspects {
 			for _, c := range a.Citations {
-				text := sources[c.ChunkID]
-				switch {
-				case strings.Contains(text, c.Quote):
-					exact++
-				case strings.Contains(squash(text), squash(c.Quote)):
-					spaceOnly++
-				case strings.Contains(strings.ToLower(squash(text)), strings.ToLower(squash(c.Quote))):
-					caseOnly++
-					t.Logf("case-only mismatch: %q", c.Quote)
-				default:
-					absent++
-					t.Logf("absent: %q", c.Quote)
+				if !strings.Contains(squash(listing.Markdown), squash(c.Quote)) {
+					t.Logf("  unresolved quote: %q", c.Quote)
 				}
 			}
 		}
 	}
-	t.Logf("EVIDENCE citations exact=%d whitespace-only=%d case-only=%d absent=%d",
-		exact, spaceOnly, caseOnly, absent)
+	for kind, n := range kinds {
+		t.Logf("EVIDENCE rejection kind=%q count=%d", kind, n)
+	}
+}
+
+// classify buckets a validator problem by its kind, without its detail.
+func classify(problem string) string {
+	switch {
+	case strings.Contains(problem, "quotes wording"):
+		return "quote does not resolve"
+	case strings.Contains(problem, "duplicates aspect"):
+		return "duplicate aspect"
+	case strings.Contains(problem, "is not one of"):
+		return "value outside the enumeration"
+	case strings.Contains(problem, "not a permitted"):
+		return "field outside the type"
+	}
+	return "other: " + problem
 }
 
 func squash(s string) string { return strings.Join(strings.Fields(s), " ") }

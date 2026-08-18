@@ -273,20 +273,39 @@ func ScoreClassifier(listing Listing, extracted []profile.Aspect, sources map[ui
 }
 
 // captured reports whether one labelled aspect is present in what was
-// extracted. Containment is one-directional on purpose: the label is the
-// shorter, terser statement, and finding it inside a fuller one is the case
-// this rule exists for. The reverse — a one-word extraction "matching" a
-// detailed label — is not capture.
+// extracted.
+//
+// Type has to matter, but not equally. The five constraint types drive
+// comparisons — "Melbourne" and "Sydney" are opposite facts — so a labelled
+// constraint is captured only by an aspect of that same type, and whether its
+// value is right is scored separately. The descriptive types are not sharply
+// separable: whether "multi-region systems" is a skill, an experience, or a
+// responsibility is a judgement call the taxonomy does not settle, and a
+// recruiter checking whether the requirement was captured would accept any of
+// them. Measuring against my own choice among them would be measuring my
+// labelling, not the model.
+//
+// Containment is one-directional on purpose: the label is the terser statement,
+// and finding it inside a fuller one is the case this rule exists for. The
+// reverse — a one-word extraction "matching" a detailed label — is not capture.
 func captured(want profile.Aspect, extracted []profile.Aspect, byKey map[string]profile.Aspect) bool {
 	if _, ok := byKey[profile.MeaningKey(want)]; ok {
 		return true
+	}
+	if _, constrained := profile.StructuredFields(want.Type); constrained {
+		for _, got := range extracted {
+			if got.Type == want.Type {
+				return true
+			}
+		}
+		return false
 	}
 	needle := normalize(want.Wording)
 	if needle == "" {
 		return false
 	}
 	for _, got := range extracted {
-		if got.Type != want.Type {
+		if _, constrained := profile.StructuredFields(got.Type); constrained {
 			continue
 		}
 		if strings.Contains(normalize(got.Wording), needle) {

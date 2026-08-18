@@ -1,0 +1,260 @@
+Talent Hound 0.1.0-poc on darwin/arm64, 2026-08-18T09:50:33Z
+Corpus: the synthetic corpus in this repository — invented, not real placements
+  hash 0bbb546df73d6d42744ee65246e88ed4b48a5216c5345b5e1ea228fdaa811830
+Schema v2, prompt v2
+  classify: qwen2.5:7b-instruct (FROM /Users/cam/.ollama/models/blobs/sha256-2bada8a7450677000f678be90653b85d364de7db25eb5ea54136ada5f3933730)
+  embed: nomic-embed-text (FROM /Users/cam/.ollama/models/blobs/sha256-970aa74c0a90ef7482477cf803618e776e173c007bf957f635f1015bfcfef0e6)
+  generate: not used by this benchmark (n/a)
+
+Classifier over the corpus: capture 36% (65/180), uncited 0, unsupported 0, misreported 100 — fail
+
+Classifier: 20 listings
+  platform-engineer-melbourne: capture 56% (5/9), cited true, no unsupported true, constraints exact false
+    location: map[], want map[city:Melbourne]
+    work_arrangement: missing
+    employment_type: map[], want map[employment_type:permanent]
+    work_rights: map[], want map[country:Australia sponsorship_required:false]
+    compensation: map[], want map[basis:base currency:AUD minimum:180000]
+    missed skill: multi-region systems
+    missed skill: postgraduate qualification
+    missed work_arrangement: hybrid
+    missed compensation: AUD 180,000 base plus superannuation
+  backend-engineer-sydney: capture 22% (2/9), cited true, no unsupported true, constraints exact false
+    location: map[], want map[city:Sydney]
+    work_arrangement: map[], want map[arrangement:onsite]
+    employment_type: missing
+    work_rights: map[], want map[country:Australia sponsorship_required:false]
+    compensation: map[], want map[basis:base currency:AUD minimum:150000]
+    missed skill: PostgreSQL
+    missed skill: event-driven systems
+    missed skill: AWS certification
+    missed work_arrangement: onsite
+    missed employment_type: permanent
+    missed work_rights: existing Australian work rights
+    missed compensation: AUD 150,000 base plus superannuation
+  site-reliability-brisbane: capture 67% (6/9), cited true, no unsupported true, constraints exact false
+    location: map[], want map[city:Brisbane]
+    work_arrangement: map[], want map[arrangement:hybrid]
+    employment_type: map[], want map[employment_type:permanent]
+    work_rights: map[], want map[country:Australia sponsorship_required:false]
+    compensation: map[], want map[basis:base currency:AUD minimum:165000]
+    missed skill: incident response
+    missed work_rights: existing Australian work rights
+    missed compensation: AUD 165,000 base plus superannuation
+  data-engineer-melbourne: capture 0% (0/9), cited true, no unsupported true, constraints exact false
+    location: missing
+    work_arrangement: missing
+    employment_type: missing
+    work_rights: missing
+    compensation: missing
+    missed skill: Python
+    missed skill: dbt
+    missed skill: data modelling
+    missed skill: Snowflake experience
+    missed location: Melbourne
+    missed work_arrangement: remote
+    missed employment_type: permanent
+    missed work_rights: existing Australian work rights
+    missed compensation: AUD 155,000 base plus superannuation
+  staff-engineer-perth: capture 0% (0/9), cited true, no unsupported true, constraints exact false
+    location: missing
+    work_arrangement: missing
+    employment_type: missing
+    work_rights: missing
+    compensation: missing
+    missed skill: distributed systems
+    missed skill: technical leadership
+    missed skill: Go
+    missed skill: mining domain experience
+    missed location: Perth
+    missed work_arrangement: onsite
+    missed employment_type: permanent
+    missed work_rights: existing Australian work rights
+    missed compensation: AUD 210,000 base plus superannuation
+  frontend-engineer-sydney: capture 67% (6/9), cited true, no unsupported true, constraints exact false
+    location: map[], want map[city:Sydney]
+    work_arrangement: map[], want map[arrangement:hybrid]
+    employment_type: map[], want map[employment_type:permanent]
+    work_rights: map[], want map[country:Australia sponsorship_required:false]
+    compensation: map[], want map[basis:base currency:AUD minimum:140000]
+    missed skill: accessibility
+    missed skill: design systems
+    missed work_rights: existing Australian work rights
+  security-engineer-canberra: capture 44% (4/9), cited true, no unsupported true, constraints exact false
+    location: map[], want map[city:Canberra]
+    work_arrangement: map[], want map[arrangement:onsite]
+    employment_type: map[], want map[employment_type:permanent]
+    work_rights: map[], want map[country:Australia sponsorship_required:false]
+    compensation: map[], want map[basis:base currency:AUD minimum:175000]
+    missed skill: threat modelling
+    missed skill: incident response
+    missed skill: government clearance
+    missed work_rights: existing Australian work rights
+    missed compensation: AUD 175,000 base plus superannuation
+  ml-engineer-melbourne: capture 0% (0/9), cited true, no unsupported true, constraints exact false
+    location: missing
+    work_arrangement: missing
+    employment_type: missing
+    work_rights: missing
+    compensation: missing
+    missed skill: PyTorch
+    missed skill: model evaluation
+    missed skill: Python
+    missed skill: publication record
+    missed location: Melbourne
+    missed work_arrangement: hybrid
+    missed employment_type: permanent
+    missed work_rights: existing Australian work rights
+    missed compensation: AUD 185,000 base plus superannuation
+  devops-engineer-adelaide: capture 0% (0/9), cited true, no unsupported true, constraints exact false
+    location: missing
+    work_arrangement: missing
+    employment_type: missing
+    work_rights: missing
+    compensation: missing
+    missed skill: Terraform
+    missed skill: CI pipelines
+    missed skill: AWS
+    missed skill: Kubernetes operators
+    missed location: Adelaide
+    missed work_arrangement: hybrid
+    missed employment_type: permanent
+    missed work_rights: existing Australian work rights
+    missed compensation: AUD 145,000 base plus superannuation
+  mobile-engineer-sydney: capture 56% (5/9), cited true, no unsupported true, constraints exact false
+    location: map[], want map[city:Sydney]
+    work_arrangement: map[], want map[arrangement:hybrid]
+    employment_type: map[], want map[employment_type:permanent]
+    work_rights: map[], want map[country:Australia sponsorship_required:false]
+    compensation: map[], want map[basis:base currency:AUD minimum:150000]
+    missed skill: Kotlin
+    missed skill: release engineering
+    missed skill: fintech experience
+    missed work_rights: existing Australian work rights
+  principal-engineer-melbourne: capture 67% (6/9), cited true, no unsupported true, constraints exact false
+    location: map[], want map[city:Melbourne]
+    work_arrangement: missing
+    employment_type: missing
+    work_rights: map[], want map[country:Australia sponsorship_required:false]
+    compensation: map[], want map[basis:base currency:AUD minimum:240000]
+    missed skill: mentoring
+    missed work_arrangement: hybrid
+    missed employment_type: permanent
+  backend-contract-melbourne: capture 67% (6/9), cited true, no unsupported true, constraints exact false
+    location: map[], want map[city:Melbourne]
+    work_arrangement: map[], want map[arrangement:remote]
+    employment_type: map[], want map[employment_type:contract]
+    work_rights: map[], want map[country:Australia sponsorship_required:false]
+    compensation: map[], want map[basis:rate currency:AUD minimum:900]
+    missed skill: REST APIs
+    missed skill: SQL
+    missed work_rights: existing Australian work rights
+  platform-engineer-remote: capture 67% (6/9), cited true, no unsupported true, constraints exact false
+    location: map[], want map[remote_ok:true]
+    work_arrangement: map[], want map[arrangement:remote]
+    employment_type: map[], want map[employment_type:permanent]
+    work_rights: map[], want map[country:Australia sponsorship_required:false]
+    compensation: map[], want map[basis:base currency:AUD minimum:170000]
+    missed skill: observability
+    missed skill: open-source contributions
+    missed work_rights: existing Australian work rights
+  qa-engineer-brisbane: capture 0% (0/9), cited true, no unsupported true, constraints exact false
+    location: missing
+    work_arrangement: missing
+    employment_type: missing
+    work_rights: missing
+    compensation: missing
+    missed skill: test automation
+    missed skill: Playwright
+    missed skill: test strategy
+    missed skill: medical device experience
+    missed location: Brisbane
+    missed work_arrangement: hybrid
+    missed employment_type: permanent
+    missed work_rights: existing Australian work rights
+    missed compensation: AUD 130,000 base plus superannuation
+  data-platform-sydney: capture 67% (6/9), cited true, no unsupported true, constraints exact false
+    location: map[], want map[city:Sydney]
+    work_arrangement: map[], want map[arrangement:hybrid]
+    employment_type: missing
+    work_rights: map[], want map[country:Australia sponsorship_required:false]
+    compensation: map[], want map[basis:base currency:AUD minimum:175000]
+    missed employment_type: permanent
+    missed work_rights: existing Australian work rights
+    missed compensation: AUD 175,000 base plus superannuation
+  engineering-manager-melbourne: capture 44% (4/9), cited true, no unsupported true, constraints exact false
+    location: map[], want map[city:Melbourne]
+    work_arrangement: map[], want map[arrangement:hybrid]
+    employment_type: map[], want map[employment_type:permanent]
+    work_rights: map[], want map[country:Australia sponsorship_required:false]
+    compensation: map[], want map[basis:base currency:AUD minimum:200000]
+    missed skill: delivery
+    missed skill: hiring
+    missed skill: data domain experience
+    missed work_rights: existing Australian work rights
+    missed compensation: AUD 200,000 base plus superannuation
+  integration-engineer-hobart: capture 56% (5/9), cited true, no unsupported true, constraints exact false
+    location: map[], want map[city:Hobart]
+    work_arrangement: missing
+    employment_type: map[], want map[employment_type:permanent]
+    work_rights: map[], want map[country:Australia sponsorship_required:false]
+    compensation: map[], want map[basis:base currency:AUD minimum:135000]
+    missed skill: utilities experience
+    missed work_arrangement: onsite
+    missed work_rights: existing Australian work rights
+    missed compensation: AUD 135,000 base plus superannuation
+  embedded-engineer-perth: capture 0% (0/9), cited true, no unsupported true, constraints exact false
+    location: missing
+    work_arrangement: missing
+    employment_type: missing
+    work_rights: missing
+    compensation: missing
+    missed skill: C
+    missed skill: real-time systems
+    missed skill: hardware interfaces
+    missed skill: Rust
+    missed location: Perth
+    missed work_arrangement: onsite
+    missed employment_type: permanent
+    missed work_rights: existing Australian work rights
+    missed compensation: AUD 160,000 base plus superannuation
+  solutions-architect-sydney: capture 0% (0/9), cited true, no unsupported true, constraints exact false
+    location: missing
+    work_arrangement: missing
+    employment_type: missing
+    work_rights: missing
+    compensation: missing
+    missed skill: solution design
+    missed skill: stakeholder management
+    missed skill: cloud architecture
+    missed skill: retail domain experience
+    missed location: Sydney
+    missed work_arrangement: hybrid
+    missed employment_type: permanent
+    missed work_rights: existing Australian work rights
+    missed compensation: AUD 195,000 base plus superannuation
+  junior-backend-melbourne: capture 44% (4/9), cited true, no unsupported true, constraints exact false
+    location: map[], want map[city:Melbourne]
+    work_arrangement: map[], want map[arrangement:onsite]
+    employment_type: map[], want map[employment_type:permanent]
+    work_rights: map[], want map[country:Australia sponsorship_required:false]
+    compensation: map[], want map[basis:base currency:AUD minimum:110000]
+    missed skill: SQL
+    missed skill: testing
+    missed skill: research background
+    missed work_rights: existing Australian work rights
+    missed compensation: AUD 110,000 base plus superannuation
+
+Matching: 0 of 5 scenarios reached three plausible
+  go-platform-melbourne: 0 plausible of 0 distinct — no candidate profile: the classify model did not answer
+  data-python-melbourne: 0 plausible of 0 distinct — no candidate profile: the classify model did not answer
+  frontend-accessibility-sydney: 2 plausible of 5 distinct
+  sre-kubernetes-brisbane: 2 plausible of 5 distinct
+  embedded-c-perth: 0 plausible of 0 distinct — no candidate profile: the classifier's output did not satisfy the contract after one repair attempt:
+- aspect 5 citation 1 quotes wording that does not appear in chunk 3
+- aspect 6 citation 1 quotes wording that does not appear in chunk 3
+- aspect 7 citation 1 quotes wording that does not appear in chunk 3
+
+Eligible roles: 20
+
+Outcome: fail

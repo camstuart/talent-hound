@@ -662,3 +662,59 @@ func TestTheScoreNamesWhatWasMissed(t *testing.T) {
 		t.Fatalf("captured = %d, want 1", score.Captured)
 	}
 }
+
+// Whether "multi-region systems" is a skill, an experience, or a
+// responsibility is a judgement the taxonomy does not settle. Measuring against
+// my choice among them would measure my labelling, not the model.
+func TestADescriptiveLabelIsCapturedAcrossItsNeighbouringTypes(t *testing.T) {
+	listing := Listing{
+		ID: "types",
+		Material: []profile.Aspect{
+			aspect(profile.Skill, "multi-region systems", nil),
+			aspect(profile.Skill, "postgraduate qualification", nil),
+		},
+	}
+	sources := map[uint]string{1: "Experience operating multi-region systems. A postgraduate qualification helps."}
+	extracted := []profile.Aspect{
+		cite(aspect(profile.Experience, "Experience operating multi-region systems", nil),
+			"multi-region systems"),
+		cite(aspect(profile.Qualification, "A postgraduate qualification helps", nil),
+			"postgraduate qualification"),
+	}
+	if score := ScoreClassifier(listing, extracted, sources); score.Captured != 2 {
+		t.Fatalf("captured %d of 2: %+v", score.Captured, score.Missed)
+	}
+}
+
+// A constraint is not captured by a description of it: "Melbourne" and "Sydney"
+// are opposite facts, and the types that drive comparisons have to match.
+func TestAConstraintIsCapturedOnlyByItsOwnType(t *testing.T) {
+	listing := Listing{
+		ID:       "constraint",
+		Material: []profile.Aspect{aspect(profile.Location, "Melbourne", map[string]any{"city": "Melbourne"})},
+	}
+	sources := map[uint]string{1: "Melbourne-based team."}
+	extracted := []profile.Aspect{cite(aspect(profile.Skill, "Melbourne-based team", nil), "Melbourne-based")}
+	if score := ScoreClassifier(listing, extracted, sources); score.Captured != 0 {
+		t.Fatalf("a skill captured a location: %+v", score)
+	}
+}
+
+// A constraint the model did report is captured whether or not its value is
+// right — value correctness is the constraints-exact condition, scored on its
+// own so a run says which of the two failed.
+func TestAConstraintWithAWrongValueIsStillCaptured(t *testing.T) {
+	want := aspect(profile.Location, "Melbourne", map[string]any{"city": "Melbourne"})
+	listing := Listing{ID: "wrongvalue", Material: []profile.Aspect{want}, Structured: []profile.Aspect{want}}
+	sources := map[uint]string{1: "Melbourne."}
+	extracted := []profile.Aspect{
+		cite(aspect(profile.Location, "Melbourne", map[string]any{"city": "Sydney"}), "Melbourne"),
+	}
+	score := ScoreClassifier(listing, extracted, sources)
+	if score.Captured != 1 {
+		t.Fatalf("captured = %d, want 1", score.Captured)
+	}
+	if score.ConstraintsExact {
+		t.Fatal("a wrong city was reported as exact")
+	}
+}

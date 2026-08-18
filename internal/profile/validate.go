@@ -137,7 +137,7 @@ func validateCitations(where string, a Aspect, known map[uint]string) []string {
 		// Substring containment, not offsets: the model quotes, it does not
 		// count bytes, and asking it to would trade a check that works for one
 		// that fails on whitespace.
-		if !strings.Contains(normalizeSpace(text), normalizeSpace(quote)) {
+		if !strings.Contains(normalizeSpace(text), trimBoundary(normalizeSpace(quote))) {
 			problems = append(problems, fmt.Sprintf(
 				"%s quotes wording that does not appear in chunk %d", at, c.ChunkID))
 		}
@@ -249,3 +249,18 @@ func meaningKey(a Aspect) string {
 // normalizeSpace collapses runs of whitespace, so a quote that differs from its
 // source only in line wrapping still resolves.
 func normalizeSpace(s string) string { return strings.Join(strings.Fields(s), " ") }
+
+// trimBoundary drops punctuation and quotation marks at the ends of a quote.
+//
+// Models cut mid-sentence and tidy the edge: asked to quote from "...offered as
+// permanent work at AUD 155,000...", they return "This is a remote role,
+// offered as permanent work." — the same words, with a full stop the source
+// does not have there. That is a boundary artefact of quoting, in the same
+// class as the line wrapping already tolerated above, and it is the single
+// largest cause of rejected profiles measured against the frozen corpus.
+//
+// Only the ends are trimmed. Punctuation inside the quote still has to match,
+// so nothing here lets a model quote wording the source does not contain.
+func trimBoundary(quote string) string {
+	return strings.Trim(quote, " \t.,;:!?\"'“”‘’()[]")
+}

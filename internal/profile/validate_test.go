@@ -433,3 +433,44 @@ func TestTheRepairPromptCarriesEveryProblemAndThePreviousAnswer(t *testing.T) {
 		}
 	}
 }
+
+// A model asked to quote from the middle of a sentence returns the words with a
+// full stop the source does not have there. That is an artefact of quoting, not
+// a different claim — and it was the largest single cause of rejected profiles
+// against the frozen corpus.
+func TestAQuoteTidiedAtItsEdgeStillResolves(t *testing.T) {
+	sources := []Source{{ChunkID: 1, Text: "This is a remote role, offered as permanent work at AUD 155,000 base."}}
+	for _, quote := range []string{
+		"This is a remote role, offered as permanent work.",
+		"offered as permanent work",
+		"\"offered as permanent work\"",
+		"offered as permanent work,",
+	} {
+		proposal := Proposal{Aspects: []Aspect{{
+			Type: EmploymentType, Wording: "permanent",
+			Citations: []Citation{{ChunkID: 1, Quote: quote}},
+		}}}
+		if problems := Validate(SubjectRole, proposal, sources); len(problems) != 0 {
+			t.Fatalf("%q was refused: %v", quote, problems)
+		}
+	}
+}
+
+// Nothing about that lets a model quote wording the source does not contain,
+// including punctuation inside the quote.
+func TestTrimmingTheEdgeDoesNotAdmitInventedWording(t *testing.T) {
+	sources := []Source{{ChunkID: 1, Text: "This is a remote role, offered as permanent work."}}
+	for _, quote := range []string{
+		"offered as contract work",
+		"This is a remote role; offered as permanent work",
+		"offered as permanent work in Sydney",
+	} {
+		proposal := Proposal{Aspects: []Aspect{{
+			Type: EmploymentType, Wording: "permanent",
+			Citations: []Citation{{ChunkID: 1, Quote: quote}},
+		}}}
+		if problems := Validate(SubjectRole, proposal, sources); len(problems) == 0 {
+			t.Fatalf("%q was accepted", quote)
+		}
+	}
+}
