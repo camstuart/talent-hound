@@ -53,6 +53,7 @@ func main() {
 	search := NewSearchService(gdb)
 	embed := NewEmbedService(gdb, jobs, registry, ollama)
 	roleProfiles := NewRoleProfileService(gdb, classify)
+	shortlist := NewShortlistService(gdb, search, embed, criteria, profiles, roleProfiles)
 
 	// Create a new Wails application by providing the necessary options.
 	// Variables 'Name' and 'Description' are for application metadata.
@@ -78,7 +79,8 @@ func main() {
 			application.NewService(roleProfiles),
 			application.NewService(criteria),
 			application.NewService(NewDiscoveryService(gdb, exa, profiles, criteria, records, artifacts)),
-			application.NewService(NewShortlistService(gdb, search, embed, criteria, profiles, roleProfiles)),
+			application.NewService(shortlist),
+			application.NewService(NewAssessService(gdb, jobs, registry, ollama, embed, criteria, profiles, roleProfiles, shortlist)),
 			application.NewService(NewCredentialService()),
 		},
 		Assets: application.AssetOptions{

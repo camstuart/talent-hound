@@ -27,6 +27,11 @@ type fakeClassifier struct {
 	// assert what reached it.
 	prompts []string
 	calls   int
+	// respond, when set, answers from the prompt rather than from a script.
+	// Assessment asks one question per requirement with different evidence
+	// each time, so a fixed script would have to know the plan's order — and a
+	// test that encodes the plan's order tests the plan, not the contract.
+	respond func(prompt string) string
 }
 
 func (f *fakeClassifier) Chat(_ context.Context, _ string, prompt string, _ map[string]any) (string, error) {
@@ -36,6 +41,9 @@ func (f *fakeClassifier) Chat(_ context.Context, _ string, prompt string, _ map[
 	f.prompts = append(f.prompts, prompt)
 	if f.err != nil {
 		return "", f.err
+	}
+	if f.respond != nil {
+		return f.respond(prompt), nil
 	}
 	if len(f.responses) == 0 {
 		return "", errors.New("no scripted response")

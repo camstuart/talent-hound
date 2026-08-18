@@ -525,6 +525,58 @@ var migrations = []migration{
 			"ALTER TABLE `roles` ADD COLUMN `retrieved_at` datetime",
 		},
 	},
+	{
+		Version: 14,
+		Name:    "matches_and_results",
+		// A match is a conclusion, and a conclusion is only valid while the
+		// inputs that produced it are. The hash is indexed because it is the
+		// lookup: reuse asks "is there a stored match with this hash", and
+		// nothing else decides.
+		SQL: []string{
+			"CREATE TABLE `matches` (" +
+				"`id` integer PRIMARY KEY AUTOINCREMENT," +
+				"`initiative_id` integer NOT NULL REFERENCES `initiatives`(`id`)," +
+				"`candidate_id` integer NOT NULL REFERENCES `candidates`(`id`)," +
+				"`role_id` integer NOT NULL REFERENCES `roles`(`id`)," +
+				"`input_hash` text NOT NULL," +
+				// The counts ranking needs, summed across both directions, so
+				// ordering does not re-read every result row.
+				"`unmet_must_haves` integer NOT NULL DEFAULT 0," +
+				"`unknown_must_haves` integer NOT NULL DEFAULT 0," +
+				"`met_nice_to_haves` integer NOT NULL DEFAULT 0," +
+				"`retrieval_position` integer NOT NULL DEFAULT 0," +
+				"`failure_reason` text NOT NULL DEFAULT ''," +
+				"`assessed_at` datetime NOT NULL," +
+				"`created_at` datetime," +
+				"`updated_at` datetime)",
+			"CREATE UNIQUE INDEX `idx_matches_identity` ON " +
+				"`matches`(`initiative_id`,`candidate_id`,`role_id`)",
+			"CREATE INDEX `idx_matches_hash` ON `matches`(`input_hash`)",
+			"CREATE TABLE `match_results` (" +
+				"`id` integer PRIMARY KEY AUTOINCREMENT," +
+				"`match_id` integer NOT NULL REFERENCES `matches`(`id`)," +
+				"`direction` text NOT NULL " +
+				"CHECK (`direction` IN ('role_fits_candidate','candidate_fits_role'))," +
+				"`ordinal` integer NOT NULL," +
+				"`requirement` text NOT NULL," +
+				"`priority` text NOT NULL DEFAULT 'unspecified' " +
+				"CHECK (`priority` IN ('must_have','nice_to_have','unspecified'))," +
+				// Three states and nothing else. A model that invents a fourth
+				// is refused in Go, and refused again here.
+				"`result` text NOT NULL CHECK (`result` IN ('met','not_met','unknown'))," +
+				"`reason` text NOT NULL DEFAULT ''," +
+				// Evidence as JSON. A met result with none of it is refused
+				// before it reaches this table.
+				"`citations` text NOT NULL DEFAULT '[]'," +
+				"`created_at` datetime," +
+				"`updated_at` datetime)",
+			"CREATE UNIQUE INDEX `idx_match_results_ordinal` ON " +
+				"`match_results`(`match_id`,`direction`,`ordinal`)",
+			"CREATE TRIGGER `matches_reason_insert` BEFORE INSERT ON `matches` " +
+				"FOR EACH ROW WHEN " + badReason("NEW.`failure_reason`") +
+				" BEGIN SELECT RAISE(ABORT, 'failure reason must be a short code'); END",
+		},
+	},
 }
 
 // badVectorLength is the condition an embedding is refused on: a blob that is
