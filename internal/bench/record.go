@@ -188,6 +188,9 @@ func (r *Record) Summary() string {
 		for _, why := range append(append([]string{}, score.Unsupported...), score.Misreported...) {
 			fmt.Fprintf(&b, "    %s\n", why)
 		}
+		for _, missed := range score.Missed {
+			fmt.Fprintf(&b, "    missed %s\n", missed)
+		}
 	}
 
 	fmt.Fprintf(&b, "\nMatching: %d of %d scenarios reached three plausible\n",

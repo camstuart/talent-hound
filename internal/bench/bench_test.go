@@ -640,3 +640,25 @@ func TestAMissingStatedFieldFails(t *testing.T) {
 		t.Fatalf("a dropped basis passed: %+v", score)
 	}
 }
+
+// A capture number nobody can argue with is a number nobody can act on: the
+// score names the labels no extracted aspect covered.
+func TestTheScoreNamesWhatWasMissed(t *testing.T) {
+	listing := Listing{
+		ID: "missed",
+		Material: []profile.Aspect{
+			aspect(profile.Skill, "Go", nil),
+			aspect(profile.Skill, "Kubernetes", nil),
+		},
+	}
+	sources := map[uint]string{1: "Must have Go."}
+	extracted := []profile.Aspect{cite(aspect(profile.Skill, "Must have Go", nil), "Must have Go")}
+
+	score := ScoreClassifier(listing, extracted, sources)
+	if len(score.Missed) != 1 || !strings.Contains(score.Missed[0], "Kubernetes") {
+		t.Fatalf("the missed label was not named: %+v", score.Missed)
+	}
+	if score.Captured != 1 {
+		t.Fatalf("captured = %d, want 1", score.Captured)
+	}
+}

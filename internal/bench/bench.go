@@ -161,11 +161,14 @@ var criticalTypes = map[profile.AspectType]bool{
 type ClassifierScore struct {
 	// Listing names which one this is: twenty scores with no names is a record
 	// that says something failed without saying what.
-	Listing     string   `json:"listing"`
-	Extracted   int      `json:"extracted"`
-	Material    int      `json:"material"`
-	Captured    int      `json:"captured"`
-	CaptureRate float64  `json:"captureRate"`
+	Listing     string  `json:"listing"`
+	Extracted   int     `json:"extracted"`
+	Material    int     `json:"material"`
+	Captured    int     `json:"captured"`
+	CaptureRate float64 `json:"captureRate"`
+	// Missed names the labels no extracted aspect covered, so a capture number
+	// can be argued with rather than only reported.
+	Missed      []string `json:"missed"`
 	Uncited     []string `json:"uncited"`
 	Unsupported []string `json:"unsupported"`
 	Misreported []string `json:"misreported"`
@@ -187,7 +190,7 @@ func ScoreClassifier(listing Listing, extracted []profile.Aspect, sources map[ui
 	score := ClassifierScore{
 		Listing:   listing.ID,
 		Extracted: len(extracted), Material: len(listing.Material),
-		Uncited: []string{}, Unsupported: []string{}, Misreported: []string{},
+		Missed: []string{}, Uncited: []string{}, Unsupported: []string{}, Misreported: []string{},
 	}
 
 	for _, aspect := range extracted {
@@ -215,7 +218,9 @@ func ScoreClassifier(listing Listing, extracted []profile.Aspect, sources map[ui
 	for _, want := range listing.Material {
 		if captured(want, extracted, found) {
 			score.Captured++
+			continue
 		}
+		score.Missed = append(score.Missed, string(want.Type)+": "+want.Wording)
 	}
 	if score.Material > 0 {
 		score.CaptureRate = float64(score.Captured) / float64(score.Material)
