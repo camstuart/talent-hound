@@ -49,6 +49,15 @@ func (o *Ollama) Chat(ctx context.Context, model, prompt string, schema map[stri
 		"messages": []map[string]string{{"role": "user", "content": prompt}},
 	}
 	if schema != nil {
+		// A schema-constrained call is extraction, not writing: the answer is
+		// determined by the sources, and sampling only adds ways to get it
+		// wrong. Measured against the frozen corpus, the same twenty listings
+		// scored 83% capture on one run and 64% on the next with no code
+		// between them — and the product's own profile identity assumes a
+		// profile is a function of its sources, which sampling makes false.
+		body["temperature"] = 0
+		body["top_p"] = 1
+		body["seed"] = 1
 		body["response_format"] = map[string]any{
 			"type": "json_schema",
 			"json_schema": map[string]any{
