@@ -239,8 +239,17 @@ func ScoreClassifier(listing Listing, extracted []profile.Aspect, sources map[ui
 		}
 		matched := false
 		for _, got := range candidates {
-			if sameStructured(want.Structured, got.Structured) {
+			if reproduces(want.Structured, got.Structured) {
 				matched = true
+				// A field the source never states is a value introduced, which
+				// is the other half of the PRD's rule: "no unsupported
+				// must-have, location, work-rights, employment-type, or
+				// compensation value is introduced".
+				for _, extra := range extraFields(want.Structured, got.Structured) {
+					score.Unsupported = append(score.Unsupported,
+						fmt.Sprintf("%s: %s=%v, which the source does not state",
+							want.Type, extra, got.Structured[extra]))
+				}
 				break
 			}
 		}
@@ -310,18 +319,43 @@ func quoted(text, quote string) bool {
 
 func normalize(s string) string { return strings.Join(strings.Fields(strings.ToLower(s)), " ") }
 
-// sameStructured compares two structured values by their canonical JSON, so
-// field order is not a difference.
-func sameStructured(want, got map[string]any) bool {
-	a, err := json.Marshal(canonical(want))
-	if err != nil {
-		return false
+// reproduces reports whether every value the source states was reproduced.
+//
+// It is a subset check, not equality. The label says what the listing states;
+// an extraction that also carries a field the listing is silent about has not
+// misreported the constraint — it has introduced a value, which is scored
+// separately and under its own name.
+func reproduces(want, got map[string]any) bool {
+	w, g := canonical(want), canonical(got)
+	for field, value := range w {
+		other, ok := g[field]
+		if !ok {
+			return false
+		}
+		a, err := json.Marshal(value)
+		if err != nil {
+			return false
+		}
+		b, err := json.Marshal(other)
+		if err != nil || string(a) != string(b) {
+			return false
+		}
 	}
-	b, err := json.Marshal(canonical(got))
-	if err != nil {
-		return false
+	return true
+}
+
+// extraFields names the structured fields an extraction carries that the label
+// does not, in sorted order so a record does not change between identical runs.
+func extraFields(want, got map[string]any) []string {
+	w, g := canonical(want), canonical(got)
+	out := []string{}
+	for field := range g {
+		if _, ok := w[field]; !ok {
+			out = append(out, field)
+		}
 	}
-	return string(a) == string(b)
+	sort.Strings(out)
+	return out
 }
 
 // canonical lowercases string values and drops empty ones, so "Melbourne" and

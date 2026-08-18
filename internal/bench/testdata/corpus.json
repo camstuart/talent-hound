@@ -1,6 +1,6 @@
 {
   "synthetic": true,
-  "note": "Every candidate, company, role, and rating in this corpus is invented. It exists so the benchmark harness, its thresholds, and its record can be exercised end to end before the recruiter's real frozen corpus arrives, and it is not a substitute for that corpus. No real candidate information appears in this repository. Structured labels use the product's own field vocabulary from internal/profile/taxonomy.go: labels written in any other field names could never match, however well a model performed.",
+  "note": "Every candidate, company, role, and rating in this corpus is invented. It exists so the benchmark harness, its thresholds, and its record can be exercised end to end before the recruiter's real frozen corpus arrives, and it is not a substitute for that corpus. No real candidate information appears in this repository. Structured labels use the product's own field vocabulary from internal/profile/taxonomy.go, and state only what each listing says in words: a benchmark that demands inference is measuring something the source never asked for.",
   "scenarios": [
     {
       "id": "go-platform-melbourne",
@@ -187,8 +187,7 @@
           "type": "location",
           "wording": "Melbourne",
           "structured": {
-            "city": "Melbourne",
-            "country": "Australia"
+            "city": "Melbourne"
           }
         },
         {
@@ -210,7 +209,6 @@
           "wording": "existing Australian work rights",
           "structured": {
             "country": "Australia",
-            "status": "unknown",
             "sponsorship_required": false
           }
         },
@@ -220,7 +218,6 @@
           "structured": {
             "currency": "AUD",
             "minimum": 180000,
-            "period": "year",
             "basis": "base"
           }
         }
@@ -230,8 +227,7 @@
           "type": "location",
           "wording": "Melbourne",
           "structured": {
-            "city": "Melbourne",
-            "country": "Australia"
+            "city": "Melbourne"
           }
         },
         {
@@ -253,7 +249,6 @@
           "wording": "existing Australian work rights",
           "structured": {
             "country": "Australia",
-            "status": "unknown",
             "sponsorship_required": false
           }
         },
@@ -263,7 +258,6 @@
           "structured": {
             "currency": "AUD",
             "minimum": 180000,
-            "period": "year",
             "basis": "base"
           }
         }
@@ -298,8 +292,7 @@
           "type": "location",
           "wording": "Sydney",
           "structured": {
-            "city": "Sydney",
-            "country": "Australia"
+            "city": "Sydney"
           }
         },
         {
@@ -321,7 +314,6 @@
           "wording": "existing Australian work rights",
           "structured": {
             "country": "Australia",
-            "status": "unknown",
             "sponsorship_required": false
           }
         },
@@ -331,7 +323,6 @@
           "structured": {
             "currency": "AUD",
             "minimum": 150000,
-            "period": "year",
             "basis": "base"
           }
         }
@@ -341,8 +332,7 @@
           "type": "location",
           "wording": "Sydney",
           "structured": {
-            "city": "Sydney",
-            "country": "Australia"
+            "city": "Sydney"
           }
         },
         {
@@ -364,7 +354,6 @@
           "wording": "existing Australian work rights",
           "structured": {
             "country": "Australia",
-            "status": "unknown",
             "sponsorship_required": false
           }
         },
@@ -374,7 +363,6 @@
           "structured": {
             "currency": "AUD",
             "minimum": 150000,
-            "period": "year",
             "basis": "base"
           }
         }
@@ -409,8 +397,7 @@
           "type": "location",
           "wording": "Brisbane",
           "structured": {
-            "city": "Brisbane",
-            "country": "Australia"
+            "city": "Brisbane"
           }
         },
         {
@@ -432,7 +419,6 @@
           "wording": "existing Australian work rights",
           "structured": {
             "country": "Australia",
-            "status": "unknown",
             "sponsorship_required": false
           }
         },
@@ -442,7 +428,6 @@
           "structured": {
             "currency": "AUD",
             "minimum": 165000,
-            "period": "year",
             "basis": "base"
           }
         }
@@ -452,8 +437,7 @@
           "type": "location",
           "wording": "Brisbane",
           "structured": {
-            "city": "Brisbane",
-            "country": "Australia"
+            "city": "Brisbane"
           }
         },
         {
@@ -475,7 +459,6 @@
           "wording": "existing Australian work rights",
           "structured": {
             "country": "Australia",
-            "status": "unknown",
             "sponsorship_required": false
           }
         },
@@ -485,7 +468,6 @@
           "structured": {
             "currency": "AUD",
             "minimum": 165000,
-            "period": "year",
             "basis": "base"
           }
         }
@@ -520,8 +502,7 @@
           "type": "location",
           "wording": "Melbourne",
           "structured": {
-            "city": "Melbourne",
-            "country": "Australia"
+            "city": "Melbourne"
           }
         },
         {
@@ -543,7 +524,6 @@
           "wording": "existing Australian work rights",
           "structured": {
             "country": "Australia",
-            "status": "unknown",
             "sponsorship_required": false
           }
         },
@@ -553,7 +533,6 @@
           "structured": {
             "currency": "AUD",
             "minimum": 155000,
-            "period": "year",
             "basis": "base"
           }
         }
@@ -563,8 +542,7 @@
           "type": "location",
           "wording": "Melbourne",
           "structured": {
-            "city": "Melbourne",
-            "country": "Australia"
+            "city": "Melbourne"
           }
         },
         {
@@ -586,7 +564,6 @@
           "wording": "existing Australian work rights",
           "structured": {
             "country": "Australia",
-            "status": "unknown",
             "sponsorship_required": false
           }
         },
@@ -596,7 +573,6 @@
           "structured": {
             "currency": "AUD",
             "minimum": 155000,
-            "period": "year",
             "basis": "base"
           }
         }
@@ -631,8 +607,7 @@
           "type": "location",
           "wording": "Perth",
           "structured": {
-            "city": "Perth",
-            "country": "Australia"
+            "city": "Perth"
           }
         },
         {
@@ -654,7 +629,6 @@
           "wording": "existing Australian work rights",
           "structured": {
             "country": "Australia",
-            "status": "unknown",
             "sponsorship_required": false
           }
         },
@@ -664,7 +638,6 @@
           "structured": {
             "currency": "AUD",
             "minimum": 210000,
-            "period": "year",
             "basis": "base"
           }
         }
@@ -674,8 +647,7 @@
           "type": "location",
           "wording": "Perth",
           "structured": {
-            "city": "Perth",
-            "country": "Australia"
+            "city": "Perth"
           }
         },
         {
@@ -697,7 +669,6 @@
           "wording": "existing Australian work rights",
           "structured": {
             "country": "Australia",
-            "status": "unknown",
             "sponsorship_required": false
           }
         },
@@ -707,7 +678,6 @@
           "structured": {
             "currency": "AUD",
             "minimum": 210000,
-            "period": "year",
             "basis": "base"
           }
         }
@@ -742,8 +712,7 @@
           "type": "location",
           "wording": "Sydney",
           "structured": {
-            "city": "Sydney",
-            "country": "Australia"
+            "city": "Sydney"
           }
         },
         {
@@ -765,7 +734,6 @@
           "wording": "existing Australian work rights",
           "structured": {
             "country": "Australia",
-            "status": "unknown",
             "sponsorship_required": false
           }
         },
@@ -775,7 +743,6 @@
           "structured": {
             "currency": "AUD",
             "minimum": 140000,
-            "period": "year",
             "basis": "base"
           }
         }
@@ -785,8 +752,7 @@
           "type": "location",
           "wording": "Sydney",
           "structured": {
-            "city": "Sydney",
-            "country": "Australia"
+            "city": "Sydney"
           }
         },
         {
@@ -808,7 +774,6 @@
           "wording": "existing Australian work rights",
           "structured": {
             "country": "Australia",
-            "status": "unknown",
             "sponsorship_required": false
           }
         },
@@ -818,7 +783,6 @@
           "structured": {
             "currency": "AUD",
             "minimum": 140000,
-            "period": "year",
             "basis": "base"
           }
         }
@@ -853,8 +817,7 @@
           "type": "location",
           "wording": "Canberra",
           "structured": {
-            "city": "Canberra",
-            "country": "Australia"
+            "city": "Canberra"
           }
         },
         {
@@ -876,7 +839,6 @@
           "wording": "existing Australian work rights",
           "structured": {
             "country": "Australia",
-            "status": "unknown",
             "sponsorship_required": false
           }
         },
@@ -886,7 +848,6 @@
           "structured": {
             "currency": "AUD",
             "minimum": 175000,
-            "period": "year",
             "basis": "base"
           }
         }
@@ -896,8 +857,7 @@
           "type": "location",
           "wording": "Canberra",
           "structured": {
-            "city": "Canberra",
-            "country": "Australia"
+            "city": "Canberra"
           }
         },
         {
@@ -919,7 +879,6 @@
           "wording": "existing Australian work rights",
           "structured": {
             "country": "Australia",
-            "status": "unknown",
             "sponsorship_required": false
           }
         },
@@ -929,7 +888,6 @@
           "structured": {
             "currency": "AUD",
             "minimum": 175000,
-            "period": "year",
             "basis": "base"
           }
         }
@@ -964,8 +922,7 @@
           "type": "location",
           "wording": "Melbourne",
           "structured": {
-            "city": "Melbourne",
-            "country": "Australia"
+            "city": "Melbourne"
           }
         },
         {
@@ -987,7 +944,6 @@
           "wording": "existing Australian work rights",
           "structured": {
             "country": "Australia",
-            "status": "unknown",
             "sponsorship_required": false
           }
         },
@@ -997,7 +953,6 @@
           "structured": {
             "currency": "AUD",
             "minimum": 185000,
-            "period": "year",
             "basis": "base"
           }
         }
@@ -1007,8 +962,7 @@
           "type": "location",
           "wording": "Melbourne",
           "structured": {
-            "city": "Melbourne",
-            "country": "Australia"
+            "city": "Melbourne"
           }
         },
         {
@@ -1030,7 +984,6 @@
           "wording": "existing Australian work rights",
           "structured": {
             "country": "Australia",
-            "status": "unknown",
             "sponsorship_required": false
           }
         },
@@ -1040,7 +993,6 @@
           "structured": {
             "currency": "AUD",
             "minimum": 185000,
-            "period": "year",
             "basis": "base"
           }
         }
@@ -1075,8 +1027,7 @@
           "type": "location",
           "wording": "Adelaide",
           "structured": {
-            "city": "Adelaide",
-            "country": "Australia"
+            "city": "Adelaide"
           }
         },
         {
@@ -1098,7 +1049,6 @@
           "wording": "existing Australian work rights",
           "structured": {
             "country": "Australia",
-            "status": "unknown",
             "sponsorship_required": false
           }
         },
@@ -1108,7 +1058,6 @@
           "structured": {
             "currency": "AUD",
             "minimum": 145000,
-            "period": "year",
             "basis": "base"
           }
         }
@@ -1118,8 +1067,7 @@
           "type": "location",
           "wording": "Adelaide",
           "structured": {
-            "city": "Adelaide",
-            "country": "Australia"
+            "city": "Adelaide"
           }
         },
         {
@@ -1141,7 +1089,6 @@
           "wording": "existing Australian work rights",
           "structured": {
             "country": "Australia",
-            "status": "unknown",
             "sponsorship_required": false
           }
         },
@@ -1151,7 +1098,6 @@
           "structured": {
             "currency": "AUD",
             "minimum": 145000,
-            "period": "year",
             "basis": "base"
           }
         }
@@ -1186,8 +1132,7 @@
           "type": "location",
           "wording": "Sydney",
           "structured": {
-            "city": "Sydney",
-            "country": "Australia"
+            "city": "Sydney"
           }
         },
         {
@@ -1209,7 +1154,6 @@
           "wording": "existing Australian work rights",
           "structured": {
             "country": "Australia",
-            "status": "unknown",
             "sponsorship_required": false
           }
         },
@@ -1219,7 +1163,6 @@
           "structured": {
             "currency": "AUD",
             "minimum": 150000,
-            "period": "year",
             "basis": "base"
           }
         }
@@ -1229,8 +1172,7 @@
           "type": "location",
           "wording": "Sydney",
           "structured": {
-            "city": "Sydney",
-            "country": "Australia"
+            "city": "Sydney"
           }
         },
         {
@@ -1252,7 +1194,6 @@
           "wording": "existing Australian work rights",
           "structured": {
             "country": "Australia",
-            "status": "unknown",
             "sponsorship_required": false
           }
         },
@@ -1262,7 +1203,6 @@
           "structured": {
             "currency": "AUD",
             "minimum": 150000,
-            "period": "year",
             "basis": "base"
           }
         }
@@ -1297,8 +1237,7 @@
           "type": "location",
           "wording": "Melbourne",
           "structured": {
-            "city": "Melbourne",
-            "country": "Australia"
+            "city": "Melbourne"
           }
         },
         {
@@ -1320,7 +1259,6 @@
           "wording": "existing Australian work rights",
           "structured": {
             "country": "Australia",
-            "status": "unknown",
             "sponsorship_required": false
           }
         },
@@ -1330,7 +1268,6 @@
           "structured": {
             "currency": "AUD",
             "minimum": 240000,
-            "period": "year",
             "basis": "base"
           }
         }
@@ -1340,8 +1277,7 @@
           "type": "location",
           "wording": "Melbourne",
           "structured": {
-            "city": "Melbourne",
-            "country": "Australia"
+            "city": "Melbourne"
           }
         },
         {
@@ -1363,7 +1299,6 @@
           "wording": "existing Australian work rights",
           "structured": {
             "country": "Australia",
-            "status": "unknown",
             "sponsorship_required": false
           }
         },
@@ -1373,7 +1308,6 @@
           "structured": {
             "currency": "AUD",
             "minimum": 240000,
-            "period": "year",
             "basis": "base"
           }
         }
@@ -1408,8 +1342,7 @@
           "type": "location",
           "wording": "Melbourne",
           "structured": {
-            "city": "Melbourne",
-            "country": "Australia"
+            "city": "Melbourne"
           }
         },
         {
@@ -1431,7 +1364,6 @@
           "wording": "existing Australian work rights",
           "structured": {
             "country": "Australia",
-            "status": "unknown",
             "sponsorship_required": false
           }
         },
@@ -1441,7 +1373,6 @@
           "structured": {
             "currency": "AUD",
             "minimum": 900,
-            "period": "day",
             "basis": "rate"
           }
         }
@@ -1451,8 +1382,7 @@
           "type": "location",
           "wording": "Melbourne",
           "structured": {
-            "city": "Melbourne",
-            "country": "Australia"
+            "city": "Melbourne"
           }
         },
         {
@@ -1474,7 +1404,6 @@
           "wording": "existing Australian work rights",
           "structured": {
             "country": "Australia",
-            "status": "unknown",
             "sponsorship_required": false
           }
         },
@@ -1484,7 +1413,6 @@
           "structured": {
             "currency": "AUD",
             "minimum": 900,
-            "period": "day",
             "basis": "rate"
           }
         }
@@ -1519,7 +1447,6 @@
           "type": "location",
           "wording": "Remote (Australia)",
           "structured": {
-            "country": "Australia",
             "remote_ok": true
           }
         },
@@ -1542,7 +1469,6 @@
           "wording": "existing Australian work rights",
           "structured": {
             "country": "Australia",
-            "status": "unknown",
             "sponsorship_required": false
           }
         },
@@ -1552,7 +1478,6 @@
           "structured": {
             "currency": "AUD",
             "minimum": 170000,
-            "period": "year",
             "basis": "base"
           }
         }
@@ -1562,7 +1487,6 @@
           "type": "location",
           "wording": "Remote (Australia)",
           "structured": {
-            "country": "Australia",
             "remote_ok": true
           }
         },
@@ -1585,7 +1509,6 @@
           "wording": "existing Australian work rights",
           "structured": {
             "country": "Australia",
-            "status": "unknown",
             "sponsorship_required": false
           }
         },
@@ -1595,7 +1518,6 @@
           "structured": {
             "currency": "AUD",
             "minimum": 170000,
-            "period": "year",
             "basis": "base"
           }
         }
@@ -1630,8 +1552,7 @@
           "type": "location",
           "wording": "Brisbane",
           "structured": {
-            "city": "Brisbane",
-            "country": "Australia"
+            "city": "Brisbane"
           }
         },
         {
@@ -1653,7 +1574,6 @@
           "wording": "existing Australian work rights",
           "structured": {
             "country": "Australia",
-            "status": "unknown",
             "sponsorship_required": false
           }
         },
@@ -1663,7 +1583,6 @@
           "structured": {
             "currency": "AUD",
             "minimum": 130000,
-            "period": "year",
             "basis": "base"
           }
         }
@@ -1673,8 +1592,7 @@
           "type": "location",
           "wording": "Brisbane",
           "structured": {
-            "city": "Brisbane",
-            "country": "Australia"
+            "city": "Brisbane"
           }
         },
         {
@@ -1696,7 +1614,6 @@
           "wording": "existing Australian work rights",
           "structured": {
             "country": "Australia",
-            "status": "unknown",
             "sponsorship_required": false
           }
         },
@@ -1706,7 +1623,6 @@
           "structured": {
             "currency": "AUD",
             "minimum": 130000,
-            "period": "year",
             "basis": "base"
           }
         }
@@ -1741,8 +1657,7 @@
           "type": "location",
           "wording": "Sydney",
           "structured": {
-            "city": "Sydney",
-            "country": "Australia"
+            "city": "Sydney"
           }
         },
         {
@@ -1764,7 +1679,6 @@
           "wording": "existing Australian work rights",
           "structured": {
             "country": "Australia",
-            "status": "unknown",
             "sponsorship_required": false
           }
         },
@@ -1774,7 +1688,6 @@
           "structured": {
             "currency": "AUD",
             "minimum": 175000,
-            "period": "year",
             "basis": "base"
           }
         }
@@ -1784,8 +1697,7 @@
           "type": "location",
           "wording": "Sydney",
           "structured": {
-            "city": "Sydney",
-            "country": "Australia"
+            "city": "Sydney"
           }
         },
         {
@@ -1807,7 +1719,6 @@
           "wording": "existing Australian work rights",
           "structured": {
             "country": "Australia",
-            "status": "unknown",
             "sponsorship_required": false
           }
         },
@@ -1817,7 +1728,6 @@
           "structured": {
             "currency": "AUD",
             "minimum": 175000,
-            "period": "year",
             "basis": "base"
           }
         }
@@ -1852,8 +1762,7 @@
           "type": "location",
           "wording": "Melbourne",
           "structured": {
-            "city": "Melbourne",
-            "country": "Australia"
+            "city": "Melbourne"
           }
         },
         {
@@ -1875,7 +1784,6 @@
           "wording": "existing Australian work rights",
           "structured": {
             "country": "Australia",
-            "status": "unknown",
             "sponsorship_required": false
           }
         },
@@ -1885,7 +1793,6 @@
           "structured": {
             "currency": "AUD",
             "minimum": 200000,
-            "period": "year",
             "basis": "base"
           }
         }
@@ -1895,8 +1802,7 @@
           "type": "location",
           "wording": "Melbourne",
           "structured": {
-            "city": "Melbourne",
-            "country": "Australia"
+            "city": "Melbourne"
           }
         },
         {
@@ -1918,7 +1824,6 @@
           "wording": "existing Australian work rights",
           "structured": {
             "country": "Australia",
-            "status": "unknown",
             "sponsorship_required": false
           }
         },
@@ -1928,7 +1833,6 @@
           "structured": {
             "currency": "AUD",
             "minimum": 200000,
-            "period": "year",
             "basis": "base"
           }
         }
@@ -1963,8 +1867,7 @@
           "type": "location",
           "wording": "Hobart",
           "structured": {
-            "city": "Hobart",
-            "country": "Australia"
+            "city": "Hobart"
           }
         },
         {
@@ -1986,7 +1889,6 @@
           "wording": "existing Australian work rights",
           "structured": {
             "country": "Australia",
-            "status": "unknown",
             "sponsorship_required": false
           }
         },
@@ -1996,7 +1898,6 @@
           "structured": {
             "currency": "AUD",
             "minimum": 135000,
-            "period": "year",
             "basis": "base"
           }
         }
@@ -2006,8 +1907,7 @@
           "type": "location",
           "wording": "Hobart",
           "structured": {
-            "city": "Hobart",
-            "country": "Australia"
+            "city": "Hobart"
           }
         },
         {
@@ -2029,7 +1929,6 @@
           "wording": "existing Australian work rights",
           "structured": {
             "country": "Australia",
-            "status": "unknown",
             "sponsorship_required": false
           }
         },
@@ -2039,7 +1938,6 @@
           "structured": {
             "currency": "AUD",
             "minimum": 135000,
-            "period": "year",
             "basis": "base"
           }
         }
@@ -2074,8 +1972,7 @@
           "type": "location",
           "wording": "Perth",
           "structured": {
-            "city": "Perth",
-            "country": "Australia"
+            "city": "Perth"
           }
         },
         {
@@ -2097,7 +1994,6 @@
           "wording": "existing Australian work rights",
           "structured": {
             "country": "Australia",
-            "status": "unknown",
             "sponsorship_required": false
           }
         },
@@ -2107,7 +2003,6 @@
           "structured": {
             "currency": "AUD",
             "minimum": 160000,
-            "period": "year",
             "basis": "base"
           }
         }
@@ -2117,8 +2012,7 @@
           "type": "location",
           "wording": "Perth",
           "structured": {
-            "city": "Perth",
-            "country": "Australia"
+            "city": "Perth"
           }
         },
         {
@@ -2140,7 +2034,6 @@
           "wording": "existing Australian work rights",
           "structured": {
             "country": "Australia",
-            "status": "unknown",
             "sponsorship_required": false
           }
         },
@@ -2150,7 +2043,6 @@
           "structured": {
             "currency": "AUD",
             "minimum": 160000,
-            "period": "year",
             "basis": "base"
           }
         }
@@ -2185,8 +2077,7 @@
           "type": "location",
           "wording": "Sydney",
           "structured": {
-            "city": "Sydney",
-            "country": "Australia"
+            "city": "Sydney"
           }
         },
         {
@@ -2208,7 +2099,6 @@
           "wording": "existing Australian work rights",
           "structured": {
             "country": "Australia",
-            "status": "unknown",
             "sponsorship_required": false
           }
         },
@@ -2218,7 +2108,6 @@
           "structured": {
             "currency": "AUD",
             "minimum": 195000,
-            "period": "year",
             "basis": "base"
           }
         }
@@ -2228,8 +2117,7 @@
           "type": "location",
           "wording": "Sydney",
           "structured": {
-            "city": "Sydney",
-            "country": "Australia"
+            "city": "Sydney"
           }
         },
         {
@@ -2251,7 +2139,6 @@
           "wording": "existing Australian work rights",
           "structured": {
             "country": "Australia",
-            "status": "unknown",
             "sponsorship_required": false
           }
         },
@@ -2261,7 +2148,6 @@
           "structured": {
             "currency": "AUD",
             "minimum": 195000,
-            "period": "year",
             "basis": "base"
           }
         }
@@ -2296,8 +2182,7 @@
           "type": "location",
           "wording": "Melbourne",
           "structured": {
-            "city": "Melbourne",
-            "country": "Australia"
+            "city": "Melbourne"
           }
         },
         {
@@ -2319,7 +2204,6 @@
           "wording": "existing Australian work rights",
           "structured": {
             "country": "Australia",
-            "status": "unknown",
             "sponsorship_required": false
           }
         },
@@ -2329,7 +2213,6 @@
           "structured": {
             "currency": "AUD",
             "minimum": 110000,
-            "period": "year",
             "basis": "base"
           }
         }
@@ -2339,8 +2222,7 @@
           "type": "location",
           "wording": "Melbourne",
           "structured": {
-            "city": "Melbourne",
-            "country": "Australia"
+            "city": "Melbourne"
           }
         },
         {
@@ -2362,7 +2244,6 @@
           "wording": "existing Australian work rights",
           "structured": {
             "country": "Australia",
-            "status": "unknown",
             "sponsorship_required": false
           }
         },
@@ -2372,7 +2253,6 @@
           "structured": {
             "currency": "AUD",
             "minimum": 110000,
-            "period": "year",
             "basis": "base"
           }
         }

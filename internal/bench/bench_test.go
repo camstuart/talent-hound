@@ -579,3 +579,64 @@ func TestACorpusJustUnderTheBarFails(t *testing.T) {
 		t.Fatalf("80%% over the corpus failed: %+v", totals)
 	}
 }
+
+// Reproduction is a subset check: the label says what the listing states, and
+// an extraction carrying a field the listing is silent about has not
+// misreported the constraint.
+func TestAnExtraFieldIsNotAMisreportedConstraint(t *testing.T) {
+	listing := Listing{
+		ID:         "extra",
+		Material:   []profile.Aspect{aspect(profile.Location, "Melbourne", map[string]any{"city": "Melbourne"})},
+		Structured: []profile.Aspect{aspect(profile.Location, "Melbourne", map[string]any{"city": "Melbourne"})},
+	}
+	sources := map[uint]string{1: "Melbourne, Australia"}
+	extracted := []profile.Aspect{
+		cite(aspect(profile.Location, "Melbourne, Australia",
+			map[string]any{"city": "Melbourne", "country": "Australia"}), "Melbourne, Australia"),
+	}
+	score := ScoreClassifier(listing, extracted, sources)
+	if !score.ConstraintsExact {
+		t.Fatalf("an extra field counted as misreported: %+v", score.Misreported)
+	}
+	// It is scored under its own name instead.
+	if len(score.Unsupported) != 1 || !strings.Contains(score.Unsupported[0], "country") {
+		t.Fatalf("the introduced value was not named: %+v", score.Unsupported)
+	}
+}
+
+// A wrong value for a field the listing does state is still a misreported
+// constraint.
+func TestAWrongValueForAStatedFieldStillFails(t *testing.T) {
+	listing := Listing{
+		ID:         "wrong",
+		Material:   []profile.Aspect{aspect(profile.Location, "Melbourne", map[string]any{"city": "Melbourne"})},
+		Structured: []profile.Aspect{aspect(profile.Location, "Melbourne", map[string]any{"city": "Melbourne"})},
+	}
+	sources := map[uint]string{1: "Melbourne"}
+	extracted := []profile.Aspect{
+		cite(aspect(profile.Location, "Melbourne", map[string]any{"city": "Sydney"}), "Melbourne"),
+	}
+	if score := ScoreClassifier(listing, extracted, sources); score.ConstraintsExact {
+		t.Fatalf("a wrong city passed: %+v", score)
+	}
+}
+
+// A missing field the listing does state is a misreported constraint, not an
+// absence to be forgiven.
+func TestAMissingStatedFieldFails(t *testing.T) {
+	listing := Listing{
+		ID: "missing",
+		Material: []profile.Aspect{aspect(profile.Compensation, "AUD 180,000 base",
+			map[string]any{"currency": "AUD", "minimum": 180000, "basis": "base"})},
+		Structured: []profile.Aspect{aspect(profile.Compensation, "AUD 180,000 base",
+			map[string]any{"currency": "AUD", "minimum": 180000, "basis": "base"})},
+	}
+	sources := map[uint]string{1: "AUD 180,000 base"}
+	extracted := []profile.Aspect{
+		cite(aspect(profile.Compensation, "AUD 180,000 base",
+			map[string]any{"currency": "AUD", "minimum": 180000}), "AUD 180,000 base"),
+	}
+	if score := ScoreClassifier(listing, extracted, sources); score.ConstraintsExact {
+		t.Fatalf("a dropped basis passed: %+v", score)
+	}
+}
