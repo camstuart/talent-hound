@@ -246,5 +246,23 @@ func ParseProposal(raw string) (Proposal, []string) {
 	if err := json.Unmarshal([]byte(strings.TrimSpace(raw)), &p); err != nil {
 		return Proposal{}, []string{"the response was not valid JSON matching the profile schema"}
 	}
+	for i := range p.Aspects {
+		dropNulls(p.Aspects[i].Structured)
+	}
 	return p, nil
+}
+
+// dropNulls removes structured fields the model set to null.
+//
+// A null means the source did not say, and absence is how this contract already
+// represents that — "unknown is legal everywhere: a source that does not say is
+// a fact". Treating null as a value instead made a whole profile invalid over a
+// field the model was right to leave empty, which cost the classifier benchmark
+// several listings outright.
+func dropNulls(structured map[string]any) {
+	for field, value := range structured {
+		if value == nil {
+			delete(structured, field)
+		}
+	}
 }

@@ -4,7 +4,7 @@
   "scenarios": [
     {
       "id": "go-platform-melbourne",
-      "resume": "# Candidate profile — invented\n\nSeven years building backend services in Go, most recently on a platform team\nrunning multi-region infrastructure. Strong SQLite and PostgreSQL. Based in\nMelbourne, wants hybrid work, permanent, expects around AUD 180,000.\n",
+      "resume": "# Candidate profile — invented\n\n## Summary\n\nBackend and platform engineer, seven years. Based in Melbourne, looking for\nhybrid work, permanent, expecting around AUD 180,000 base.\n\n## Experience\n\n**Senior platform engineer, Kestrel Freight (2022–present)**\nRan the platform team's shared services in Go. Moved the order pipeline to a\nmulti-region deployment across two Australian regions, cutting failover time\nfrom twenty minutes to under two. Owned the on-call rotation and the incident\nreview process. Introduced structured logging and tracing across eleven\nservices.\n\n**Backend engineer, Kestrel Freight (2019–2022)**\nBuilt and maintained REST and gRPC services in Go against PostgreSQL. Wrote the\nembedded SQLite cache used by the field application, including its migration\ntooling. Reduced p95 latency on the quoting endpoint from 900 ms to 120 ms.\n\n**Software engineer, Marlow Systems (2017–2019)**\nPython and Go services for logistics scheduling. Maintained the CI pipeline and\nthe deployment scripts.\n\n## Skills\n\nGo, SQLite, PostgreSQL, gRPC, Kubernetes, Terraform, observability and tracing,\nincident response, multi-region architecture, technical mentoring.\n",
       "ratings": [
         {
           "roleId": "platform-engineer-melbourne",
@@ -38,7 +38,7 @@
     },
     {
       "id": "data-python-melbourne",
-      "resume": "# Candidate profile — invented\n\nFive years in data engineering: Python, dbt, dimensional modelling, and a year\nrunning Spark pipelines. Melbourne, prefers remote, permanent, around AUD\n155,000.\n",
+      "resume": "# Candidate profile — invented\n\n## Summary\n\nData engineer, five years. Melbourne, prefers remote, permanent, around AUD\n155,000.\n\n## Experience\n\n**Data engineer, Bellbird Retail Group (2021–present)**\nOwned the analytics warehouse: dimensional modelling, dbt transformations, and\nthe tests that guard them. Built ingestion in Python for fourteen source\nsystems. Cut the nightly batch from six hours to ninety minutes. Ran a Spark\npipeline for clickstream sessionisation.\n\n**Analytics engineer, Corella Health (2019–2021)**\nBuilt reporting models in dbt and SQL over a Postgres warehouse. Wrote the data\nquality checks that gated releases. Worked directly with clinicians to define\nmetrics.\n\n## Skills\n\nPython, dbt, SQL, dimensional modelling, Spark, Airflow, data quality testing,\nwarehouse design, stakeholder communication.\n",
       "ratings": [
         {
           "roleId": "data-engineer-melbourne",
@@ -68,7 +68,7 @@
     },
     {
       "id": "frontend-accessibility-sydney",
-      "resume": "# Candidate profile — invented\n\nSix years of frontend work in TypeScript, with a focus on accessibility and\ndesign systems. Sydney, hybrid, permanent, around AUD 145,000.\n",
+      "resume": "# Candidate profile — invented\n\n## Summary\n\nFrontend engineer, six years, with a focus on accessibility. Sydney, hybrid,\npermanent, around AUD 145,000.\n\n## Experience\n\n**Senior frontend engineer, Tidewater Retail (2021–present)**\nOwned the design system used by four product teams. Took the checkout flow from\npartial keyboard support to full WCAG 2.1 AA conformance, verified with screen\nreader testing. Introduced automated accessibility checks into CI.\n\n**Frontend engineer, Ashgrove Media (2019–2021)**\nBuilt editorial interfaces in TypeScript and React. Rebuilt the article renderer\nfor performance, halving time to first contentful paint.\n\n## Skills\n\nTypeScript, React, design systems, WCAG 2.1, screen reader testing, keyboard\nnavigation, component libraries, performance profiling, CSS architecture.\n",
       "ratings": [
         {
           "roleId": "frontend-engineer-sydney",
@@ -98,7 +98,7 @@
     },
     {
       "id": "sre-kubernetes-brisbane",
-      "resume": "# Candidate profile — invented\n\nEight years in operations, four of them as an SRE: Kubernetes, Prometheus, and\nincident command for a health platform. Brisbane, hybrid, permanent, around AUD\n170,000.\n",
+      "resume": "# Candidate profile — invented\n\n## Summary\n\nSite reliability engineer, eight years in operations. Brisbane, hybrid,\npermanent, around AUD 170,000.\n\n## Experience\n\n**Site reliability engineer, Corella Health (2021–present)**\nRan Kubernetes clusters carrying a patient-facing platform. Owned alerting in\nPrometheus and the on-call rotation, and acted as incident commander for major\nincidents. Cut alert noise by sixty percent by rewriting the alerting rules\nagainst service level objectives.\n\n**Systems engineer, Derwent Utilities (2017–2021)**\nMaintained Linux fleets and the monitoring stack. Automated provisioning with\nAnsible and Terraform.\n\n## Skills\n\nKubernetes, Prometheus, Grafana, incident response and command, service level\nobjectives, Terraform, Ansible, Linux administration, capacity planning.\n",
       "ratings": [
         {
           "roleId": "site-reliability-brisbane",
@@ -128,7 +128,7 @@
     },
     {
       "id": "embedded-c-perth",
-      "resume": "# Candidate profile — invented\n\nNine years of embedded development in C for industrial equipment, with\nreal-time constraints and direct hardware interfaces. Perth, onsite, permanent,\naround AUD 160,000.\n",
+      "resume": "# Candidate profile — invented\n\n## Summary\n\nEmbedded engineer, nine years in industrial equipment. Perth, onsite,\npermanent, around AUD 160,000.\n\n## Experience\n\n**Senior embedded engineer, Redgum Mining Tech (2020–present)**\nFirmware in C for conveyor control units with hard real-time deadlines. Wrote\nthe CAN bus driver and the safety interlock logic. Brought a product through\nfunctional safety review.\n\n**Embedded engineer, Marlow Systems (2016–2020)**\nC firmware for sensor modules. Built the hardware-in-the-loop test rig used for\nrelease qualification.\n\n## Skills\n\nC, real-time systems, CAN bus, device drivers, hardware interfaces, functional\nsafety, hardware-in-the-loop testing, oscilloscope debugging, RTOS.\n",
       "ratings": [
         {
           "roleId": "embedded-engineer-perth",

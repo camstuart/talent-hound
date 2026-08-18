@@ -41,3 +41,28 @@ func TestThePromptRequiresStructuredValuesWhereTheSourceIsExplicit(t *testing.T)
 		t.Fatal("the prompt does not forbid guessing a structured value")
 	}
 }
+
+// A null structured field means the source did not say, which is how this
+// contract already represents absence. Treating it as a value made a whole
+// profile invalid over a field the model was right to leave empty.
+func TestANullStructuredFieldIsAbsenceNotAnInvalidValue(t *testing.T) {
+	raw := `{"aspects":[{"type":"compensation","wording":"AUD 180,000",
+		"structured":{"currency":"AUD","minimum":180000,"basis":null,"period":null},
+		"citations":[{"chunkId":1,"quote":"AUD 180,000"}]}]}`
+	proposal, problems := ParseProposal(raw)
+	if len(problems) != 0 {
+		t.Fatalf("parsing: %v", problems)
+	}
+	got := proposal.Aspects[0].Structured
+	if _, ok := got["basis"]; ok {
+		t.Fatalf("a null field survived: %+v", got)
+	}
+	if got["currency"] != "AUD" {
+		t.Fatalf("a stated field was dropped: %+v", got)
+	}
+
+	sources := []Source{{ChunkID: 1, Text: "AUD 180,000"}}
+	if problems := Validate(SubjectRole, proposal, sources); len(problems) != 0 {
+		t.Fatalf("a proposal with null fields was rejected: %v", problems)
+	}
+}

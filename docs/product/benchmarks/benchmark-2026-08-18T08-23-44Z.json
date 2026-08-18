@@ -1,0 +1,493 @@
+{
+  "taken": "2026-08-18T08:23:44Z",
+  "version": "0.1.0-poc",
+  "platform": "darwin/arm64",
+  "schemaVersion": "2",
+  "promptVersion": "2",
+  "corpusHash": "7ac28b4bc2e295e64b2b8aa86f6e25989e1c0b5fb7da8e09518652b6ce9e7cc4",
+  "corpusIs": "the synthetic corpus in this repository — invented, not real placements",
+  "cloudAssisted": false,
+  "assignments": [
+    {
+      "role": "classify",
+      "model": "qwen2.5:7b-instruct",
+      "digest": "FROM /Users/cam/.ollama/models/blobs/sha256-2bada8a7450677000f678be90653b85d364de7db25eb5ea54136ada5f3933730"
+    },
+    {
+      "role": "embed",
+      "model": "nomic-embed-text",
+      "digest": "FROM /Users/cam/.ollama/models/blobs/sha256-970aa74c0a90ef7482477cf803618e776e173c007bf957f635f1015bfcfef0e6"
+    },
+    {
+      "role": "generate",
+      "model": "not used by this benchmark",
+      "digest": "n/a"
+    }
+  ],
+  "classifier": [
+    {
+      "listing": "platform-engineer-melbourne",
+      "extracted": 0,
+      "material": 9,
+      "captured": 0,
+      "captureRate": 0,
+      "uncited": [],
+      "unsupported": [],
+      "misreported": [
+        "location: missing",
+        "work_arrangement: missing",
+        "employment_type: missing",
+        "work_rights: missing",
+        "compensation: missing"
+      ],
+      "allCited": true,
+      "noUnsupported": true,
+      "captureMet": false,
+      "constraintsExact": false,
+      "pass": false
+    },
+    {
+      "listing": "backend-engineer-sydney",
+      "extracted": 10,
+      "material": 9,
+      "captured": 5,
+      "captureRate": 0.5555555555555556,
+      "uncited": [],
+      "unsupported": [],
+      "misreported": [
+        "location: map[], want map[city:Sydney]",
+        "work_arrangement: map[], want map[arrangement:onsite]",
+        "employment_type: map[], want map[employment_type:permanent]",
+        "work_rights: map[], want map[country:Australia sponsorship_required:false]",
+        "compensation: map[], want map[basis:base currency:AUD minimum:150000]"
+      ],
+      "allCited": true,
+      "noUnsupported": true,
+      "captureMet": false,
+      "constraintsExact": false,
+      "pass": false
+    },
+    {
+      "listing": "site-reliability-brisbane",
+      "extracted": 0,
+      "material": 9,
+      "captured": 0,
+      "captureRate": 0,
+      "uncited": [],
+      "unsupported": [],
+      "misreported": [
+        "location: missing",
+        "work_arrangement: missing",
+        "employment_type: missing",
+        "work_rights: missing",
+        "compensation: missing"
+      ],
+      "allCited": true,
+      "noUnsupported": true,
+      "captureMet": false,
+      "constraintsExact": false,
+      "pass": false
+    },
+    {
+      "listing": "data-engineer-melbourne",
+      "extracted": 8,
+      "material": 9,
+      "captured": 7,
+      "captureRate": 0.7777777777777778,
+      "uncited": [],
+      "unsupported": [],
+      "misreported": [
+        "location: map[], want map[city:Melbourne]",
+        "work_arrangement: map[], want map[arrangement:remote]",
+        "employment_type: missing",
+        "work_rights: map[], want map[country:Australia sponsorship_required:false]",
+        "compensation: map[], want map[basis:base currency:AUD minimum:155000]"
+      ],
+      "allCited": true,
+      "noUnsupported": true,
+      "captureMet": false,
+      "constraintsExact": false,
+      "pass": false
+    },
+    {
+      "listing": "staff-engineer-perth",
+      "extracted": 9,
+      "material": 9,
+      "captured": 5,
+      "captureRate": 0.5555555555555556,
+      "uncited": [],
+      "unsupported": [],
+      "misreported": [
+        "location: map[], want map[city:Perth]",
+        "work_arrangement: map[], want map[arrangement:onsite]",
+        "employment_type: map[], want map[employment_type:permanent]",
+        "work_rights: map[], want map[country:Australia sponsorship_required:false]",
+        "compensation: map[], want map[basis:base currency:AUD minimum:210000]"
+      ],
+      "allCited": true,
+      "noUnsupported": true,
+      "captureMet": false,
+      "constraintsExact": false,
+      "pass": false
+    },
+    {
+      "listing": "frontend-engineer-sydney",
+      "extracted": 11,
+      "material": 9,
+      "captured": 4,
+      "captureRate": 0.4444444444444444,
+      "uncited": [],
+      "unsupported": [],
+      "misreported": [
+        "location: map[], want map[city:Sydney]",
+        "work_arrangement: map[], want map[arrangement:hybrid]",
+        "employment_type: map[], want map[employment_type:permanent]",
+        "work_rights: map[], want map[country:Australia sponsorship_required:false]",
+        "compensation: map[], want map[basis:base currency:AUD minimum:140000]"
+      ],
+      "allCited": true,
+      "noUnsupported": true,
+      "captureMet": false,
+      "constraintsExact": false,
+      "pass": false
+    },
+    {
+      "listing": "security-engineer-canberra",
+      "extracted": 10,
+      "material": 9,
+      "captured": 4,
+      "captureRate": 0.4444444444444444,
+      "uncited": [],
+      "unsupported": [],
+      "misreported": [
+        "location: map[], want map[city:Canberra]",
+        "work_arrangement: map[], want map[arrangement:onsite]",
+        "employment_type: map[], want map[employment_type:permanent]",
+        "work_rights: map[], want map[country:Australia sponsorship_required:false]",
+        "compensation: map[], want map[basis:base currency:AUD minimum:175000]"
+      ],
+      "allCited": true,
+      "noUnsupported": true,
+      "captureMet": false,
+      "constraintsExact": false,
+      "pass": false
+    },
+    {
+      "listing": "ml-engineer-melbourne",
+      "extracted": 0,
+      "material": 9,
+      "captured": 0,
+      "captureRate": 0,
+      "uncited": [],
+      "unsupported": [],
+      "misreported": [
+        "location: missing",
+        "work_arrangement: missing",
+        "employment_type: missing",
+        "work_rights: missing",
+        "compensation: missing"
+      ],
+      "allCited": true,
+      "noUnsupported": true,
+      "captureMet": false,
+      "constraintsExact": false,
+      "pass": false
+    },
+    {
+      "listing": "devops-engineer-adelaide",
+      "extracted": 0,
+      "material": 9,
+      "captured": 0,
+      "captureRate": 0,
+      "uncited": [],
+      "unsupported": [],
+      "misreported": [
+        "location: missing",
+        "work_arrangement: missing",
+        "employment_type: missing",
+        "work_rights: missing",
+        "compensation: missing"
+      ],
+      "allCited": true,
+      "noUnsupported": true,
+      "captureMet": false,
+      "constraintsExact": false,
+      "pass": false
+    },
+    {
+      "listing": "mobile-engineer-sydney",
+      "extracted": 10,
+      "material": 9,
+      "captured": 7,
+      "captureRate": 0.7777777777777778,
+      "uncited": [],
+      "unsupported": [],
+      "misreported": [
+        "location: map[], want map[city:Sydney]",
+        "work_arrangement: map[], want map[arrangement:hybrid]",
+        "employment_type: map[], want map[employment_type:permanent]",
+        "work_rights: map[], want map[country:Australia sponsorship_required:false]",
+        "compensation: map[], want map[basis:base currency:AUD minimum:150000]"
+      ],
+      "allCited": true,
+      "noUnsupported": true,
+      "captureMet": false,
+      "constraintsExact": false,
+      "pass": false
+    },
+    {
+      "listing": "principal-engineer-melbourne",
+      "extracted": 0,
+      "material": 9,
+      "captured": 0,
+      "captureRate": 0,
+      "uncited": [],
+      "unsupported": [],
+      "misreported": [
+        "location: missing",
+        "work_arrangement: missing",
+        "employment_type: missing",
+        "work_rights: missing",
+        "compensation: missing"
+      ],
+      "allCited": true,
+      "noUnsupported": true,
+      "captureMet": false,
+      "constraintsExact": false,
+      "pass": false
+    },
+    {
+      "listing": "backend-contract-melbourne",
+      "extracted": 9,
+      "material": 9,
+      "captured": 8,
+      "captureRate": 0.8888888888888888,
+      "uncited": [],
+      "unsupported": [],
+      "misreported": [
+        "location: map[], want map[city:Melbourne]",
+        "work_arrangement: map[], want map[arrangement:remote]",
+        "employment_type: map[], want map[employment_type:contract]",
+        "work_rights: map[], want map[country:Australia sponsorship_required:false]",
+        "compensation: map[], want map[basis:rate currency:AUD minimum:900]"
+      ],
+      "allCited": true,
+      "noUnsupported": true,
+      "captureMet": true,
+      "constraintsExact": false,
+      "pass": false
+    },
+    {
+      "listing": "platform-engineer-remote",
+      "extracted": 8,
+      "material": 9,
+      "captured": 5,
+      "captureRate": 0.5555555555555556,
+      "uncited": [],
+      "unsupported": [],
+      "misreported": [
+        "location: map[], want map[remote_ok:true]",
+        "work_arrangement: map[], want map[arrangement:remote]",
+        "employment_type: missing",
+        "work_rights: map[], want map[country:Australia sponsorship_required:false]",
+        "compensation: map[], want map[basis:base currency:AUD minimum:170000]"
+      ],
+      "allCited": true,
+      "noUnsupported": true,
+      "captureMet": false,
+      "constraintsExact": false,
+      "pass": false
+    },
+    {
+      "listing": "qa-engineer-brisbane",
+      "extracted": 0,
+      "material": 9,
+      "captured": 0,
+      "captureRate": 0,
+      "uncited": [],
+      "unsupported": [],
+      "misreported": [
+        "location: missing",
+        "work_arrangement: missing",
+        "employment_type: missing",
+        "work_rights: missing",
+        "compensation: missing"
+      ],
+      "allCited": true,
+      "noUnsupported": true,
+      "captureMet": false,
+      "constraintsExact": false,
+      "pass": false
+    },
+    {
+      "listing": "data-platform-sydney",
+      "extracted": 11,
+      "material": 9,
+      "captured": 6,
+      "captureRate": 0.6666666666666666,
+      "uncited": [],
+      "unsupported": [],
+      "misreported": [
+        "location: map[], want map[city:Sydney]",
+        "work_arrangement: map[], want map[arrangement:hybrid]",
+        "employment_type: map[], want map[employment_type:permanent]",
+        "work_rights: map[], want map[country:Australia sponsorship_required:false]",
+        "compensation: map[], want map[basis:base currency:AUD minimum:175000]"
+      ],
+      "allCited": true,
+      "noUnsupported": true,
+      "captureMet": false,
+      "constraintsExact": false,
+      "pass": false
+    },
+    {
+      "listing": "engineering-manager-melbourne",
+      "extracted": 8,
+      "material": 9,
+      "captured": 4,
+      "captureRate": 0.4444444444444444,
+      "uncited": [],
+      "unsupported": [],
+      "misreported": [
+        "location: map[], want map[city:Melbourne]",
+        "work_arrangement: missing",
+        "employment_type: map[], want map[employment_type:permanent]",
+        "work_rights: map[], want map[country:Australia sponsorship_required:false]",
+        "compensation: map[], want map[basis:base currency:AUD minimum:200000]"
+      ],
+      "allCited": true,
+      "noUnsupported": true,
+      "captureMet": false,
+      "constraintsExact": false,
+      "pass": false
+    },
+    {
+      "listing": "integration-engineer-hobart",
+      "extracted": 9,
+      "material": 9,
+      "captured": 4,
+      "captureRate": 0.4444444444444444,
+      "uncited": [],
+      "unsupported": [],
+      "misreported": [
+        "location: map[], want map[city:Hobart]",
+        "work_arrangement: map[], want map[arrangement:onsite]",
+        "employment_type: map[], want map[employment_type:permanent]",
+        "work_rights: missing",
+        "compensation: map[], want map[basis:base currency:AUD minimum:135000]"
+      ],
+      "allCited": true,
+      "noUnsupported": true,
+      "captureMet": false,
+      "constraintsExact": false,
+      "pass": false
+    },
+    {
+      "listing": "embedded-engineer-perth",
+      "extracted": 0,
+      "material": 9,
+      "captured": 0,
+      "captureRate": 0,
+      "uncited": [],
+      "unsupported": [],
+      "misreported": [
+        "location: missing",
+        "work_arrangement: missing",
+        "employment_type: missing",
+        "work_rights: missing",
+        "compensation: missing"
+      ],
+      "allCited": true,
+      "noUnsupported": true,
+      "captureMet": false,
+      "constraintsExact": false,
+      "pass": false
+    },
+    {
+      "listing": "solutions-architect-sydney",
+      "extracted": 10,
+      "material": 9,
+      "captured": 8,
+      "captureRate": 0.8888888888888888,
+      "uncited": [],
+      "unsupported": [],
+      "misreported": [
+        "location: map[], want map[city:Sydney]",
+        "work_arrangement: map[], want map[arrangement:hybrid]",
+        "employment_type: map[], want map[employment_type:permanent]",
+        "work_rights: map[], want map[country:Australia sponsorship_required:false]",
+        "compensation: map[], want map[basis:base currency:AUD minimum:195000]"
+      ],
+      "allCited": true,
+      "noUnsupported": true,
+      "captureMet": true,
+      "constraintsExact": false,
+      "pass": false
+    },
+    {
+      "listing": "junior-backend-melbourne",
+      "extracted": 9,
+      "material": 9,
+      "captured": 3,
+      "captureRate": 0.3333333333333333,
+      "uncited": [],
+      "unsupported": [],
+      "misreported": [
+        "location: map[], want map[city:Melbourne]",
+        "work_arrangement: map[], want map[arrangement:onsite]",
+        "employment_type: missing",
+        "work_rights: map[], want map[country:Australia sponsorship_required:false]",
+        "compensation: map[], want map[basis:base currency:AUD minimum:110000]"
+      ],
+      "allCited": true,
+      "noUnsupported": true,
+      "captureMet": false,
+      "constraintsExact": false,
+      "pass": false
+    }
+  ],
+  "matching": {
+    "scenarios": [
+      {
+        "scenarioId": "go-platform-melbourne",
+        "distinct": [],
+        "plausible": 0,
+        "met": false,
+        "note": "no candidate profile: the classifier's output did not satisfy the contract after one repair attempt:\n- aspect 2 citation 1 quotes wording that does not appear in chunk 1\n- aspect 7 sets basis to \u003cnil\u003e, which is not one of: base, total_package, rate, unknown\n- aspect 7 sets period to \u003cnil\u003e, which is not one of: hour, day, week, month, year, unknown"
+      },
+      {
+        "scenarioId": "data-python-melbourne",
+        "distinct": [],
+        "plausible": 0,
+        "met": false,
+        "note": "no roles ranked: the approved profile has 4 aspects, 1 of them searchable"
+      },
+      {
+        "scenarioId": "frontend-accessibility-sydney",
+        "distinct": [],
+        "plausible": 0,
+        "met": false,
+        "note": "no roles ranked: the approved profile has 6 aspects, 2 of them searchable"
+      },
+      {
+        "scenarioId": "sre-kubernetes-brisbane",
+        "distinct": [],
+        "plausible": 0,
+        "met": false,
+        "note": "no roles ranked: the approved profile has 7 aspects, 3 of them searchable"
+      },
+      {
+        "scenarioId": "embedded-c-perth",
+        "distinct": [],
+        "plausible": 0,
+        "met": false,
+        "note": "no candidate profile: the classifier's output did not satisfy the contract after one repair attempt:\n- aspect 6 sets basis to annual, which is not one of: base, total_package, rate, unknown"
+      }
+    ],
+    "metCount": 0,
+    "pass": false
+  },
+  "eligibleRoles": 20,
+  "measurements": [],
+  "outcome": "fail"
+}
