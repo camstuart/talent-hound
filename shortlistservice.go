@@ -130,7 +130,7 @@ func (s *ShortlistService) Build(initiativeID, candidateID uint) (*Shortlist, er
 
 	lists := []fusion.Ranked{}
 	for _, q := range queries {
-		lexical, err := s.lexical(initiativeID, q.text, allowed)
+		lexical, err := s.lexical(initiativeID, q.text, q.anyTerms, allowed)
 		if err != nil {
 			return nil, err
 		}
@@ -202,6 +202,15 @@ func (s *ShortlistService) eligibleRoles(initiativeID uint) ([]models.Role, erro
 type query struct {
 	source string
 	text   string
+	// anyTerms ORs the query's words instead of ANDing them.
+	//
+	// A criterion is wording the recruiter typed on purpose: two words mean
+	// both, and AND is right. A profile aspect is a sentence lifted out of a
+	// document — "Ran the platform team's shared services in Go" — and ANDing
+	// it demands a role listing containing all nine words, which no listing
+	// does. It is the same distinction Phase 17 drew for questions, arriving
+	// here for the same reason.
+	anyTerms bool
 }
 
 // queries builds the search terms: every approved criterion, and every
@@ -245,14 +254,20 @@ func (s *ShortlistService) queries(initiativeID, candidateID uint) ([]query, err
 		if len(fusion.RoleAspectsFor(typ)) == 0 {
 			continue
 		}
-		out = append(out, query{source: a.Wording, text: a.Wording})
+		out = append(out, query{source: a.Wording, text: a.Wording, anyTerms: true})
 	}
 	return out, nil
 }
 
 // lexical retrieves role chunks by word, grouped to roles in rank order.
-func (s *ShortlistService) lexical(initiativeID uint, text string, allowed map[uint]bool) ([]uint, error) {
-	hits, err := s.search.Search(initiativeID, text, perQueryDepth)
+func (s *ShortlistService) lexical(
+	initiativeID uint, text string, anyTerms bool, allowed map[uint]bool,
+) ([]uint, error) {
+	find := s.search.Search
+	if anyTerms {
+		find = s.search.SearchAny
+	}
+	hits, err := find(initiativeID, text, perQueryDepth)
 	if err != nil {
 		return nil, err
 	}

@@ -506,3 +506,76 @@ func TestAnApprovedProfileAloneDrivesTheShortlist(t *testing.T) {
 		t.Fatalf("the top role is %d, want the platform role %d", out.Entries[0].RoleID, wanted)
 	}
 }
+
+// A profile aspect is a sentence lifted out of a document, not a phrase the
+// recruiter typed. ANDing its words demands a listing containing every one of
+// them, which is why five live benchmark scenarios ranked nothing at all while
+// carrying nine searchable aspects each.
+func TestAnAspectSentenceStillFindsItsRole(t *testing.T) {
+	e := newShortlistEnv(t)
+	wanted := e.roleWithListing(t, "Platform engineer",
+		"Must have Go and production SQLite experience. Melbourne, hybrid.")
+	e.roleWithListing(t, "Pastry chef", "Must have patisserie experience. Hobart, onsite.")
+
+	candidateID := e.candidateWithAspect(t,
+		"Ran the platform team's shared services in Go, including an embedded SQLite cache")
+
+	out := e.build(t, candidateID)
+	if len(out.Entries) == 0 {
+		t.Fatal("a sentence-shaped aspect ranked nothing at all")
+	}
+	if out.Entries[0].RoleID != wanted {
+		t.Fatalf("top role is %d, want %d", out.Entries[0].RoleID, wanted)
+	}
+}
+
+// candidateWithAspect approves a candidate profile holding one aspect with the
+// given wording, cited to the resume it came from.
+func (e *shortlistEnv) candidateWithAspect(t *testing.T, wording string) uint {
+	t.Helper()
+	c, err := e.records.CreateCandidate(models.Candidate{FullName: "Nadia Frost"})
+	if err != nil {
+		t.Fatalf("creating candidate: %v", err)
+	}
+	md := "# Nadia Frost\n\n## Experience\n\n" + wording + ".\n"
+	a, err := e.artifacts.create("resume", "resume.md", "test", []byte(md),
+		models.LinkCandidate, c.ID)
+	if err != nil {
+		t.Fatalf("attaching resume: %v", err)
+	}
+	err = e.db.Model(&models.Artifact{}).Where("id = ?", a.ID).Updates(map[string]any{
+		"extraction_state":  models.ExtractionExtracted,
+		"extractor":         "native-text",
+		"extractor_version": "1",
+		"markdown":          md,
+	}).Error
+	if err != nil {
+		t.Fatalf("recording extraction: %v", err)
+	}
+	e.chunks2 = e.chunkAndWait(t, a.ID)
+
+	e.assignClassify(t, "synthetic-classify")
+	// The chunker splits at headings, so the citing chunk is the one that
+	// actually holds the wording rather than whichever came first.
+	var chunkID uint
+	for _, ch := range e.chunks2 {
+		if strings.Contains(ch.Text, wording) {
+			chunkID = ch.ID
+		}
+	}
+	if chunkID == 0 {
+		t.Fatal("no chunk holds the aspect wording")
+	}
+	cite := []profile.Citation{{ChunkID: chunkID, Quote: wording}}
+	e.model.responses = []string{jsonProposal(t, []profile.Aspect{
+		{Type: profile.Experience, Wording: wording, Citations: cite},
+	})}
+	p, err := e.profiles.Classify(c.ID)
+	if err != nil {
+		t.Fatalf("classifying: %v", err)
+	}
+	if _, err := e.profiles.Approve(p.ID); err != nil {
+		t.Fatalf("approving: %v", err)
+	}
+	return c.ID
+}
