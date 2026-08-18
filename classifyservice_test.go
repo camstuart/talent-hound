@@ -384,7 +384,7 @@ func TestARecruiterSuppliedAspectIsStoredAndStaysDistinct(t *testing.T) {
 
 	p, err := e.classify.AddRecruiterAspect(profile.SubjectCandidate, 7, profile.Aspect{
 		Type: profile.Compensation, Wording: "Told me she wants at least 190k",
-	}, "note 12")
+	}, "note 12", "")
 	if err != nil {
 		t.Fatalf("adding a recruiter aspect: %v", err)
 	}
@@ -409,7 +409,7 @@ func TestARecruiterAspectWithoutARecordIsRefused(t *testing.T) {
 	e := newClassifyEnv(t)
 	_, err := e.classify.AddRecruiterAspect(profile.SubjectCandidate, 7, profile.Aspect{
 		Type: profile.Skill, Wording: "Knows Go",
-	}, "   ")
+	}, "   ", "")
 	if err == nil {
 		t.Fatal("a recruiter aspect with no record was accepted")
 	}

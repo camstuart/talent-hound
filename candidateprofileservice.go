@@ -69,10 +69,14 @@ func (s *CandidateProfileService) fromRecordOnly(candidateID uint) (*models.Prof
 	if len(aspects) == 0 {
 		return nil, fmt.Errorf("this candidate has no extracted documents and no structured details to build a profile from")
 	}
+	hash, err := s.CurrentSourceHash(candidateID)
+	if err != nil {
+		return nil, err
+	}
 	var current *models.Profile
 	for _, a := range aspects {
 		current, err = s.classify.AddRecruiterAspect(
-			profile.SubjectCandidate, candidateID, a, recruiterRecord(candidateID))
+			profile.SubjectCandidate, candidateID, a, recruiterRecord(candidateID), hash)
 		if err != nil && !strings.Contains(err.Error(), "duplicates aspect") {
 			return nil, err
 		}
@@ -133,23 +137,7 @@ func (s *CandidateProfileService) CurrentSourceHash(candidateID uint) (string, e
 	if err != nil {
 		return "", err
 	}
-	rows := []models.Chunk{}
-	if len(ids) > 0 {
-		if err := s.db.Where("id IN ?", ids).Find(&rows).Error; err != nil {
-			return "", fmt.Errorf("loading source chunks: %w", err)
-		}
-	}
-	byID := make(map[uint]models.Chunk, len(rows))
-	for _, r := range rows {
-		byID[r.ID] = r
-	}
-	sources := make([]profile.Source, 0, len(ids))
-	for _, id := range ids {
-		if r, ok := byID[id]; ok {
-			sources = append(sources, profile.Source{ChunkID: r.ID, Text: r.Text})
-		}
-	}
-	return profile.HashSources(sources), nil
+	return hashChunks(s.db, ids)
 }
 
 // Approve stamps a version as the one search and matching use.
@@ -303,8 +291,12 @@ func (s *CandidateProfileService) RemoveAspect(candidateID uint, ordinal int) (*
 
 // AddAspect records a fact the recruiter asserted.
 func (s *CandidateProfileService) AddAspect(candidateID uint, aspect profile.Aspect) (*models.Profile, error) {
+	hash, err := s.CurrentSourceHash(candidateID)
+	if err != nil {
+		return nil, err
+	}
 	return s.classify.AddRecruiterAspect(
-		profile.SubjectCandidate, candidateID, aspect, recruiterRecord(candidateID))
+		profile.SubjectCandidate, candidateID, aspect, recruiterRecord(candidateID), hash)
 }
 
 // workingSet returns the aspects an edit applies to, and the version they came
@@ -571,7 +563,13 @@ type AspectCitation struct {
 // recruiter reviewing a profile can see the source wording without leaving the
 // screen.
 func (s *CandidateProfileService) Citations(profileID uint) ([]AspectCitation, error) {
-	aspects, err := s.classify.Aspects(profileID)
+	return citationsOf(s.db, s.classify, profileID)
+}
+
+// citationsOf is the shared resolver: candidates and roles cite the same way,
+// so they read the same way too.
+func citationsOf(db *gorm.DB, classify *ClassifyService, profileID uint) ([]AspectCitation, error) {
+	aspects, err := classify.Aspects(profileID)
 	if err != nil {
 		return nil, err
 	}
@@ -583,7 +581,7 @@ func (s *CandidateProfileService) Citations(profileID uint) ([]AspectCitation, e
 				continue
 			}
 			var chunk models.Chunk
-			if err := s.db.First(&chunk, c.ChunkID).Error; err != nil {
+			if err := db.First(&chunk, c.ChunkID).Error; err != nil {
 				// The evidence is gone. Say so rather than quoting nothing.
 				out = append(out, AspectCitation{
 					Ordinal:  i,
@@ -592,7 +590,7 @@ func (s *CandidateProfileService) Citations(profileID uint) ([]AspectCitation, e
 				continue
 			}
 			var artifact models.Artifact
-			if err := s.db.Select("id", "display_name").First(&artifact, chunk.ArtifactID).Error; err != nil {
+			if err := db.Select("id", "display_name").First(&artifact, chunk.ArtifactID).Error; err != nil {
 				return nil, fmt.Errorf("loading artifact %d: %w", chunk.ArtifactID, err)
 			}
 			out = append(out, AspectCitation{

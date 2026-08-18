@@ -143,8 +143,12 @@ func (s *ClassifyService) attempt(
 // database says a person asserted this. Letting recruiter aspects cite nothing
 // would make "cited" mean two things depending on origin, and Phase 17's drafts
 // would have to quote both.
+// sourceHash is the evidence in force when the recruiter made this version.
+// The caller supplies it because what counts as a subject's evidence is a
+// per-subject-kind question, and a version that carried the previous one would
+// look stale the moment it was created.
 func (s *ClassifyService) AddRecruiterAspect(
-	kind profile.SubjectKind, subjectID uint, aspect profile.Aspect, record string,
+	kind profile.SubjectKind, subjectID uint, aspect profile.Aspect, record, sourceHash string,
 ) (*models.Profile, error) {
 	if !kind.Valid() {
 		return nil, fmt.Errorf("unknown subject kind %q", kind)
@@ -161,7 +165,11 @@ func (s *ClassifyService) AddRecruiterAspect(
 		return nil, err
 	}
 	aspects := []profile.Aspect{}
-	identity := profile.Identity{SchemaVersion: profile.SchemaVersion, PromptVersion: profile.PromptVersion}
+	identity := profile.Identity{
+		SchemaVersion: profile.SchemaVersion,
+		PromptVersion: profile.PromptVersion,
+		SourceHash:    sourceHash,
+	}
 	modelName := ""
 	if current != nil {
 		existing, err := s.Aspects(current.ID)
@@ -170,7 +178,6 @@ func (s *ClassifyService) AddRecruiterAspect(
 		}
 		aspects = existing
 		identity.Revision = current.ModelRevision
-		identity.SourceHash = current.SourceHash
 		modelName = current.ModelName
 	}
 	// Only the new aspect is validated. The stored ones were validated against
@@ -188,12 +195,12 @@ func (s *ClassifyService) AddRecruiterAspect(
 		}
 	}
 	aspects = append(aspects, aspect)
-	state := models.ProfileProposed
-	if current != nil {
-		state = models.ProfileState(current.State)
-	}
+	// Always Proposed, never inherited. Inheriting would carry Failed forward
+	// onto a version the recruiter just built by hand — which is exactly the
+	// path that exists so a failed extraction cannot make a subject unusable —
+	// and would carry Approved forward onto content nobody approved.
 	return s.store(ClassifyInput{SubjectKind: kind, SubjectID: subjectID},
-		identity, modelName, aspects, state, "")
+		identity, modelName, aspects, models.ProfileProposed, "")
 }
 
 // store writes a whole profile version in one transaction, or none of it.
