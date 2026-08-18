@@ -103,6 +103,10 @@ func runClassifier(t *testing.T, corpus *bench.Corpus, model string) []bench.Cla
 
 // runMatching builds a shortlist per scenario over the whole frozen listing
 // corpus and scores the top five against the recruiter's ratings.
+//
+// Each scenario's own resume goes through the live classifier: a benchmark that
+// gave every scenario the same candidate would score the same shortlist five
+// times and call it five scenarios.
 func runMatching(t *testing.T, corpus *bench.Corpus, classifyModel, embedModel string) (bench.MatchingScore, int) {
 	t.Helper()
 	results := []bench.TopFive{}
@@ -110,7 +114,14 @@ func runMatching(t *testing.T, corpus *bench.Corpus, classifyModel, embedModel s
 
 	for _, scenario := range corpus.Scenarios {
 		e := newShortlistEnv(t)
-		e.classify = NewClassifyService(e.db, e.registry, platform.NewOllama())
+		// Every service that decomposes anything is rebuilt against the live
+		// model, so nothing in this run is answered by a scripted fake.
+		live := NewClassifyService(e.db, e.registry, platform.NewOllama())
+		e.classify = live
+		e.profiles = NewCandidateProfileService(e.db, live, e.records)
+		e.roles = NewRoleProfileService(e.db, live)
+		e.shortlist = NewShortlistService(e.db, e.search, e.embed, e.criteria, e.profiles, e.roles)
+
 		e.assignClassify(t, classifyModel)
 		if _, err := e.registry.Assign(AssignInput{
 			Role: models.RoleEmbed, Model: embedModel,
@@ -125,7 +136,7 @@ func runMatching(t *testing.T, corpus *bench.Corpus, classifyModel, embedModel s
 			roleID := e.roleWithListing(t, listing.Title, listing.Markdown)
 			byRole[roleID] = listing.ID
 		}
-		candidateID := e.approvedCandidate(t)
+		candidateID := scenarioCandidate(t, e, scenario)
 
 		shortlist, err := e.shortlist.Build(e.initiative, candidateID)
 		if err != nil {
@@ -140,9 +151,51 @@ func runMatching(t *testing.T, corpus *bench.Corpus, classifyModel, embedModel s
 			}
 			top.RoleIDs = append(top.RoleIDs, byRole[entry.RoleID])
 		}
+		t.Logf("%s: top five %v of %d eligible", scenario.ID, top.RoleIDs, eligible)
 		results = append(results, top)
 	}
 	return bench.ScoreMatching(corpus, results), eligible
+}
+
+// scenarioCandidate creates the scenario's candidate, attaches its resume, and
+// classifies and approves a profile with the live model.
+//
+// The name is invented and belongs to this repository, not to the scenario: the
+// corpus carries a resume, and a benchmark needs a record to hang it on.
+func scenarioCandidate(t *testing.T, e *shortlistEnv, scenario bench.Scenario) uint {
+	t.Helper()
+	c, err := e.records.CreateCandidate(models.Candidate{FullName: "Benchmark subject " + scenario.ID})
+	if err != nil {
+		t.Fatalf("creating the candidate: %v", err)
+	}
+	a, err := e.artifacts.create("resume", "resume.md", "test", []byte(scenario.Resume),
+		models.LinkCandidate, c.ID)
+	if err != nil {
+		t.Fatalf("attaching the resume: %v", err)
+	}
+	err = e.db.Model(&models.Artifact{}).Where("id = ?", a.ID).Updates(map[string]any{
+		"extraction_state":  models.ExtractionExtracted,
+		"extractor":         "native-text",
+		"extractor_version": "1",
+		"markdown":          scenario.Resume,
+	}).Error
+	if err != nil {
+		t.Fatalf("recording extraction: %v", err)
+	}
+	e.chunks2 = e.chunkAndWait(t, a.ID)
+
+	p, err := e.profiles.Classify(c.ID)
+	if err != nil {
+		// A model that cannot decompose the resume cannot be matched with. The
+		// scenario still runs, on the record alone, and scores what that is
+		// worth — which is the honest answer rather than a skipped scenario.
+		t.Logf("%s: the model produced no usable candidate profile: %v", scenario.ID, err)
+		return c.ID
+	}
+	if _, err := e.profiles.Approve(p.ID); err != nil {
+		t.Fatalf("approving the profile: %v", err)
+	}
+	return c.ID
 }
 
 // aspectsOf reads back what the classifier stored, so the benchmark scores what

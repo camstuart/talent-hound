@@ -133,8 +133,8 @@ func (r *Record) Summary() string {
 
 	fmt.Fprintf(&b, "\nClassifier: %d listings\n", len(r.Classifier))
 	for _, score := range r.Classifier {
-		fmt.Fprintf(&b, "  capture %.0f%% (%d/%d), cited %v, no unsupported %v, constraints exact %v\n",
-			score.CaptureRate*100, score.Captured, score.Material,
+		fmt.Fprintf(&b, "  %s: capture %.0f%% (%d/%d), cited %v, no unsupported %v, constraints exact %v\n",
+			score.Listing, score.CaptureRate*100, score.Captured, score.Material,
 			score.AllCited, score.NoUnsupported, score.ConstraintsExact)
 		for _, why := range append(append([]string{}, score.Unsupported...), score.Misreported...) {
 			fmt.Fprintf(&b, "    %s\n", why)

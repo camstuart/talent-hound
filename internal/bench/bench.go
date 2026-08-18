@@ -159,6 +159,9 @@ var criticalTypes = map[profile.AspectType]bool{
 // ClassifierScore is the four conditions, reported separately. A single boolean
 // would answer "did it pass" and lose the only thing a failing run is good for.
 type ClassifierScore struct {
+	// Listing names which one this is: twenty scores with no names is a record
+	// that says something failed without saying what.
+	Listing     string   `json:"listing"`
 	Extracted   int      `json:"extracted"`
 	Material    int      `json:"material"`
 	Captured    int      `json:"captured"`
@@ -182,6 +185,7 @@ type ClassifierScore struct {
 // looser one of its own.
 func ScoreClassifier(listing Listing, extracted []profile.Aspect, sources map[uint]string) ClassifierScore {
 	score := ClassifierScore{
+		Listing:   listing.ID,
 		Extracted: len(extracted), Material: len(listing.Material),
 		Uncited: []string{}, Unsupported: []string{}, Misreported: []string{},
 	}

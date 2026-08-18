@@ -212,7 +212,7 @@ export default function CandidateProfilePanel(props: { initiativeId: number }) {
           fallback={<li class="muted">Nothing here yet — build a profile, or add an aspect by hand.</li>}
         >
           {(aspect, i) => (
-            <li class="search-hit">
+            <li class="search-hit" data-provenance={aspect.origin === "recruiter_supplied" ? "recruiter" : "ai"}>
               <span class="artifact-name">
                 {aspect.type}
                 <span class="muted">

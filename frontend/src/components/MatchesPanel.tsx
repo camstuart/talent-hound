@@ -137,7 +137,7 @@ export default function MatchesPanel(props: { initiativeId: number }) {
                                 {r.requirement}
                               </pre>
                               <Show when={r.reason}>
-                                <p class="muted">{r.reason}</p>
+                                <p class="muted" data-provenance="ai">{r.reason}</p>
                               </Show>
                               <Show when={citationsOf(r).length > 0}>
                                 <button
@@ -152,7 +152,7 @@ export default function MatchesPanel(props: { initiativeId: number }) {
                               <Show when={evidenceOf() === `${i()}:${direction}:${j()}`}>
                                 <For each={citationsOf(r)}>
                                   {(c) => (
-                                    <pre aria-label={`Cited evidence ${c.ref}`}>{c.text}</pre>
+                                    <pre data-provenance="source" aria-label={`Cited evidence ${c.ref}`}>{c.text}</pre>
                                   )}
                                 </For>
                               </Show>

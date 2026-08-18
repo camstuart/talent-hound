@@ -49,7 +49,7 @@ gate-model-classify:
 # models. Writes a record to docs/product/benchmarks/.
 # Set TH_CLASSIFY_MODEL and TH_EMBED_MODEL.
 bench:
-    go test -tags livemodel -v -count=1 -timeout 120m -run TestBenchmark .
+    go test -tags livemodel -v -count=1 -timeout 240m -run TestBenchmark .
 
 # Build the pinned MarkItDown PyInstaller one-dir sidecar (Windows only)
 sidecar:

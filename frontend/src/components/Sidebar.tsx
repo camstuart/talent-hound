@@ -25,6 +25,7 @@ export default function Sidebar(props: Props) {
       <label class="sidebar-filter">
         <input
           type="checkbox"
+          aria-label="Show archived initiatives"
           checked={props.showArchived}
           onChange={(e) => props.onToggleArchived(e.currentTarget.checked)}
         />

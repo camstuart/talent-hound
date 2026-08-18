@@ -132,7 +132,7 @@ export default function DraftsPanel(props: { initiativeId: number }) {
                 <span class="muted"> — {a.supported ? "supported by evidence" : "not supported"}</span>
               </span>
               {/* Untrusted: displayed, never rendered. */}
-              <pre aria-label={`Answer ${i() + 1}`}>{a.answer}</pre>
+              <pre data-provenance="ai" aria-label={`Answer ${i() + 1}`}>{a.answer}</pre>
               <Show when={citationsOf(a).length > 0}>
                 <button
                   aria-label={`Show the evidence for answer ${i() + 1}`}
@@ -146,7 +146,7 @@ export default function DraftsPanel(props: { initiativeId: number }) {
                   {(c) => (
                     <>
                       <p class="muted">{c.location}</p>
-                      <pre aria-label={`Cited evidence for answer ${i() + 1}`}>{c.text}</pre>
+                      <pre data-provenance="source" aria-label={`Cited evidence for answer ${i() + 1}`}>{c.text}</pre>
                     </>
                   )}
                 </For>
@@ -201,7 +201,7 @@ export default function DraftsPanel(props: { initiativeId: number }) {
                 fallback={
                   <>
                     {/* Untrusted: displayed, never rendered. */}
-                    <pre aria-label={`Draft ${i() + 1}`}>{d.body}</pre>
+                    <pre data-provenance="ai" aria-label={`Draft ${i() + 1}`}>{d.body}</pre>
                     <Show when={d.state === "active"}>
                       <button
                         aria-label={`Edit draft ${i() + 1}`}

@@ -76,6 +76,32 @@ twenty role listings, labelled before any model runs against them.
 
 Cloud-assisted runs are recorded separately and cannot pass any of the above.
 
+## Development-machine live-model runs
+
+Not the acceptance environment. This is a macOS development machine, so nothing
+here can turn a target-laptop row above from NOT RUN into PASS. What it does
+prove is that the live paths run end to end against real models, and it produces
+the model-selection evidence Phase 1 asks for.
+
+Machine: macOS on Apple silicon, Ollama at `http://localhost:11434`.
+
+| Run | Model | Result |
+| --- | --- | --- |
+| `just gate-model` chat | `qwen2.5:3b-instruct` | PASS — 9.2 s cold, 2.2 GB resident |
+| `just gate-model` constrained JSON | `qwen2.5:3b-instruct` | PASS — 0.70 s, schema honoured |
+| `just gate-model` constrained JSON | `gemma4:12b-mlx` | **FAIL** — returns prose, ignores the schema |
+| `just gate-model` embeddings | `nomic-embed-text` | PASS — 768 dimensions, 0.29 s |
+| `just gate-model-classify` contract | `qwen2.5:3b-instruct` | **FAIL** — duplicate aspects, and citations quoting wording absent from the chunk |
+| `just gate-model-classify` injection | `qwen2.5:3b-instruct` | PASS — the injected instruction was refused |
+
+**Model selection consequence.** `gemma4:12b-mlx` cannot serve any role that
+needs a schema, which is every role this product uses a model for.
+`qwen2.5:3b-instruct` holds the schema but not the contract: it invents
+citations, which is the failure the contract exists to catch. Neither is a
+candidate for the pinned classify model. The PoC's recommended
+`qwen2.5:7b-instruct` was not testable here — the pull needs about 5 GB free and
+this machine had less.
+
 ## Target-laptop measurements
 
 Provisional. A miss is recorded as measured, with an explicit go/no-go decision,
@@ -94,12 +120,20 @@ and is never restated as a pass.
 
 ## Accessibility walkthrough
 
+Run as `frontend/e2e/accessibility.spec.ts`, so it is re-run by `just check`
+rather than being a walkthrough someone did once.
+
 | Check | Result |
 | --- | --- |
-| Every action reachable by keyboard | NOT RUN |
-| Focus order follows the visible order | NOT RUN |
-| Source, recruiter-authored, and AI content are visibly distinct | NOT RUN |
-| Every control has an accessible name | PARTIAL — asserted throughout the Playwright suite |
+| Every action reachable by keyboard | PASS — tabbing reaches interactive controls, and every stop resolves to a name by the rules a reader uses |
+| A whole flow completable by keyboard alone | PASS — new initiative, from opening the modal to creating it |
+| Focus is visible wherever it lands | PASS |
+| Every control has an accessible name | PASS — no anonymous button, input, select, or textarea in a workspace |
+| Source, recruiter-authored, and AI content are visibly distinct | PASS — three treatments, each labelled in words so none depends on colour |
+
+What this does not cover: a screen-reader session with a real assistive
+technology, and colour-contrast ratios. Both need a person and a device, and
+neither is claimed here.
 
 ## Final checks
 

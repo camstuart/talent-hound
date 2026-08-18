@@ -576,3 +576,51 @@ button {
 li[data-satisfied="yes"] .artifact-name {
     opacity: 0.6;
 }
+
+/* Where words came from, shown rather than described.
+   Source is what a document or listing actually says, recruiter is what the
+   recruiter wrote or claimed as their own, and AI is what a model produced.
+   Colour alone would fail anyone who cannot see it, so each carries a label
+   and a distinct border weight. */
+[data-provenance] {
+    border-left: 3px solid var(--border, #3a3a3a);
+    padding-left: 0.6rem;
+}
+
+[data-provenance]::before {
+    display: block;
+    font-size: 0.7rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    opacity: 0.75;
+}
+
+[data-provenance="source"] {
+    border-left-color: #4a90d9;
+}
+
+[data-provenance="source"]::before {
+    content: "From the document";
+    color: #4a90d9;
+}
+
+[data-provenance="recruiter"] {
+    border-left-style: double;
+    border-left-width: 5px;
+    border-left-color: #4caf72;
+}
+
+[data-provenance="recruiter"]::before {
+    content: "You wrote this";
+    color: #4caf72;
+}
+
+[data-provenance="ai"] {
+    border-left-style: dashed;
+    border-left-color: #c9902f;
+}
+
+[data-provenance="ai"]::before {
+    content: "Written by a model — check it";
+    color: #c9902f;
+}
