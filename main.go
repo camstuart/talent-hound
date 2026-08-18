@@ -44,6 +44,7 @@ func main() {
 	registry := NewModelService(gdb, jobs, ollama)
 	records := NewRecordService(gdb)
 	classify := NewClassifyService(gdb, registry, ollama)
+	profiles := NewCandidateProfileService(gdb, classify, records)
 
 	// Create a new Wails application by providing the necessary options.
 	// Variables 'Name' and 'Description' are for application metadata.
@@ -65,8 +66,9 @@ func main() {
 			application.NewService(registry),
 			application.NewService(NewEmbedService(gdb, jobs, registry, ollama)),
 			application.NewService(classify),
-			application.NewService(NewCandidateProfileService(gdb, classify, records)),
+			application.NewService(profiles),
 			application.NewService(NewRoleProfileService(gdb, classify)),
+			application.NewService(NewCriteriaService(gdb, registry, ollama, profiles)),
 			application.NewService(NewCredentialService()),
 		},
 		Assets: application.AssetOptions{

@@ -445,6 +445,39 @@ var migrations = []migration{
 				"`profiles`(`subject_kind`,`subject_id`,`approved_at`)",
 		},
 	},
+	{
+		Version: 12,
+		Name:    "search_criteria",
+		// Criteria belong to an initiative, not a candidate: they are the
+		// recruiter's intent, and a resume saying someone worked somewhere is
+		// not a statement that they want to again.
+		SQL: []string{
+			"CREATE TABLE `search_criteria` (" +
+				"`id` integer PRIMARY KEY AUTOINCREMENT," +
+				"`initiative_id` integer NOT NULL REFERENCES `initiatives`(`id`)," +
+				// Position is presentation. The PRD is explicit that ordering is
+				// not weighting, so it deliberately does not affect the version.
+				"`position` integer NOT NULL," +
+				"`text` text NOT NULL," +
+				// No unspecified: a criterion is the recruiter's choice, and an
+				// unweighted one would be a preference nobody expressed.
+				"`priority` text NOT NULL CHECK (`priority` IN ('must_have','nice_to_have'))," +
+				// Recorded once, on write, so it cannot change under the reader
+				// when the classify model changes.
+				"`warning` text NOT NULL DEFAULT ''," +
+				"`created_at` datetime," +
+				"`updated_at` datetime)",
+			"CREATE INDEX `idx_search_criteria_initiative` ON " +
+				"`search_criteria`(`initiative_id`,`position`)",
+			// One row per initiative, bumped when content changes. An assessment
+			// records the version it was made under, so Phase 16 can tell a
+			// stale match from a current one.
+			"CREATE TABLE `criteria_versions` (" +
+				"`initiative_id` integer PRIMARY KEY REFERENCES `initiatives`(`id`)," +
+				"`version` integer NOT NULL DEFAULT 1," +
+				"`updated_at` datetime)",
+		},
+	},
 }
 
 // badVectorLength is the condition an embedding is refused on: a blob that is

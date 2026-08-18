@@ -1,5 +1,5 @@
 import { createEffect, createSignal, For, onMount, Show } from "solid-js";
-import { workspaceRevision } from "../workspaceRevision";
+import { bumpWorkspace, workspaceRevision } from "../workspaceRevision";
 import { RecordService } from "../../bindings/camstuart/talent-hound";
 import type { Candidate, Company, Contact, Role } from "../../bindings/camstuart/talent-hound/internal/models";
 import RecordForm, { list, num, type FieldSpec } from "./RecordForm";
@@ -119,6 +119,8 @@ export default function RecordsPanel() {
               sourceNote: v.sourceNote,
               lastConfirmed: v.lastConfirmed,
             } as unknown as Candidate);
+            // Other panels list these records too.
+            bumpWorkspace();
             await reload();
           }}
         />
@@ -147,6 +149,8 @@ export default function RecordsPanel() {
               location: v.location,
               source: v.source,
             } as unknown as Company);
+            // Other panels list these records too.
+            bumpWorkspace();
             await reload();
           }}
         />
@@ -290,6 +294,8 @@ export default function RecordsPanel() {
               origin: v.origin,
               lifecycleState: v.lifecycleState,
             } as unknown as Role);
+            // Other panels list these records too.
+            bumpWorkspace();
             await reload();
           }}
         />
