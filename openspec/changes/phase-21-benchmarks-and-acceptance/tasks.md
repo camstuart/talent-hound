@@ -9,10 +9,11 @@
 ## 2. Scoring
 
 - [x] 2.1 Classifier score: citations, unsupported critical constraints, capture, structured constraints
-- [x] 2.2 Capture measured by meaning key, as the product measures duplicates
+- [x] 2.2 Capture measured by meaning, or by containment of the labelled wording within the same type
 - [x] 2.3 Matching score: duplicates collapsed, absent slots not plausible, three-of-five in four-of-five
 - [x] 2.4 Fewer than ten eligible roles reported as inconclusive
 - [x] 2.5 A cloud-assisted run cannot be a PoC pass
+- [x] 2.6 A scenario that produced nothing carries the reason into the record
 
 ## 3. Record
 

@@ -478,3 +478,56 @@ func ratedCorpus() *Corpus {
 	}
 	return corpus
 }
+
+// The first live run scored zero capture on listings the model had plainly
+// decomposed, because a terse label never equals a fuller extracted wording.
+// Capture asks whether the substance is there.
+func TestALabelIsCapturedByAFullerWordingOfTheSameThing(t *testing.T) {
+	listing := Listing{
+		ID: "wording",
+		Material: []profile.Aspect{
+			aspect(profile.Skill, "Go", nil),
+			aspect(profile.Skill, "multi-region systems", nil),
+		},
+	}
+	sources := map[uint]string{1: "Must have strong Go and production SQLite experience. " +
+		"Experience operating multi-region systems is essential."}
+	extracted := []profile.Aspect{
+		cite(aspect(profile.Skill, "Must have strong Go and production SQLite experience", nil),
+			"Must have strong Go"),
+		cite(aspect(profile.Skill, "Experience operating multi-region systems is essential", nil),
+			"multi-region systems is essential"),
+	}
+	score := ScoreClassifier(listing, extracted, sources)
+	if score.Captured != 2 || score.CaptureRate != 1 {
+		t.Fatalf("capture = %d of %d (%.2f), want both", score.Captured, score.Material, score.CaptureRate)
+	}
+}
+
+// Containment runs one way: the label is the terser statement, and a one-word
+// extraction does not capture a detailed requirement.
+func TestAShorterExtractionDoesNotCaptureADetailedLabel(t *testing.T) {
+	listing := Listing{
+		ID:       "reverse",
+		Material: []profile.Aspect{aspect(profile.Skill, "eight years of production Go on multi-region systems", nil)},
+	}
+	sources := map[uint]string{1: "Go"}
+	extracted := []profile.Aspect{cite(aspect(profile.Skill, "Go", nil), "Go")}
+	if score := ScoreClassifier(listing, extracted, sources); score.Captured != 0 {
+		t.Fatalf("a one-word extraction captured a detailed label: %+v", score)
+	}
+}
+
+// The type still has to match: a location named in a skill is not the location
+// constraint.
+func TestCaptureStillRequiresTheSameType(t *testing.T) {
+	listing := Listing{
+		ID:       "types",
+		Material: []profile.Aspect{aspect(profile.Location, "Melbourne", map[string]any{"place": "Melbourne"})},
+	}
+	sources := map[uint]string{1: "Melbourne"}
+	extracted := []profile.Aspect{cite(aspect(profile.Skill, "Melbourne-based team", nil), "Melbourne")}
+	if score := ScoreClassifier(listing, extracted, sources); score.Captured != 0 {
+		t.Fatalf("a skill captured a location label: %+v", score)
+	}
+}

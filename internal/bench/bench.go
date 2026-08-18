@@ -199,14 +199,21 @@ func ScoreClassifier(listing Listing, extracted []profile.Aspect, sources map[ui
 		}
 	}
 
-	// Capture is by meaning key: "must have Go" and "Go is required" are one
-	// aspect here because they are one aspect everywhere else in the product.
+	// Capture asks whether the substance the recruiter marked is present, not
+	// whether the model chose the same words for it.
+	//
+	// Meaning-key equality alone was the first rule here, and the first live run
+	// showed why it is wrong: a label reading "Go" never equals an extracted
+	// aspect reading "Must have strong Go and production SQLite experience",
+	// though a recruiter would obviously count it as captured. So a label counts
+	// when an extracted aspect of the same type either means the same thing by
+	// the product's own duplicate rule, or contains the labelled wording.
 	found := map[string]profile.Aspect{}
 	for _, aspect := range extracted {
 		found[profile.MeaningKey(aspect)] = aspect
 	}
 	for _, want := range listing.Material {
-		if _, ok := found[profile.MeaningKey(want)]; ok {
+		if captured(want, extracted, found) {
 			score.Captured++
 		}
 	}
@@ -249,6 +256,30 @@ func ScoreClassifier(listing Listing, extracted []profile.Aspect, sources map[ui
 	score.ConstraintsExact = len(score.Misreported) == 0
 	score.Pass = score.AllCited && score.NoUnsupported && score.CaptureMet && score.ConstraintsExact
 	return score
+}
+
+// captured reports whether one labelled aspect is present in what was
+// extracted. Containment is one-directional on purpose: the label is the
+// shorter, terser statement, and finding it inside a fuller one is the case
+// this rule exists for. The reverse — a one-word extraction "matching" a
+// detailed label — is not capture.
+func captured(want profile.Aspect, extracted []profile.Aspect, byKey map[string]profile.Aspect) bool {
+	if _, ok := byKey[profile.MeaningKey(want)]; ok {
+		return true
+	}
+	needle := normalize(want.Wording)
+	if needle == "" {
+		return false
+	}
+	for _, got := range extracted {
+		if got.Type != want.Type {
+			continue
+		}
+		if strings.Contains(normalize(got.Wording), needle) {
+			return true
+		}
+	}
+	return false
 }
 
 // cited reports whether an aspect carries at least one citation that resolves.
@@ -318,6 +349,11 @@ func canonical(in map[string]any) map[string]any {
 type TopFive struct {
 	ScenarioID string   `json:"scenarioId"`
 	RoleIDs    []string `json:"roleIds"`
+	// Note records why a scenario produced nothing, when it produced nothing.
+	// An empty top five because the candidate profile could not be built is not
+	// the matcher failing, and a record that shows both as "0 plausible" sends
+	// the reader after the wrong thing.
+	Note string `json:"note,omitempty"`
 }
 
 // ScenarioScore is one scenario's outcome.
@@ -327,6 +363,8 @@ type ScenarioScore struct {
 	Distinct  []string `json:"distinct"`
 	Plausible int      `json:"plausible"`
 	Met       bool     `json:"met"`
+	// Note carries the reason a scenario produced nothing, verbatim.
+	Note string `json:"note,omitempty"`
 }
 
 // MatchingScore is the benchmark's outcome across the five scenarios.
@@ -351,7 +389,7 @@ func ScoreMatching(corpus *Corpus, results []TopFive) MatchingScore {
 	out := MatchingScore{Scenarios: []ScenarioScore{}}
 	for _, result := range results {
 		seen := map[string]bool{}
-		score := ScenarioScore{ScenarioID: result.ScenarioID, Distinct: []string{}}
+		score := ScenarioScore{ScenarioID: result.ScenarioID, Distinct: []string{}, Note: result.Note}
 		for _, id := range result.RoleIDs {
 			if seen[id] {
 				continue

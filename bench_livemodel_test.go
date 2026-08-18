@@ -136,15 +136,22 @@ func runMatching(t *testing.T, corpus *bench.Corpus, classifyModel, embedModel s
 			roleID := e.roleWithListing(t, listing.Title, listing.Markdown)
 			byRole[roleID] = listing.ID
 		}
-		candidateID := scenarioCandidate(t, e, scenario)
+		candidateID, note := scenarioCandidate(t, e, scenario)
 
 		shortlist, err := e.shortlist.Build(e.initiative, candidateID)
 		if err != nil {
-			t.Fatalf("%s: building the shortlist: %v", scenario.ID, err)
+			// A refusal is the scenario's outcome, recorded as itself rather
+			// than as an empty top five that reads like a ranking failure.
+			t.Logf("%s: the shortlist was refused: %v", scenario.ID, err)
+			results = append(results, bench.TopFive{
+				ScenarioID: scenario.ID, RoleIDs: []string{},
+				Note: "no shortlist: " + err.Error(),
+			})
+			continue
 		}
 		eligible = shortlist.Eligible
 
-		top := bench.TopFive{ScenarioID: scenario.ID, RoleIDs: []string{}}
+		top := bench.TopFive{ScenarioID: scenario.ID, RoleIDs: []string{}, Note: note}
 		for _, entry := range shortlist.Entries {
 			if len(top.RoleIDs) == 5 {
 				break
@@ -162,7 +169,7 @@ func runMatching(t *testing.T, corpus *bench.Corpus, classifyModel, embedModel s
 //
 // The name is invented and belongs to this repository, not to the scenario: the
 // corpus carries a resume, and a benchmark needs a record to hang it on.
-func scenarioCandidate(t *testing.T, e *shortlistEnv, scenario bench.Scenario) uint {
+func scenarioCandidate(t *testing.T, e *shortlistEnv, scenario bench.Scenario) (uint, string) {
 	t.Helper()
 	c, err := e.records.CreateCandidate(models.Candidate{FullName: "Benchmark subject " + scenario.ID})
 	if err != nil {
@@ -187,15 +194,15 @@ func scenarioCandidate(t *testing.T, e *shortlistEnv, scenario bench.Scenario) u
 	p, err := e.profiles.Classify(c.ID)
 	if err != nil {
 		// A model that cannot decompose the resume cannot be matched with. The
-		// scenario still runs, on the record alone, and scores what that is
-		// worth — which is the honest answer rather than a skipped scenario.
+		// scenario still runs, and the reason travels into the record so an
+		// empty top five is not read as the matcher failing.
 		t.Logf("%s: the model produced no usable candidate profile: %v", scenario.ID, err)
-		return c.ID
+		return c.ID, "no candidate profile: " + err.Error()
 	}
 	if _, err := e.profiles.Approve(p.ID); err != nil {
 		t.Fatalf("approving the profile: %v", err)
 	}
-	return c.ID
+	return c.ID, ""
 }
 
 // aspectsOf reads back what the classifier stored, so the benchmark scores what

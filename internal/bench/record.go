@@ -144,7 +144,11 @@ func (r *Record) Summary() string {
 	fmt.Fprintf(&b, "\nMatching: %d of %d scenarios reached three plausible\n",
 		r.Matching.MetCount, len(r.Matching.Scenarios))
 	for _, s := range r.Matching.Scenarios {
-		fmt.Fprintf(&b, "  %s: %d plausible of %d distinct\n", s.ScenarioID, s.Plausible, len(s.Distinct))
+		fmt.Fprintf(&b, "  %s: %d plausible of %d distinct", s.ScenarioID, s.Plausible, len(s.Distinct))
+		if s.Note != "" {
+			fmt.Fprintf(&b, " — %s", s.Note)
+		}
+		b.WriteString("\n")
 	}
 
 	fmt.Fprintf(&b, "\nEligible roles: %d\n", r.EligibleRoles)

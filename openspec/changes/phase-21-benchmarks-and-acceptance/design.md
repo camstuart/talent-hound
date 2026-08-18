@@ -34,7 +34,13 @@ A changed hash does not fail a run. It appears in the record, so "it passes now"
 
 The classifier score reports citation coverage, unsupported critical constraints, material-aspect capture, and structured-constraint reproduction as four results plus one pass. A single boolean would answer "did it pass" and lose the only thing a failing run is useful for: which of the four it failed.
 
-Capture is measured by meaning key, not string equality — the same key Phase 10 already uses to detect duplicate aspects, so "must have Go" and "Go is required" are one aspect here as they are everywhere else.
+Capture asks whether the substance the recruiter labelled is present, not whether the model chose the same words for it. A label counts when an extracted aspect of the same type either means the same thing by Phase 10's duplicate rule — the same meaning key, so "must have Go" and "Go is required" are one aspect here as they are everywhere else — or contains the labelled wording.
+
+The meaning key alone was the first rule, and the first live run showed why it is wrong: a label reading "Go" never equals an extracted aspect reading "Must have strong Go and production SQLite experience", though a recruiter labelling that listing would obviously count it as captured. Containment runs one way only. The label is the terser statement, and finding it inside a fuller one is the case this rule exists for; a one-word extraction does not capture a detailed requirement.
+
+### A scenario that produced nothing says why
+
+An empty top five because the candidate profile could not be built is not the matcher failing, and a record showing both as "0 plausible" sends the reader after the wrong thing. The reason travels with the scenario, verbatim, into the record.
 
 ### Matching takes ratings, it does not produce them
 
@@ -54,5 +60,5 @@ The benchmark needs real models, so it lives where the existing live-model gates
 
 - **The frozen corpus is invented.** Stated in the corpus and in the record. It exercises the harness; it does not substitute for the recruiter's real placements, and the acceptance record says so.
 - **Five scenarios is a small sample.** The PRD's choice, kept deliberately.
-- **Meaning-key matching can merge two aspects a recruiter meant separately.** It merges them everywhere else in the product too, so the benchmark measures what the product does rather than something kinder.
+- **Containment can count a label as captured inside an aspect that is mostly about something else.** The alternative — the meaning key alone — scored a correctly decomposed listing at zero, which is the worse error: it makes a working model look broken.
 - **Nothing enforces that tuning avoided the corpus.** Only the hash and the record make a change visible.
