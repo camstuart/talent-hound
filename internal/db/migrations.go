@@ -478,6 +478,53 @@ var migrations = []migration{
 				"`updated_at` datetime)",
 		},
 	},
+	{
+		Version: 13,
+		Name:    "discovery_and_disclosure",
+		// Two records with two lifetimes, deliberately. The search keeps the
+		// visible query because reproducing a search needs it and the
+		// initiative is where the recruiter already has that information. The
+		// disclosure event keeps none of it, because the audit log is the thing
+		// that might be exported, reviewed, or retained longest.
+		SQL: []string{
+			"CREATE TABLE `searches` (" +
+				"`id` integer PRIMARY KEY AUTOINCREMENT," +
+				"`initiative_id` integer NOT NULL REFERENCES `initiatives`(`id`)," +
+				"`provider` text NOT NULL," +
+				// Exactly what was sent, byte for byte.
+				"`query` text NOT NULL," +
+				"`result_count` integer NOT NULL DEFAULT 0," +
+				"`skipped_count` integer NOT NULL DEFAULT 0," +
+				"`partial` numeric NOT NULL DEFAULT 0," +
+				"`failure_reason` text NOT NULL DEFAULT ''," +
+				"`sent_at` datetime NOT NULL," +
+				"`created_at` datetime," +
+				"`updated_at` datetime)",
+			"CREATE INDEX `idx_searches_initiative` ON `searches`(`initiative_id`,`sent_at`)",
+			// No query column, no content column, and none may be added: the
+			// point of this table is what it does not hold.
+			"CREATE TABLE `disclosure_events` (" +
+				"`id` integer PRIMARY KEY AUTOINCREMENT," +
+				"`occurred_at` datetime NOT NULL," +
+				"`provider` text NOT NULL," +
+				"`task` text NOT NULL," +
+				// A comma-separated list of category names — "professional
+				// requirements", never the requirements themselves.
+				"`categories` text NOT NULL DEFAULT ''," +
+				"`initiative_id` integer REFERENCES `initiatives`(`id`)," +
+				"`candidate_id` integer REFERENCES `candidates`(`id`)," +
+				"`role_id` integer REFERENCES `roles`(`id`)," +
+				"`created_at` datetime," +
+				"`updated_at` datetime)",
+			"CREATE INDEX `idx_disclosure_events_time` ON `disclosure_events`(`occurred_at`)",
+			// A role's source links carry whether they are the current source
+			// or a historical one. Historical artifacts stay visible for
+			// provenance and leave current retrieval.
+			"ALTER TABLE `artifact_links` ADD COLUMN `historical` numeric NOT NULL DEFAULT 0",
+			"ALTER TABLE `roles` ADD COLUMN `content_hash` text NOT NULL DEFAULT ''",
+			"ALTER TABLE `roles` ADD COLUMN `retrieved_at` datetime",
+		},
+	},
 }
 
 // badVectorLength is the condition an embedding is refused on: a blob that is

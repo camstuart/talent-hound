@@ -70,8 +70,14 @@ type Role struct {
 	Source         string        `json:"source"`
 	Origin         RoleOrigin    `gorm:"not null" json:"origin"`
 	LifecycleState RoleLifecycle `gorm:"not null" json:"lifecycleState"`
-	CreatedAt      time.Time     `json:"createdAt"`
-	UpdatedAt      time.Time     `json:"updatedAt"`
+	// ContentHash fingerprints the current source content, so rediscovering a
+	// listing can tell "nothing happened" from "the listing changed".
+	ContentHash string `gorm:"not null;default:''" json:"contentHash"`
+	// RetrievedAt is when the listing was last seen. Staleness is measured from
+	// it, against a clock the caller supplies.
+	RetrievedAt *time.Time `json:"retrievedAt"`
+	CreatedAt   time.Time  `json:"createdAt"`
+	UpdatedAt   time.Time  `json:"updatedAt"`
 }
 
 // Validate normalises r in place and reports the first problem found.

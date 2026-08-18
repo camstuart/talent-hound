@@ -99,6 +99,10 @@ type ArtifactLink struct {
 	ArtifactID uint       `gorm:"not null" json:"artifactId"`
 	TargetType LinkTarget `gorm:"not null" json:"targetType"`
 	TargetID   uint       `gorm:"not null" json:"targetId"`
-	CreatedAt  time.Time  `json:"createdAt"`
-	UpdatedAt  time.Time  `json:"updatedAt"`
+	// Historical marks a role's superseded source. The artifact stays visible
+	// so an earlier citation still resolves, and leaves current retrieval so a
+	// match is never made against a listing that has been replaced.
+	Historical bool      `gorm:"not null;default:false" json:"historical"`
+	CreatedAt  time.Time `json:"createdAt"`
+	UpdatedAt  time.Time `json:"updatedAt"`
 }

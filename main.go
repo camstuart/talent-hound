@@ -45,6 +45,11 @@ func main() {
 	records := NewRecordService(gdb)
 	classify := NewClassifyService(gdb, registry, ollama)
 	profiles := NewCandidateProfileService(gdb, classify, records)
+	artifacts := NewArtifactService(gdb)
+	criteria := NewCriteriaService(gdb, registry, ollama, profiles)
+	// The Exa key lives in the Windows credential store and is read at call
+	// time; an empty key means searches refuse rather than being unavailable.
+	exa := platform.NewExa("")
 
 	// Create a new Wails application by providing the necessary options.
 	// Variables 'Name' and 'Description' are for application metadata.
@@ -58,7 +63,7 @@ func main() {
 			application.NewService(&GreetService{}),
 			application.NewService(NewInitiativeService(gdb)),
 			application.NewService(records),
-			application.NewService(NewArtifactService(gdb)),
+			application.NewService(artifacts),
 			application.NewService(jobs),
 			application.NewService(extraction),
 			application.NewService(NewChunkService(gdb, jobs)),
@@ -68,7 +73,8 @@ func main() {
 			application.NewService(classify),
 			application.NewService(profiles),
 			application.NewService(NewRoleProfileService(gdb, classify)),
-			application.NewService(NewCriteriaService(gdb, registry, ollama, profiles)),
+			application.NewService(criteria),
+			application.NewService(NewDiscoveryService(gdb, exa, profiles, criteria, records, artifacts)),
 			application.NewService(NewCredentialService()),
 		},
 		Assets: application.AssetOptions{
