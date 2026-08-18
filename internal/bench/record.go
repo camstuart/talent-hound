@@ -90,18 +90,55 @@ func sortedKeys(in map[string]Assignment) []string {
 	return out
 }
 
-// ClassifierPass reports whether every scored listing passed.
-func (r *Record) ClassifierPass() bool {
-	if len(r.Classifier) == 0 {
-		return false
-	}
-	for _, score := range r.Classifier {
-		if !score.Pass {
-			return false
-		}
-	}
-	return true
+// ClassifierTotals is the benchmark's four conditions over the whole corpus.
+//
+// The PRD states them over the corpus, not per listing: "at least 80% of
+// recruiter-labeled material aspects are captured" is one number about the
+// held-out set. Requiring every listing to clear 80% by itself is a stricter
+// bar than the one the product was accepted against, and inventing a harder
+// test is as wrong as inventing an easier one.
+type ClassifierTotals struct {
+	Listings    int     `json:"listings"`
+	Material    int     `json:"material"`
+	Captured    int     `json:"captured"`
+	CaptureRate float64 `json:"captureRate"`
+	Uncited     int     `json:"uncited"`
+	Unsupported int     `json:"unsupported"`
+	Misreported int     `json:"misreported"`
+
+	AllCited         bool `json:"allCited"`
+	NoUnsupported    bool `json:"noUnsupported"`
+	CaptureMet       bool `json:"captureMet"`
+	ConstraintsExact bool `json:"constraintsExact"`
+	Pass             bool `json:"pass"`
 }
+
+// ClassifierTotals sums the per-listing scores. The per-listing detail stays,
+// because a corpus-level failure with no way to see which listing caused it is
+// a number nobody can act on.
+func (r *Record) ClassifierTotals() ClassifierTotals {
+	out := ClassifierTotals{Listings: len(r.Classifier)}
+	for _, score := range r.Classifier {
+		out.Material += score.Material
+		out.Captured += score.Captured
+		out.Uncited += len(score.Uncited)
+		out.Unsupported += len(score.Unsupported)
+		out.Misreported += len(score.Misreported)
+	}
+	if out.Material > 0 {
+		out.CaptureRate = float64(out.Captured) / float64(out.Material)
+	}
+	out.AllCited = out.Uncited == 0
+	out.NoUnsupported = out.Unsupported == 0
+	out.CaptureMet = out.Material > 0 && out.CaptureRate >= CaptureThreshold
+	out.ConstraintsExact = out.Misreported == 0
+	out.Pass = out.Listings > 0 && out.AllCited && out.NoUnsupported &&
+		out.CaptureMet && out.ConstraintsExact
+	return out
+}
+
+// ClassifierPass reports whether the corpus as a whole met the four conditions.
+func (r *Record) ClassifierPass() bool { return r.ClassifierTotals().Pass }
 
 // Conclude sets the outcome from what the run found.
 func (r *Record) Conclude() {
@@ -115,6 +152,13 @@ func (r *Record) JSON() ([]byte, error) {
 		return nil, fmt.Errorf("writing the record: %w", err)
 	}
 	return raw, nil
+}
+
+func passWord(pass bool) string {
+	if pass {
+		return "pass"
+	}
+	return "fail"
 }
 
 // Summary is the record as read. It leads with what it ran against, because a
@@ -131,6 +175,11 @@ func (r *Record) Summary() string {
 		b.WriteString("Cloud-assisted: this run cannot pass the PoC.\n")
 	}
 
+	totals := r.ClassifierTotals()
+	fmt.Fprintf(&b, "\nClassifier over the corpus: capture %.0f%% (%d/%d), "+
+		"uncited %d, unsupported %d, misreported %d — %s\n",
+		totals.CaptureRate*100, totals.Captured, totals.Material,
+		totals.Uncited, totals.Unsupported, totals.Misreported, passWord(totals.Pass))
 	fmt.Fprintf(&b, "\nClassifier: %d listings\n", len(r.Classifier))
 	for _, score := range r.Classifier {
 		fmt.Fprintf(&b, "  %s: capture %.0f%% (%d/%d), cited %v, no unsupported %v, constraints exact %v\n",

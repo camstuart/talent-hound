@@ -531,3 +531,51 @@ func TestCaptureStillRequiresTheSameType(t *testing.T) {
 		t.Fatalf("a skill captured a location label: %+v", score)
 	}
 }
+
+// The PRD states its classifier bars over the corpus, not per listing. A run
+// where one listing is weak and the rest are strong passes if the corpus as a
+// whole clears 80% — requiring every listing to clear it alone would be a
+// harder test than the one the product was accepted against.
+func TestTheClassifierBarIsMeasuredOverTheCorpus(t *testing.T) {
+	corpus, _ := Load()
+	record := NewRecord("2026-08-18T00:00:00Z", "0.1.0-poc", "darwin/arm64", corpus, "hash", nil)
+	record.Classifier = []ClassifierScore{
+		{Material: 10, Captured: 10, CaptureRate: 1},
+		{Material: 10, Captured: 10, CaptureRate: 1},
+		// Well under the bar by itself, and the corpus is still at 87%.
+		{Material: 10, Captured: 6, CaptureRate: 0.6},
+	}
+	totals := record.ClassifierTotals()
+	if totals.Captured != 26 || totals.Material != 30 {
+		t.Fatalf("totals = %d/%d, want 26/30", totals.Captured, totals.Material)
+	}
+	if !totals.CaptureMet || !totals.Pass {
+		t.Fatalf("a corpus at %.0f%% did not pass: %+v", totals.CaptureRate*100, totals)
+	}
+}
+
+func TestOneUncitedAspectAnywhereFailsTheCorpus(t *testing.T) {
+	corpus, _ := Load()
+	record := NewRecord("2026-08-18T00:00:00Z", "0.1.0-poc", "darwin/arm64", corpus, "hash", nil)
+	record.Classifier = []ClassifierScore{
+		{Material: 10, Captured: 10, CaptureRate: 1},
+		{Material: 10, Captured: 10, CaptureRate: 1, Uncited: []string{"invented"}},
+	}
+	totals := record.ClassifierTotals()
+	if totals.AllCited || totals.Pass {
+		t.Fatalf("one uncited aspect passed: %+v", totals)
+	}
+}
+
+func TestACorpusJustUnderTheBarFails(t *testing.T) {
+	corpus, _ := Load()
+	record := NewRecord("2026-08-18T00:00:00Z", "0.1.0-poc", "darwin/arm64", corpus, "hash", nil)
+	record.Classifier = []ClassifierScore{{Material: 100, Captured: 79, CaptureRate: 0.79}}
+	if totals := record.ClassifierTotals(); totals.CaptureMet || totals.Pass {
+		t.Fatalf("79%% over the corpus passed: %+v", totals)
+	}
+	record.Classifier = []ClassifierScore{{Material: 100, Captured: 80, CaptureRate: 0.80}}
+	if totals := record.ClassifierTotals(); !totals.CaptureMet {
+		t.Fatalf("80%% over the corpus failed: %+v", totals)
+	}
+}
