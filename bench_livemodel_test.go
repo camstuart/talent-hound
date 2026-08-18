@@ -129,6 +129,13 @@ func runMatching(t *testing.T, corpus *bench.Corpus, classifyModel, embedModel s
 			t.Fatalf("assigning the embedding model: %v", err)
 		}
 
+		// The candidate is profiled before the listings are brought in. Setting
+		// up twenty listings runs the embedding model, which evicts the classify
+		// model from memory on a laptop this size, and the resume call then pays
+		// a full reload inside its own timeout. Recruiters work this way round
+		// too: the candidate first, then the roles.
+		candidateID, note := scenarioCandidate(t, e, scenario)
+
 		// Every listing is in scope for every scenario: the benchmark measures
 		// ranking, not filtering.
 		byRole := map[uint]string{}
@@ -136,7 +143,6 @@ func runMatching(t *testing.T, corpus *bench.Corpus, classifyModel, embedModel s
 			roleID := e.roleWithListing(t, listing.Title, listing.Markdown)
 			byRole[roleID] = listing.ID
 		}
-		candidateID, note := scenarioCandidate(t, e, scenario)
 
 		shortlist, err := e.shortlist.Build(e.initiative, candidateID)
 		if err != nil {

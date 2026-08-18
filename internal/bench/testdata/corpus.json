@@ -1,6 +1,6 @@
 {
   "synthetic": true,
-  "note": "Every candidate, company, role, and rating in this corpus is invented. It exists so the benchmark harness, its thresholds, and its record can be exercised end to end before the recruiter's real frozen corpus arrives, and it is not a substitute for that corpus. No real candidate information appears in this repository.",
+  "note": "Every candidate, company, role, and rating in this corpus is invented. It exists so the benchmark harness, its thresholds, and its record can be exercised end to end before the recruiter's real frozen corpus arrives, and it is not a substitute for that corpus. No real candidate information appears in this repository. Structured labels use the product's own field vocabulary from internal/profile/taxonomy.go: labels written in any other field names could never match, however well a model performed.",
   "scenarios": [
     {
       "id": "go-platform-melbourne",
@@ -187,7 +187,8 @@
           "type": "location",
           "wording": "Melbourne",
           "structured": {
-            "place": "Melbourne"
+            "city": "Melbourne",
+            "country": "Australia"
           }
         },
         {
@@ -201,14 +202,16 @@
           "type": "employment_type",
           "wording": "permanent",
           "structured": {
-            "employmentType": "permanent"
+            "employment_type": "permanent"
           }
         },
         {
           "type": "work_rights",
           "wording": "existing Australian work rights",
           "structured": {
-            "rights": "australian work rights"
+            "country": "Australia",
+            "status": "unknown",
+            "sponsorship_required": false
           }
         },
         {
@@ -216,8 +219,9 @@
           "wording": "AUD 180,000 base plus superannuation",
           "structured": {
             "currency": "AUD",
-            "amount": 180000,
-            "basis": "annual"
+            "minimum": 180000,
+            "period": "year",
+            "basis": "base"
           }
         }
       ],
@@ -226,7 +230,8 @@
           "type": "location",
           "wording": "Melbourne",
           "structured": {
-            "place": "Melbourne"
+            "city": "Melbourne",
+            "country": "Australia"
           }
         },
         {
@@ -240,14 +245,16 @@
           "type": "employment_type",
           "wording": "permanent",
           "structured": {
-            "employmentType": "permanent"
+            "employment_type": "permanent"
           }
         },
         {
           "type": "work_rights",
           "wording": "existing Australian work rights",
           "structured": {
-            "rights": "australian work rights"
+            "country": "Australia",
+            "status": "unknown",
+            "sponsorship_required": false
           }
         },
         {
@@ -255,8 +262,9 @@
           "wording": "AUD 180,000 base plus superannuation",
           "structured": {
             "currency": "AUD",
-            "amount": 180000,
-            "basis": "annual"
+            "minimum": 180000,
+            "period": "year",
+            "basis": "base"
           }
         }
       ]
@@ -290,7 +298,8 @@
           "type": "location",
           "wording": "Sydney",
           "structured": {
-            "place": "Sydney"
+            "city": "Sydney",
+            "country": "Australia"
           }
         },
         {
@@ -304,14 +313,16 @@
           "type": "employment_type",
           "wording": "permanent",
           "structured": {
-            "employmentType": "permanent"
+            "employment_type": "permanent"
           }
         },
         {
           "type": "work_rights",
           "wording": "existing Australian work rights",
           "structured": {
-            "rights": "australian work rights"
+            "country": "Australia",
+            "status": "unknown",
+            "sponsorship_required": false
           }
         },
         {
@@ -319,8 +330,9 @@
           "wording": "AUD 150,000 base plus superannuation",
           "structured": {
             "currency": "AUD",
-            "amount": 150000,
-            "basis": "annual"
+            "minimum": 150000,
+            "period": "year",
+            "basis": "base"
           }
         }
       ],
@@ -329,7 +341,8 @@
           "type": "location",
           "wording": "Sydney",
           "structured": {
-            "place": "Sydney"
+            "city": "Sydney",
+            "country": "Australia"
           }
         },
         {
@@ -343,14 +356,16 @@
           "type": "employment_type",
           "wording": "permanent",
           "structured": {
-            "employmentType": "permanent"
+            "employment_type": "permanent"
           }
         },
         {
           "type": "work_rights",
           "wording": "existing Australian work rights",
           "structured": {
-            "rights": "australian work rights"
+            "country": "Australia",
+            "status": "unknown",
+            "sponsorship_required": false
           }
         },
         {
@@ -358,8 +373,9 @@
           "wording": "AUD 150,000 base plus superannuation",
           "structured": {
             "currency": "AUD",
-            "amount": 150000,
-            "basis": "annual"
+            "minimum": 150000,
+            "period": "year",
+            "basis": "base"
           }
         }
       ]
@@ -393,7 +409,8 @@
           "type": "location",
           "wording": "Brisbane",
           "structured": {
-            "place": "Brisbane"
+            "city": "Brisbane",
+            "country": "Australia"
           }
         },
         {
@@ -407,14 +424,16 @@
           "type": "employment_type",
           "wording": "permanent",
           "structured": {
-            "employmentType": "permanent"
+            "employment_type": "permanent"
           }
         },
         {
           "type": "work_rights",
           "wording": "existing Australian work rights",
           "structured": {
-            "rights": "australian work rights"
+            "country": "Australia",
+            "status": "unknown",
+            "sponsorship_required": false
           }
         },
         {
@@ -422,8 +441,9 @@
           "wording": "AUD 165,000 base plus superannuation",
           "structured": {
             "currency": "AUD",
-            "amount": 165000,
-            "basis": "annual"
+            "minimum": 165000,
+            "period": "year",
+            "basis": "base"
           }
         }
       ],
@@ -432,7 +452,8 @@
           "type": "location",
           "wording": "Brisbane",
           "structured": {
-            "place": "Brisbane"
+            "city": "Brisbane",
+            "country": "Australia"
           }
         },
         {
@@ -446,14 +467,16 @@
           "type": "employment_type",
           "wording": "permanent",
           "structured": {
-            "employmentType": "permanent"
+            "employment_type": "permanent"
           }
         },
         {
           "type": "work_rights",
           "wording": "existing Australian work rights",
           "structured": {
-            "rights": "australian work rights"
+            "country": "Australia",
+            "status": "unknown",
+            "sponsorship_required": false
           }
         },
         {
@@ -461,8 +484,9 @@
           "wording": "AUD 165,000 base plus superannuation",
           "structured": {
             "currency": "AUD",
-            "amount": 165000,
-            "basis": "annual"
+            "minimum": 165000,
+            "period": "year",
+            "basis": "base"
           }
         }
       ]
@@ -496,7 +520,8 @@
           "type": "location",
           "wording": "Melbourne",
           "structured": {
-            "place": "Melbourne"
+            "city": "Melbourne",
+            "country": "Australia"
           }
         },
         {
@@ -510,14 +535,16 @@
           "type": "employment_type",
           "wording": "permanent",
           "structured": {
-            "employmentType": "permanent"
+            "employment_type": "permanent"
           }
         },
         {
           "type": "work_rights",
           "wording": "existing Australian work rights",
           "structured": {
-            "rights": "australian work rights"
+            "country": "Australia",
+            "status": "unknown",
+            "sponsorship_required": false
           }
         },
         {
@@ -525,8 +552,9 @@
           "wording": "AUD 155,000 base plus superannuation",
           "structured": {
             "currency": "AUD",
-            "amount": 155000,
-            "basis": "annual"
+            "minimum": 155000,
+            "period": "year",
+            "basis": "base"
           }
         }
       ],
@@ -535,7 +563,8 @@
           "type": "location",
           "wording": "Melbourne",
           "structured": {
-            "place": "Melbourne"
+            "city": "Melbourne",
+            "country": "Australia"
           }
         },
         {
@@ -549,14 +578,16 @@
           "type": "employment_type",
           "wording": "permanent",
           "structured": {
-            "employmentType": "permanent"
+            "employment_type": "permanent"
           }
         },
         {
           "type": "work_rights",
           "wording": "existing Australian work rights",
           "structured": {
-            "rights": "australian work rights"
+            "country": "Australia",
+            "status": "unknown",
+            "sponsorship_required": false
           }
         },
         {
@@ -564,8 +595,9 @@
           "wording": "AUD 155,000 base plus superannuation",
           "structured": {
             "currency": "AUD",
-            "amount": 155000,
-            "basis": "annual"
+            "minimum": 155000,
+            "period": "year",
+            "basis": "base"
           }
         }
       ]
@@ -599,7 +631,8 @@
           "type": "location",
           "wording": "Perth",
           "structured": {
-            "place": "Perth"
+            "city": "Perth",
+            "country": "Australia"
           }
         },
         {
@@ -613,14 +646,16 @@
           "type": "employment_type",
           "wording": "permanent",
           "structured": {
-            "employmentType": "permanent"
+            "employment_type": "permanent"
           }
         },
         {
           "type": "work_rights",
           "wording": "existing Australian work rights",
           "structured": {
-            "rights": "australian work rights"
+            "country": "Australia",
+            "status": "unknown",
+            "sponsorship_required": false
           }
         },
         {
@@ -628,8 +663,9 @@
           "wording": "AUD 210,000 base plus superannuation",
           "structured": {
             "currency": "AUD",
-            "amount": 210000,
-            "basis": "annual"
+            "minimum": 210000,
+            "period": "year",
+            "basis": "base"
           }
         }
       ],
@@ -638,7 +674,8 @@
           "type": "location",
           "wording": "Perth",
           "structured": {
-            "place": "Perth"
+            "city": "Perth",
+            "country": "Australia"
           }
         },
         {
@@ -652,14 +689,16 @@
           "type": "employment_type",
           "wording": "permanent",
           "structured": {
-            "employmentType": "permanent"
+            "employment_type": "permanent"
           }
         },
         {
           "type": "work_rights",
           "wording": "existing Australian work rights",
           "structured": {
-            "rights": "australian work rights"
+            "country": "Australia",
+            "status": "unknown",
+            "sponsorship_required": false
           }
         },
         {
@@ -667,8 +706,9 @@
           "wording": "AUD 210,000 base plus superannuation",
           "structured": {
             "currency": "AUD",
-            "amount": 210000,
-            "basis": "annual"
+            "minimum": 210000,
+            "period": "year",
+            "basis": "base"
           }
         }
       ]
@@ -702,7 +742,8 @@
           "type": "location",
           "wording": "Sydney",
           "structured": {
-            "place": "Sydney"
+            "city": "Sydney",
+            "country": "Australia"
           }
         },
         {
@@ -716,14 +757,16 @@
           "type": "employment_type",
           "wording": "permanent",
           "structured": {
-            "employmentType": "permanent"
+            "employment_type": "permanent"
           }
         },
         {
           "type": "work_rights",
           "wording": "existing Australian work rights",
           "structured": {
-            "rights": "australian work rights"
+            "country": "Australia",
+            "status": "unknown",
+            "sponsorship_required": false
           }
         },
         {
@@ -731,8 +774,9 @@
           "wording": "AUD 140,000 base plus superannuation",
           "structured": {
             "currency": "AUD",
-            "amount": 140000,
-            "basis": "annual"
+            "minimum": 140000,
+            "period": "year",
+            "basis": "base"
           }
         }
       ],
@@ -741,7 +785,8 @@
           "type": "location",
           "wording": "Sydney",
           "structured": {
-            "place": "Sydney"
+            "city": "Sydney",
+            "country": "Australia"
           }
         },
         {
@@ -755,14 +800,16 @@
           "type": "employment_type",
           "wording": "permanent",
           "structured": {
-            "employmentType": "permanent"
+            "employment_type": "permanent"
           }
         },
         {
           "type": "work_rights",
           "wording": "existing Australian work rights",
           "structured": {
-            "rights": "australian work rights"
+            "country": "Australia",
+            "status": "unknown",
+            "sponsorship_required": false
           }
         },
         {
@@ -770,8 +817,9 @@
           "wording": "AUD 140,000 base plus superannuation",
           "structured": {
             "currency": "AUD",
-            "amount": 140000,
-            "basis": "annual"
+            "minimum": 140000,
+            "period": "year",
+            "basis": "base"
           }
         }
       ]
@@ -805,7 +853,8 @@
           "type": "location",
           "wording": "Canberra",
           "structured": {
-            "place": "Canberra"
+            "city": "Canberra",
+            "country": "Australia"
           }
         },
         {
@@ -819,14 +868,16 @@
           "type": "employment_type",
           "wording": "permanent",
           "structured": {
-            "employmentType": "permanent"
+            "employment_type": "permanent"
           }
         },
         {
           "type": "work_rights",
           "wording": "existing Australian work rights",
           "structured": {
-            "rights": "australian work rights"
+            "country": "Australia",
+            "status": "unknown",
+            "sponsorship_required": false
           }
         },
         {
@@ -834,8 +885,9 @@
           "wording": "AUD 175,000 base plus superannuation",
           "structured": {
             "currency": "AUD",
-            "amount": 175000,
-            "basis": "annual"
+            "minimum": 175000,
+            "period": "year",
+            "basis": "base"
           }
         }
       ],
@@ -844,7 +896,8 @@
           "type": "location",
           "wording": "Canberra",
           "structured": {
-            "place": "Canberra"
+            "city": "Canberra",
+            "country": "Australia"
           }
         },
         {
@@ -858,14 +911,16 @@
           "type": "employment_type",
           "wording": "permanent",
           "structured": {
-            "employmentType": "permanent"
+            "employment_type": "permanent"
           }
         },
         {
           "type": "work_rights",
           "wording": "existing Australian work rights",
           "structured": {
-            "rights": "australian work rights"
+            "country": "Australia",
+            "status": "unknown",
+            "sponsorship_required": false
           }
         },
         {
@@ -873,8 +928,9 @@
           "wording": "AUD 175,000 base plus superannuation",
           "structured": {
             "currency": "AUD",
-            "amount": 175000,
-            "basis": "annual"
+            "minimum": 175000,
+            "period": "year",
+            "basis": "base"
           }
         }
       ]
@@ -908,7 +964,8 @@
           "type": "location",
           "wording": "Melbourne",
           "structured": {
-            "place": "Melbourne"
+            "city": "Melbourne",
+            "country": "Australia"
           }
         },
         {
@@ -922,14 +979,16 @@
           "type": "employment_type",
           "wording": "permanent",
           "structured": {
-            "employmentType": "permanent"
+            "employment_type": "permanent"
           }
         },
         {
           "type": "work_rights",
           "wording": "existing Australian work rights",
           "structured": {
-            "rights": "australian work rights"
+            "country": "Australia",
+            "status": "unknown",
+            "sponsorship_required": false
           }
         },
         {
@@ -937,8 +996,9 @@
           "wording": "AUD 185,000 base plus superannuation",
           "structured": {
             "currency": "AUD",
-            "amount": 185000,
-            "basis": "annual"
+            "minimum": 185000,
+            "period": "year",
+            "basis": "base"
           }
         }
       ],
@@ -947,7 +1007,8 @@
           "type": "location",
           "wording": "Melbourne",
           "structured": {
-            "place": "Melbourne"
+            "city": "Melbourne",
+            "country": "Australia"
           }
         },
         {
@@ -961,14 +1022,16 @@
           "type": "employment_type",
           "wording": "permanent",
           "structured": {
-            "employmentType": "permanent"
+            "employment_type": "permanent"
           }
         },
         {
           "type": "work_rights",
           "wording": "existing Australian work rights",
           "structured": {
-            "rights": "australian work rights"
+            "country": "Australia",
+            "status": "unknown",
+            "sponsorship_required": false
           }
         },
         {
@@ -976,8 +1039,9 @@
           "wording": "AUD 185,000 base plus superannuation",
           "structured": {
             "currency": "AUD",
-            "amount": 185000,
-            "basis": "annual"
+            "minimum": 185000,
+            "period": "year",
+            "basis": "base"
           }
         }
       ]
@@ -1011,7 +1075,8 @@
           "type": "location",
           "wording": "Adelaide",
           "structured": {
-            "place": "Adelaide"
+            "city": "Adelaide",
+            "country": "Australia"
           }
         },
         {
@@ -1025,14 +1090,16 @@
           "type": "employment_type",
           "wording": "permanent",
           "structured": {
-            "employmentType": "permanent"
+            "employment_type": "permanent"
           }
         },
         {
           "type": "work_rights",
           "wording": "existing Australian work rights",
           "structured": {
-            "rights": "australian work rights"
+            "country": "Australia",
+            "status": "unknown",
+            "sponsorship_required": false
           }
         },
         {
@@ -1040,8 +1107,9 @@
           "wording": "AUD 145,000 base plus superannuation",
           "structured": {
             "currency": "AUD",
-            "amount": 145000,
-            "basis": "annual"
+            "minimum": 145000,
+            "period": "year",
+            "basis": "base"
           }
         }
       ],
@@ -1050,7 +1118,8 @@
           "type": "location",
           "wording": "Adelaide",
           "structured": {
-            "place": "Adelaide"
+            "city": "Adelaide",
+            "country": "Australia"
           }
         },
         {
@@ -1064,14 +1133,16 @@
           "type": "employment_type",
           "wording": "permanent",
           "structured": {
-            "employmentType": "permanent"
+            "employment_type": "permanent"
           }
         },
         {
           "type": "work_rights",
           "wording": "existing Australian work rights",
           "structured": {
-            "rights": "australian work rights"
+            "country": "Australia",
+            "status": "unknown",
+            "sponsorship_required": false
           }
         },
         {
@@ -1079,8 +1150,9 @@
           "wording": "AUD 145,000 base plus superannuation",
           "structured": {
             "currency": "AUD",
-            "amount": 145000,
-            "basis": "annual"
+            "minimum": 145000,
+            "period": "year",
+            "basis": "base"
           }
         }
       ]
@@ -1114,7 +1186,8 @@
           "type": "location",
           "wording": "Sydney",
           "structured": {
-            "place": "Sydney"
+            "city": "Sydney",
+            "country": "Australia"
           }
         },
         {
@@ -1128,14 +1201,16 @@
           "type": "employment_type",
           "wording": "permanent",
           "structured": {
-            "employmentType": "permanent"
+            "employment_type": "permanent"
           }
         },
         {
           "type": "work_rights",
           "wording": "existing Australian work rights",
           "structured": {
-            "rights": "australian work rights"
+            "country": "Australia",
+            "status": "unknown",
+            "sponsorship_required": false
           }
         },
         {
@@ -1143,8 +1218,9 @@
           "wording": "AUD 150,000 base plus superannuation",
           "structured": {
             "currency": "AUD",
-            "amount": 150000,
-            "basis": "annual"
+            "minimum": 150000,
+            "period": "year",
+            "basis": "base"
           }
         }
       ],
@@ -1153,7 +1229,8 @@
           "type": "location",
           "wording": "Sydney",
           "structured": {
-            "place": "Sydney"
+            "city": "Sydney",
+            "country": "Australia"
           }
         },
         {
@@ -1167,14 +1244,16 @@
           "type": "employment_type",
           "wording": "permanent",
           "structured": {
-            "employmentType": "permanent"
+            "employment_type": "permanent"
           }
         },
         {
           "type": "work_rights",
           "wording": "existing Australian work rights",
           "structured": {
-            "rights": "australian work rights"
+            "country": "Australia",
+            "status": "unknown",
+            "sponsorship_required": false
           }
         },
         {
@@ -1182,8 +1261,9 @@
           "wording": "AUD 150,000 base plus superannuation",
           "structured": {
             "currency": "AUD",
-            "amount": 150000,
-            "basis": "annual"
+            "minimum": 150000,
+            "period": "year",
+            "basis": "base"
           }
         }
       ]
@@ -1217,7 +1297,8 @@
           "type": "location",
           "wording": "Melbourne",
           "structured": {
-            "place": "Melbourne"
+            "city": "Melbourne",
+            "country": "Australia"
           }
         },
         {
@@ -1231,14 +1312,16 @@
           "type": "employment_type",
           "wording": "permanent",
           "structured": {
-            "employmentType": "permanent"
+            "employment_type": "permanent"
           }
         },
         {
           "type": "work_rights",
           "wording": "existing Australian work rights",
           "structured": {
-            "rights": "australian work rights"
+            "country": "Australia",
+            "status": "unknown",
+            "sponsorship_required": false
           }
         },
         {
@@ -1246,8 +1329,9 @@
           "wording": "AUD 240,000 base plus superannuation",
           "structured": {
             "currency": "AUD",
-            "amount": 240000,
-            "basis": "annual"
+            "minimum": 240000,
+            "period": "year",
+            "basis": "base"
           }
         }
       ],
@@ -1256,7 +1340,8 @@
           "type": "location",
           "wording": "Melbourne",
           "structured": {
-            "place": "Melbourne"
+            "city": "Melbourne",
+            "country": "Australia"
           }
         },
         {
@@ -1270,14 +1355,16 @@
           "type": "employment_type",
           "wording": "permanent",
           "structured": {
-            "employmentType": "permanent"
+            "employment_type": "permanent"
           }
         },
         {
           "type": "work_rights",
           "wording": "existing Australian work rights",
           "structured": {
-            "rights": "australian work rights"
+            "country": "Australia",
+            "status": "unknown",
+            "sponsorship_required": false
           }
         },
         {
@@ -1285,8 +1372,9 @@
           "wording": "AUD 240,000 base plus superannuation",
           "structured": {
             "currency": "AUD",
-            "amount": 240000,
-            "basis": "annual"
+            "minimum": 240000,
+            "period": "year",
+            "basis": "base"
           }
         }
       ]
@@ -1320,7 +1408,8 @@
           "type": "location",
           "wording": "Melbourne",
           "structured": {
-            "place": "Melbourne"
+            "city": "Melbourne",
+            "country": "Australia"
           }
         },
         {
@@ -1334,14 +1423,16 @@
           "type": "employment_type",
           "wording": "contract",
           "structured": {
-            "employmentType": "contract"
+            "employment_type": "contract"
           }
         },
         {
           "type": "work_rights",
           "wording": "existing Australian work rights",
           "structured": {
-            "rights": "australian work rights"
+            "country": "Australia",
+            "status": "unknown",
+            "sponsorship_required": false
           }
         },
         {
@@ -1349,8 +1440,9 @@
           "wording": "AUD 900 per day",
           "structured": {
             "currency": "AUD",
-            "amount": 900,
-            "basis": "per day"
+            "minimum": 900,
+            "period": "day",
+            "basis": "rate"
           }
         }
       ],
@@ -1359,7 +1451,8 @@
           "type": "location",
           "wording": "Melbourne",
           "structured": {
-            "place": "Melbourne"
+            "city": "Melbourne",
+            "country": "Australia"
           }
         },
         {
@@ -1373,14 +1466,16 @@
           "type": "employment_type",
           "wording": "contract",
           "structured": {
-            "employmentType": "contract"
+            "employment_type": "contract"
           }
         },
         {
           "type": "work_rights",
           "wording": "existing Australian work rights",
           "structured": {
-            "rights": "australian work rights"
+            "country": "Australia",
+            "status": "unknown",
+            "sponsorship_required": false
           }
         },
         {
@@ -1388,8 +1483,9 @@
           "wording": "AUD 900 per day",
           "structured": {
             "currency": "AUD",
-            "amount": 900,
-            "basis": "per day"
+            "minimum": 900,
+            "period": "day",
+            "basis": "rate"
           }
         }
       ]
@@ -1423,7 +1519,8 @@
           "type": "location",
           "wording": "Remote (Australia)",
           "structured": {
-            "place": "Remote (Australia)"
+            "country": "Australia",
+            "remote_ok": true
           }
         },
         {
@@ -1437,14 +1534,16 @@
           "type": "employment_type",
           "wording": "permanent",
           "structured": {
-            "employmentType": "permanent"
+            "employment_type": "permanent"
           }
         },
         {
           "type": "work_rights",
           "wording": "existing Australian work rights",
           "structured": {
-            "rights": "australian work rights"
+            "country": "Australia",
+            "status": "unknown",
+            "sponsorship_required": false
           }
         },
         {
@@ -1452,8 +1551,9 @@
           "wording": "AUD 170,000 base plus superannuation",
           "structured": {
             "currency": "AUD",
-            "amount": 170000,
-            "basis": "annual"
+            "minimum": 170000,
+            "period": "year",
+            "basis": "base"
           }
         }
       ],
@@ -1462,7 +1562,8 @@
           "type": "location",
           "wording": "Remote (Australia)",
           "structured": {
-            "place": "Remote (Australia)"
+            "country": "Australia",
+            "remote_ok": true
           }
         },
         {
@@ -1476,14 +1577,16 @@
           "type": "employment_type",
           "wording": "permanent",
           "structured": {
-            "employmentType": "permanent"
+            "employment_type": "permanent"
           }
         },
         {
           "type": "work_rights",
           "wording": "existing Australian work rights",
           "structured": {
-            "rights": "australian work rights"
+            "country": "Australia",
+            "status": "unknown",
+            "sponsorship_required": false
           }
         },
         {
@@ -1491,8 +1594,9 @@
           "wording": "AUD 170,000 base plus superannuation",
           "structured": {
             "currency": "AUD",
-            "amount": 170000,
-            "basis": "annual"
+            "minimum": 170000,
+            "period": "year",
+            "basis": "base"
           }
         }
       ]
@@ -1526,7 +1630,8 @@
           "type": "location",
           "wording": "Brisbane",
           "structured": {
-            "place": "Brisbane"
+            "city": "Brisbane",
+            "country": "Australia"
           }
         },
         {
@@ -1540,14 +1645,16 @@
           "type": "employment_type",
           "wording": "permanent",
           "structured": {
-            "employmentType": "permanent"
+            "employment_type": "permanent"
           }
         },
         {
           "type": "work_rights",
           "wording": "existing Australian work rights",
           "structured": {
-            "rights": "australian work rights"
+            "country": "Australia",
+            "status": "unknown",
+            "sponsorship_required": false
           }
         },
         {
@@ -1555,8 +1662,9 @@
           "wording": "AUD 130,000 base plus superannuation",
           "structured": {
             "currency": "AUD",
-            "amount": 130000,
-            "basis": "annual"
+            "minimum": 130000,
+            "period": "year",
+            "basis": "base"
           }
         }
       ],
@@ -1565,7 +1673,8 @@
           "type": "location",
           "wording": "Brisbane",
           "structured": {
-            "place": "Brisbane"
+            "city": "Brisbane",
+            "country": "Australia"
           }
         },
         {
@@ -1579,14 +1688,16 @@
           "type": "employment_type",
           "wording": "permanent",
           "structured": {
-            "employmentType": "permanent"
+            "employment_type": "permanent"
           }
         },
         {
           "type": "work_rights",
           "wording": "existing Australian work rights",
           "structured": {
-            "rights": "australian work rights"
+            "country": "Australia",
+            "status": "unknown",
+            "sponsorship_required": false
           }
         },
         {
@@ -1594,8 +1705,9 @@
           "wording": "AUD 130,000 base plus superannuation",
           "structured": {
             "currency": "AUD",
-            "amount": 130000,
-            "basis": "annual"
+            "minimum": 130000,
+            "period": "year",
+            "basis": "base"
           }
         }
       ]
@@ -1629,7 +1741,8 @@
           "type": "location",
           "wording": "Sydney",
           "structured": {
-            "place": "Sydney"
+            "city": "Sydney",
+            "country": "Australia"
           }
         },
         {
@@ -1643,14 +1756,16 @@
           "type": "employment_type",
           "wording": "permanent",
           "structured": {
-            "employmentType": "permanent"
+            "employment_type": "permanent"
           }
         },
         {
           "type": "work_rights",
           "wording": "existing Australian work rights",
           "structured": {
-            "rights": "australian work rights"
+            "country": "Australia",
+            "status": "unknown",
+            "sponsorship_required": false
           }
         },
         {
@@ -1658,8 +1773,9 @@
           "wording": "AUD 175,000 base plus superannuation",
           "structured": {
             "currency": "AUD",
-            "amount": 175000,
-            "basis": "annual"
+            "minimum": 175000,
+            "period": "year",
+            "basis": "base"
           }
         }
       ],
@@ -1668,7 +1784,8 @@
           "type": "location",
           "wording": "Sydney",
           "structured": {
-            "place": "Sydney"
+            "city": "Sydney",
+            "country": "Australia"
           }
         },
         {
@@ -1682,14 +1799,16 @@
           "type": "employment_type",
           "wording": "permanent",
           "structured": {
-            "employmentType": "permanent"
+            "employment_type": "permanent"
           }
         },
         {
           "type": "work_rights",
           "wording": "existing Australian work rights",
           "structured": {
-            "rights": "australian work rights"
+            "country": "Australia",
+            "status": "unknown",
+            "sponsorship_required": false
           }
         },
         {
@@ -1697,8 +1816,9 @@
           "wording": "AUD 175,000 base plus superannuation",
           "structured": {
             "currency": "AUD",
-            "amount": 175000,
-            "basis": "annual"
+            "minimum": 175000,
+            "period": "year",
+            "basis": "base"
           }
         }
       ]
@@ -1732,7 +1852,8 @@
           "type": "location",
           "wording": "Melbourne",
           "structured": {
-            "place": "Melbourne"
+            "city": "Melbourne",
+            "country": "Australia"
           }
         },
         {
@@ -1746,14 +1867,16 @@
           "type": "employment_type",
           "wording": "permanent",
           "structured": {
-            "employmentType": "permanent"
+            "employment_type": "permanent"
           }
         },
         {
           "type": "work_rights",
           "wording": "existing Australian work rights",
           "structured": {
-            "rights": "australian work rights"
+            "country": "Australia",
+            "status": "unknown",
+            "sponsorship_required": false
           }
         },
         {
@@ -1761,8 +1884,9 @@
           "wording": "AUD 200,000 base plus superannuation",
           "structured": {
             "currency": "AUD",
-            "amount": 200000,
-            "basis": "annual"
+            "minimum": 200000,
+            "period": "year",
+            "basis": "base"
           }
         }
       ],
@@ -1771,7 +1895,8 @@
           "type": "location",
           "wording": "Melbourne",
           "structured": {
-            "place": "Melbourne"
+            "city": "Melbourne",
+            "country": "Australia"
           }
         },
         {
@@ -1785,14 +1910,16 @@
           "type": "employment_type",
           "wording": "permanent",
           "structured": {
-            "employmentType": "permanent"
+            "employment_type": "permanent"
           }
         },
         {
           "type": "work_rights",
           "wording": "existing Australian work rights",
           "structured": {
-            "rights": "australian work rights"
+            "country": "Australia",
+            "status": "unknown",
+            "sponsorship_required": false
           }
         },
         {
@@ -1800,8 +1927,9 @@
           "wording": "AUD 200,000 base plus superannuation",
           "structured": {
             "currency": "AUD",
-            "amount": 200000,
-            "basis": "annual"
+            "minimum": 200000,
+            "period": "year",
+            "basis": "base"
           }
         }
       ]
@@ -1835,7 +1963,8 @@
           "type": "location",
           "wording": "Hobart",
           "structured": {
-            "place": "Hobart"
+            "city": "Hobart",
+            "country": "Australia"
           }
         },
         {
@@ -1849,14 +1978,16 @@
           "type": "employment_type",
           "wording": "permanent",
           "structured": {
-            "employmentType": "permanent"
+            "employment_type": "permanent"
           }
         },
         {
           "type": "work_rights",
           "wording": "existing Australian work rights",
           "structured": {
-            "rights": "australian work rights"
+            "country": "Australia",
+            "status": "unknown",
+            "sponsorship_required": false
           }
         },
         {
@@ -1864,8 +1995,9 @@
           "wording": "AUD 135,000 base plus superannuation",
           "structured": {
             "currency": "AUD",
-            "amount": 135000,
-            "basis": "annual"
+            "minimum": 135000,
+            "period": "year",
+            "basis": "base"
           }
         }
       ],
@@ -1874,7 +2006,8 @@
           "type": "location",
           "wording": "Hobart",
           "structured": {
-            "place": "Hobart"
+            "city": "Hobart",
+            "country": "Australia"
           }
         },
         {
@@ -1888,14 +2021,16 @@
           "type": "employment_type",
           "wording": "permanent",
           "structured": {
-            "employmentType": "permanent"
+            "employment_type": "permanent"
           }
         },
         {
           "type": "work_rights",
           "wording": "existing Australian work rights",
           "structured": {
-            "rights": "australian work rights"
+            "country": "Australia",
+            "status": "unknown",
+            "sponsorship_required": false
           }
         },
         {
@@ -1903,8 +2038,9 @@
           "wording": "AUD 135,000 base plus superannuation",
           "structured": {
             "currency": "AUD",
-            "amount": 135000,
-            "basis": "annual"
+            "minimum": 135000,
+            "period": "year",
+            "basis": "base"
           }
         }
       ]
@@ -1938,7 +2074,8 @@
           "type": "location",
           "wording": "Perth",
           "structured": {
-            "place": "Perth"
+            "city": "Perth",
+            "country": "Australia"
           }
         },
         {
@@ -1952,14 +2089,16 @@
           "type": "employment_type",
           "wording": "permanent",
           "structured": {
-            "employmentType": "permanent"
+            "employment_type": "permanent"
           }
         },
         {
           "type": "work_rights",
           "wording": "existing Australian work rights",
           "structured": {
-            "rights": "australian work rights"
+            "country": "Australia",
+            "status": "unknown",
+            "sponsorship_required": false
           }
         },
         {
@@ -1967,8 +2106,9 @@
           "wording": "AUD 160,000 base plus superannuation",
           "structured": {
             "currency": "AUD",
-            "amount": 160000,
-            "basis": "annual"
+            "minimum": 160000,
+            "period": "year",
+            "basis": "base"
           }
         }
       ],
@@ -1977,7 +2117,8 @@
           "type": "location",
           "wording": "Perth",
           "structured": {
-            "place": "Perth"
+            "city": "Perth",
+            "country": "Australia"
           }
         },
         {
@@ -1991,14 +2132,16 @@
           "type": "employment_type",
           "wording": "permanent",
           "structured": {
-            "employmentType": "permanent"
+            "employment_type": "permanent"
           }
         },
         {
           "type": "work_rights",
           "wording": "existing Australian work rights",
           "structured": {
-            "rights": "australian work rights"
+            "country": "Australia",
+            "status": "unknown",
+            "sponsorship_required": false
           }
         },
         {
@@ -2006,8 +2149,9 @@
           "wording": "AUD 160,000 base plus superannuation",
           "structured": {
             "currency": "AUD",
-            "amount": 160000,
-            "basis": "annual"
+            "minimum": 160000,
+            "period": "year",
+            "basis": "base"
           }
         }
       ]
@@ -2041,7 +2185,8 @@
           "type": "location",
           "wording": "Sydney",
           "structured": {
-            "place": "Sydney"
+            "city": "Sydney",
+            "country": "Australia"
           }
         },
         {
@@ -2055,14 +2200,16 @@
           "type": "employment_type",
           "wording": "permanent",
           "structured": {
-            "employmentType": "permanent"
+            "employment_type": "permanent"
           }
         },
         {
           "type": "work_rights",
           "wording": "existing Australian work rights",
           "structured": {
-            "rights": "australian work rights"
+            "country": "Australia",
+            "status": "unknown",
+            "sponsorship_required": false
           }
         },
         {
@@ -2070,8 +2217,9 @@
           "wording": "AUD 195,000 base plus superannuation",
           "structured": {
             "currency": "AUD",
-            "amount": 195000,
-            "basis": "annual"
+            "minimum": 195000,
+            "period": "year",
+            "basis": "base"
           }
         }
       ],
@@ -2080,7 +2228,8 @@
           "type": "location",
           "wording": "Sydney",
           "structured": {
-            "place": "Sydney"
+            "city": "Sydney",
+            "country": "Australia"
           }
         },
         {
@@ -2094,14 +2243,16 @@
           "type": "employment_type",
           "wording": "permanent",
           "structured": {
-            "employmentType": "permanent"
+            "employment_type": "permanent"
           }
         },
         {
           "type": "work_rights",
           "wording": "existing Australian work rights",
           "structured": {
-            "rights": "australian work rights"
+            "country": "Australia",
+            "status": "unknown",
+            "sponsorship_required": false
           }
         },
         {
@@ -2109,8 +2260,9 @@
           "wording": "AUD 195,000 base plus superannuation",
           "structured": {
             "currency": "AUD",
-            "amount": 195000,
-            "basis": "annual"
+            "minimum": 195000,
+            "period": "year",
+            "basis": "base"
           }
         }
       ]
@@ -2144,7 +2296,8 @@
           "type": "location",
           "wording": "Melbourne",
           "structured": {
-            "place": "Melbourne"
+            "city": "Melbourne",
+            "country": "Australia"
           }
         },
         {
@@ -2158,14 +2311,16 @@
           "type": "employment_type",
           "wording": "permanent",
           "structured": {
-            "employmentType": "permanent"
+            "employment_type": "permanent"
           }
         },
         {
           "type": "work_rights",
           "wording": "existing Australian work rights",
           "structured": {
-            "rights": "australian work rights"
+            "country": "Australia",
+            "status": "unknown",
+            "sponsorship_required": false
           }
         },
         {
@@ -2173,8 +2328,9 @@
           "wording": "AUD 110,000 base plus superannuation",
           "structured": {
             "currency": "AUD",
-            "amount": 110000,
-            "basis": "annual"
+            "minimum": 110000,
+            "period": "year",
+            "basis": "base"
           }
         }
       ],
@@ -2183,7 +2339,8 @@
           "type": "location",
           "wording": "Melbourne",
           "structured": {
-            "place": "Melbourne"
+            "city": "Melbourne",
+            "country": "Australia"
           }
         },
         {
@@ -2197,14 +2354,16 @@
           "type": "employment_type",
           "wording": "permanent",
           "structured": {
-            "employmentType": "permanent"
+            "employment_type": "permanent"
           }
         },
         {
           "type": "work_rights",
           "wording": "existing Australian work rights",
           "structured": {
-            "rights": "australian work rights"
+            "country": "Australia",
+            "status": "unknown",
+            "sponsorship_required": false
           }
         },
         {
@@ -2212,8 +2371,9 @@
           "wording": "AUD 110,000 base plus superannuation",
           "structured": {
             "currency": "AUD",
-            "amount": 110000,
-            "basis": "annual"
+            "minimum": 110000,
+            "period": "year",
+            "basis": "base"
           }
         }
       ]
