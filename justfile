@@ -41,6 +41,10 @@ gate:
 gate-model:
     go test -tags livemodel -v -count=1 ./internal/platform/
 
+# Classifier contract against the selected local model (set TH_CLASSIFY_MODEL)
+gate-model-classify:
+    go test -tags livemodel -v -count=1 -run TestGate .
+
 # Build the pinned MarkItDown PyInstaller one-dir sidecar (Windows only)
 sidecar:
     powershell -NoProfile -ExecutionPolicy Bypass -File build/sidecar/build.ps1
@@ -60,6 +64,7 @@ qa: lint-go sec vuln typecheck lint-ts dupes vet-gates
 vet-gates:
     go vet -tags windowsgate ./internal/platform/
     go vet -tags livemodel ./internal/platform/
+    go vet -tags livemodel .
     GOOS=windows go vet -tags windowsgate .
 
 # Go meta-linter (staticcheck, govet, errcheck, revive, gocritic, gosec, gofmt/goimports, ...)

@@ -73,6 +73,25 @@ Credential Manager, because there is deliberately no other store to test.
 | Credential service: store, replace, revoke, missing entry | _PASS / FAIL_ | |
 | Stored credential absent from the database, data folder, and a folder copy | _PASS / FAIL_ | paste the `EVIDENCE` line |
 
+## Phase 10 classifier contract results
+
+Added by Phase 10. Not Windows-gated — it needs a running Ollama and the
+selected model, so it joins `gate-model` rather than `gate`:
+
+```
+set TH_CLASSIFY_MODEL=<selected classify model>
+just gate-model-classify
+```
+
+Every rule of the contract is proven everywhere against deterministic fakes.
+These two ask a different question: whether the selected model can satisfy it.
+A failure here is a model-selection decision, not a validator bug.
+
+| Gate | Result | Notes |
+| --- | --- | --- |
+| The contract holds against the selected local model | _PASS / FAIL_ | paste the `EVIDENCE classify-contract` lines |
+| An injected instruction cannot widen the contract on a live model | _PASS / FAIL_ | paste the `EVIDENCE classify-injection` line |
+
 ## Phase 9 exact-scan measurements
 
 Added by Phase 9. Unlike every other table here these are **not** Windows-gated

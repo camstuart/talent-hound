@@ -62,6 +62,7 @@ func main() {
 			application.NewService(NewSearchService(gdb)),
 			application.NewService(registry),
 			application.NewService(NewEmbedService(gdb, jobs, registry, ollama)),
+			application.NewService(NewClassifyService(gdb, registry, ollama)),
 			application.NewService(NewCredentialService()),
 		},
 		Assets: application.AssetOptions{

@@ -367,6 +367,65 @@ var migrations = []migration{
 			"CREATE INDEX `idx_embeddings_owner` ON `embeddings`(`owner_kind`,`owner_id`)",
 		},
 	},
+	{
+		Version: 10,
+		Name:    "profiles_and_aspects",
+		// The taxonomy is checked in Go and again here. Two checks of one rule
+		// is not redundancy: the Go one is what the classifier is held to, and
+		// this one is what any future writer is held to, including one written
+		// by someone who has never read the validator.
+		SQL: []string{
+			"CREATE TABLE `profiles` (" +
+				"`id` integer PRIMARY KEY AUTOINCREMENT," +
+				"`subject_kind` text NOT NULL CHECK (`subject_kind` IN ('candidate','role'))," +
+				"`subject_id` integer NOT NULL," +
+				"`version` integer NOT NULL," +
+				"`state` text NOT NULL DEFAULT 'proposed' " +
+				"CHECK (`state` IN ('proposed','approved','failed'))," +
+				"`schema_version` text NOT NULL," +
+				"`prompt_version` text NOT NULL," +
+				"`model_revision` integer NOT NULL," +
+				"`model_name` text NOT NULL DEFAULT ''," +
+				"`source_hash` text NOT NULL," +
+				// The hash of everything that could change what this means.
+				"`identity` text NOT NULL," +
+				"`failure_reason` text NOT NULL DEFAULT ''," +
+				"`created_at` datetime," +
+				"`updated_at` datetime)",
+			"CREATE UNIQUE INDEX `idx_profiles_subject_version` ON " +
+				"`profiles`(`subject_kind`,`subject_id`,`version`)",
+			"CREATE INDEX `idx_profiles_identity` ON `profiles`(`identity`)",
+			"CREATE TABLE `profile_aspects` (" +
+				"`id` integer PRIMARY KEY AUTOINCREMENT," +
+				"`profile_id` integer NOT NULL REFERENCES `profiles`(`id`)," +
+				"`ordinal` integer NOT NULL," +
+				"`type` text NOT NULL CHECK (`type` IN (" +
+				"'skill','responsibility','experience','qualification','seniority'," +
+				"'location','work_arrangement','work_rights','employment_type'," +
+				"'compensation','other'))," +
+				"`wording` text NOT NULL," +
+				"`structured` text NOT NULL DEFAULT '{}'," +
+				"`priority` text NOT NULL DEFAULT 'unspecified' " +
+				"CHECK (`priority` IN ('must_have','nice_to_have','unspecified'))," +
+				"`origin` text NOT NULL DEFAULT 'extracted' " +
+				"CHECK (`origin` IN ('extracted','recruiter_supplied'))," +
+				// Never empty: an aspect with no evidence is the thing the whole
+				// contract exists to refuse.
+				"`citations` text NOT NULL DEFAULT '[]' CHECK (`citations` <> '[]')," +
+				"`created_at` datetime," +
+				"`updated_at` datetime)",
+			"CREATE UNIQUE INDEX `idx_profile_aspects_ordinal` ON " +
+				"`profile_aspects`(`profile_id`,`ordinal`)",
+			"CREATE INDEX `idx_profile_aspects_type` ON `profile_aspects`(`type`)",
+			// A profile that failed carries a code, on the same terms as a job.
+			"CREATE TRIGGER `profiles_reason_insert` BEFORE INSERT ON `profiles` " +
+				"FOR EACH ROW WHEN " + badReason("NEW.`failure_reason`") +
+				" BEGIN SELECT RAISE(ABORT, 'failure reason must be a short code'); END",
+			"CREATE TRIGGER `profiles_reason_update` BEFORE UPDATE ON `profiles` " +
+				"FOR EACH ROW WHEN " + badReason("NEW.`failure_reason`") +
+				" BEGIN SELECT RAISE(ABORT, 'failure reason must be a short code'); END",
+		},
+	},
 }
 
 // badVectorLength is the condition an embedding is refused on: a blob that is
