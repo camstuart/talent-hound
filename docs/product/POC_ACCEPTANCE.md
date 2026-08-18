@@ -101,6 +101,25 @@ Machine: macOS on Apple silicon, Ollama at `http://localhost:11434`.
 | `just gate-model` constrained JSON | `qwen3:4b` | PASS on output, **4 m 28 s** — over the 3-minute classify budget |
 | One decomposition-sized call | `qwen3:4b` | **4 m 21 s with reasoning, 4 m 35 s with `think:false`** — suppressing the reasoning field does not make it faster, the model writes the same volume into the content instead |
 
+### What benchmarking found
+
+Every one of these was live for as long as the product has existed, and none of
+them could be reached by the unit suite — they only appear when a real model
+meets labels written independently of it.
+
+| Defect | Effect | Fix |
+| --- | --- | --- |
+| The classifier schema declared `structured` as an object with no properties | Under strict decoding that admits nothing, so **no profile could ever carry a structured value**. Confirmed against the endpoint: `additionalProperties:false` returns `{}`, `true` returns the fields | SchemaVersion 2 |
+| The prompt called structured values optional | A model that follows instructions omits them, making "explicit structured constraints are reproduced correctly" unreachable for any model | PromptVersion 2 |
+| A `null` structured field failed validation | The model writing `"basis": null` for a salary quoted without one **invalidated the entire profile**, over a field it was right to leave empty | Nulls dropped at parse |
+| The shortlist ANDed every word of every query | A profile aspect is a sentence, so **every profile-driven shortlist returned empty** unless search criteria were also present. The flagship loop only worked by accident | Aspect queries use SearchAny |
+| Embedding evicts the classify model | On a laptop this size the next classify call pays a full reload inside its own timeout | Known; the benchmark profiles the candidate first |
+
+Two of my own benchmark errors are recorded with them, because a benchmark that
+is wrong in the product's favour is worse than no benchmark: capture demanded
+identical wording, and the corpus labels used field names the product does not
+have and asserted facts the listings never state.
+
 ### Frozen benchmark run, development machine
 
 `just bench`, 37 minutes, against the synthetic corpus in this repository.
