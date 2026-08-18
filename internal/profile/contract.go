@@ -16,7 +16,10 @@ import (
 // surprising the first time someone fixes a typo in the prompt, and the
 // alternative — identity that silently drifts with an edit — is worse.
 const (
-	SchemaVersion = "1"
+	// SchemaVersion 2 lets a structured value carry fields. Version 1 declared
+	// the object with no properties, which under strict decoding permitted
+	// nothing at all.
+	SchemaVersion = "2"
 	// PromptVersion 2 requires structured values for the five types that carry
 	// them where the source is explicit. Version 1 called them optional, and
 	// models obliged.
@@ -111,8 +114,15 @@ func Schema(kind SubjectKind) map[string]any {
 		"properties": map[string]any{
 			"type":    map[string]any{"type": "string", "enum": types},
 			"wording": map[string]any{"type": "string", "minLength": 1},
+			// additionalProperties must be true here. Under strict JSON-schema
+			// decoding an object with no declared properties admits nothing, so
+			// this said "structured values are an empty object" — and every
+			// model obliged, for as long as it stood. The permitted fields
+			// differ by aspect type, which one flat schema cannot express, and
+			// Validate is where that is enforced anyway.
 			"structured": map[string]any{
-				"type": "object",
+				"type":                 "object",
+				"additionalProperties": true,
 			},
 			"citations": map[string]any{
 				"type":     "array",
