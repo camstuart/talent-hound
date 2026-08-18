@@ -1,4 +1,5 @@
-import { For } from "solid-js";
+import { For, Show } from "solid-js";
+import { InitiativeStatus } from "../../bindings/camstuart/talent-hound/internal/models";
 import type { Initiative } from "../../bindings/camstuart/talent-hound/internal/models";
 import { InitiativeIcon } from "./InitiativeIcon";
 
@@ -23,6 +24,9 @@ export default function TabBar(props: Props) {
           >
             <InitiativeIcon type={initiative.type} />
             <span class="tab-title">{initiative.name}</span>
+            <Show when={initiative.status === InitiativeStatus.InitiativeArchived}>
+              <span class="archived-badge">Archived</span>
+            </Show>
             <button
               class="tab-close"
               aria-label={`Close ${initiative.name}`}

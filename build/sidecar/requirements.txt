@@ -1,0 +1,4 @@
+# Pinned MarkItDown sidecar dependencies. Rebuild the package after any change
+# here and update PIN.md with the new digest.
+markitdown[docx,pdf]==0.1.2
+pyinstaller==6.11.1

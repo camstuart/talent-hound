@@ -5,10 +5,12 @@ package main
 import (
 	"embed"
 	"log"
+	"path/filepath"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 
 	"camstuart/talent-hound/internal/db"
+	"camstuart/talent-hound/internal/platform"
 )
 
 // Wails uses Go's `embed` package to embed the frontend files into the binary.
@@ -32,6 +34,11 @@ func main() {
 		log.Fatal(err)
 	}
 
+	jobs := NewJobService(gdb)
+	// Extraction stages temporary plaintext beside the database, because that
+	// is the folder the PRD says is encrypted.
+	extraction := NewExtractService(gdb, jobs, filepath.Dir(dbPath))
+
 	// Create a new Wails application by providing the necessary options.
 	// Variables 'Name' and 'Description' are for application metadata.
 	// 'Assets' configures the asset server with the 'FS' variable pointing to the frontend files.
@@ -43,6 +50,14 @@ func main() {
 		Services: []application.Service{
 			application.NewService(&GreetService{}),
 			application.NewService(NewInitiativeService(gdb)),
+			application.NewService(NewRecordService(gdb)),
+			application.NewService(NewArtifactService(gdb)),
+			application.NewService(jobs),
+			application.NewService(extraction),
+			application.NewService(NewChunkService(gdb, jobs)),
+			application.NewService(NewSearchService(gdb)),
+			application.NewService(NewModelService(gdb, jobs, platform.NewOllama())),
+			application.NewService(NewCredentialService()),
 		},
 		Assets: application.AssetOptions{
 			Handler: application.AssetFileServerFS(assets),

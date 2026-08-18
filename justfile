@@ -29,10 +29,38 @@ test-unit:
 test-e2e:
     bun run test:e2e
 
+# ---------- Phase 1 platform gates (see openspec/changes/phase-1-windows-platform-gates) ----------
+
+# Windows-native proofs: FTS5, sidecar, Job Object containment, encryption, credentials.
+# Run on the target Windows 11 x64 laptop; needs TH_SIDECAR_EXE (see `just sidecar`).
+gate:
+    go test -tags windowsgate -v -count=1 ./internal/platform/
+
+# Live local-model proofs against Ollama at http://localhost:11434.
+# Override models with TH_INSTRUCT_MODELS / TH_EMBED_MODELS.
+gate-model:
+    go test -tags livemodel -v -count=1 ./internal/platform/
+
+# Build the pinned MarkItDown PyInstaller one-dir sidecar (Windows only)
+sidecar:
+    powershell -NoProfile -ExecutionPolicy Bypass -File build/sidecar/build.ps1
+
+# Regenerate the synthetic extraction fixtures
+fixtures:
+    python3 internal/platform/testdata/docs/generate.py
+
 # ---------- QA: linting & static analysis ----------
 
 # Run every lint / static-analysis tool
-qa: lint-go sec vuln typecheck lint-ts dupes
+qa: lint-go sec vuln typecheck lint-ts dupes vet-gates
+
+# Keep the build-tagged gate code compiling even though routine runs skip it.
+# On non-Windows hosts the *_windows.go files are skipped by filename; run
+# `GOOS=windows go vet -tags windowsgate ./internal/platform/` to cover those too.
+vet-gates:
+    go vet -tags windowsgate ./internal/platform/
+    go vet -tags livemodel ./internal/platform/
+    GOOS=windows go vet -tags windowsgate .
 
 # Go meta-linter (staticcheck, govet, errcheck, revive, gocritic, gosec, gofmt/goimports, ...)
 lint-go:
@@ -40,7 +68,7 @@ lint-go:
 
 # Go security scanner (standalone gosec pass)
 sec:
-    gosec -quiet -exclude-dir=build -exclude-dir=frontend ./...
+    gosec -quiet -exclude-dir=build -exclude-dir=frontend -exclude-dir=testdata ./...
 
 # Known-vulnerability scan of Go dependencies (call-graph aware)
 vuln:

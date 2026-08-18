@@ -48,3 +48,9 @@ Thumbs.db
 
 # Local tooling config (Claude Code)
 /.claude/
+
+# MarkItDown sidecar build artifacts (pin is recorded in build/sidecar/PIN.md)
+build/sidecar/dist/
+build/sidecar/work/
+build/sidecar/.venv/
+build/sidecar/*.spec
