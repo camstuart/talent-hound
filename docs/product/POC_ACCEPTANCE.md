@@ -51,21 +51,25 @@ corpus was the synthetic one in this repository or the recruiter's.
 | 3 | Purge a stale role and verify its derived content is gone | PASS — Go and Playwright |
 | 4 | Delete a candidate after its initiatives, resolving shared artifacts | PASS — Go and Playwright |
 | 5 | Every non-local request had its preview or approval | PASS — audit and consent tests; confirm again on the acceptance run |
-| 6 | Held-out matching benchmark | NOT RUN — needs live models; harness and scoring PASS |
-| 7 | Held-out classifier benchmark | NOT RUN — needs live models; harness and scoring PASS |
+| 6 | Held-out matching benchmark | NOT RUN on the target laptop — run end to end on a development machine, FAIL for the models available there |
+| 7 | Held-out classifier benchmark | NOT RUN on the target laptop — run end to end on a development machine, FAIL for the models available there |
 | 8 | Real-data mode refused on an unencrypted volume | PARTIAL — enforced and tested; BitLocker itself is a gate |
 | 9 | Recover a copied data folder without corruption or partial migration | PASS off-laptop — second-machine run is a gate |
 
 ## Benchmarks
 
+These rows are the acceptance environment: the Windows laptop, the pinned
+models, and the recruiter's frozen corpus. A development-machine run is
+recorded further down and cannot fill them in.
+
 | Benchmark | Bar | Result |
 | --- | --- | --- |
-| Classifier: every aspect cited | all | NOT RUN |
-| Classifier: no unsupported critical constraint | none | NOT RUN |
-| Classifier: material-aspect capture | ≥ 80% | NOT RUN |
-| Classifier: structured constraints reproduced | exact | NOT RUN |
-| Matching: three plausible in the top five | ≥ 4 of 5 scenarios | NOT RUN |
-| Live acceptance: eligible roles found | ≥ 10, else inconclusive | NOT RUN |
+| Classifier: every aspect cited | all | NOT RUN on the target laptop — met on the development run |
+| Classifier: no unsupported critical constraint | none | NOT RUN on the target laptop — met on the development run |
+| Classifier: material-aspect capture | ≥ 80% | NOT RUN on the target laptop — 22–44% on the development run's five productive listings |
+| Classifier: structured constraints reproduced | exact | NOT RUN on the target laptop — failed on every listing of the development run |
+| Matching: three plausible in the top five | ≥ 4 of 5 scenarios | NOT RUN on the target laptop — 0 of 5 on the development run, upstream of the matcher |
+| Live acceptance: eligible roles found | ≥ 10, else inconclusive | NOT RUN — 20 in scope on the development run |
 | Live acceptance: Ready profiles and assessments | ≥ 10 | NOT RUN |
 | Live acceptance: usable evidence-backed draft | ≥ 1 | NOT RUN |
 
@@ -93,6 +97,40 @@ Machine: macOS on Apple silicon, Ollama at `http://localhost:11434`.
 | `just gate-model` embeddings | `nomic-embed-text` | PASS — 768 dimensions, 0.29 s |
 | `just gate-model-classify` contract | `qwen2.5:3b-instruct` | **FAIL** — duplicate aspects, and citations quoting wording absent from the chunk |
 | `just gate-model-classify` injection | `qwen2.5:3b-instruct` | PASS — the injected instruction was refused |
+
+### Frozen benchmark run, development machine
+
+`just bench`, 37 minutes, against the synthetic corpus in this repository.
+Record: `docs/product/benchmarks/benchmark-2026-08-18T04-43-17Z.json` and its
+`.txt` summary. Corpus hash `f3280238af1715db…`.
+
+Models: classify `qwen2.5:3b-instruct`, embed `nomic-embed-text`. Generation
+takes no part in either benchmark.
+
+**Outcome: FAIL.**
+
+| Condition | Bar | Measured |
+| --- | --- | --- |
+| Every extracted aspect cited | all | met — no uncited aspect on any listing that produced one |
+| No unsupported critical constraint | none | met — nothing invented |
+| Material-aspect capture | ≥ 80% | **22–44% on the five listings that produced aspects; 0% on the other fifteen, which produced nothing at all** |
+| Structured constraints reproduced | exact | **not met on any listing — location, work rights, employment type, and compensation come back empty** |
+| Matching: three plausible in the top five | ≥ 4 of 5 scenarios | **0 of 5 — no scenario produced a candidate profile, so no shortlist was ranked** |
+| Eligible roles in scope | ≥ 10 | 20 — the run is a result, not source-coverage inconclusive |
+
+What this says about the product versus the model: the citation rule held
+everywhere it was tested — the model never produced an aspect the validator
+accepted without evidence — and the twenty roles were all in scope, so
+retrieval had something to rank. What failed is decomposition: fifteen of
+twenty listings produced nothing the contract would accept, and no resume
+produced a candidate profile at all. That is the 3B model, and it is the same
+finding as the contract gate above.
+
+An earlier record from the same day,
+`benchmark-2026-08-18T04-03-54Z`, is kept and **superseded**: its capture rule
+demanded identical wording and so scored correctly decomposed listings at zero.
+It is retained because deleting a wrong measurement is how a corrected one
+stops being checkable.
 
 **Model selection consequence.** `gemma4:12b-mlx` cannot serve any role that
 needs a schema, which is every role this product uses a model for.

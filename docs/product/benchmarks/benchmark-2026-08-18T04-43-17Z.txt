@@ -1,0 +1,140 @@
+Talent Hound 0.1.0-poc on darwin/arm64, 2026-08-18T04:43:17Z
+Corpus: the synthetic corpus in this repository — invented, not real placements
+  hash f3280238af1715dbebc00699e904d1992db8776ca8e23c580cd8cb4a15ce82d9
+Schema v1, prompt v1
+  classify: qwen2.5:3b-instruct (FROM /Users/cam/.ollama/models/blobs/sha256-5ee4f07cdb9beadbbb293e85803c569b01bd37ed059d2715faa7bb405f31caa6)
+  embed: nomic-embed-text (FROM /Users/cam/.ollama/models/blobs/sha256-970aa74c0a90ef7482477cf803618e776e173c007bf957f635f1015bfcfef0e6)
+  generate: not used by this benchmark (n/a)
+
+Classifier: 20 listings
+  platform-engineer-melbourne: capture 0% (0/9), cited true, no unsupported true, constraints exact false
+    location: missing
+    work_arrangement: missing
+    employment_type: missing
+    work_rights: missing
+    compensation: missing
+  backend-engineer-sydney: capture 44% (4/9), cited true, no unsupported true, constraints exact false
+    location: map[], want map[place:Sydney]
+    work_arrangement: map[], want map[arrangement:onsite]
+    employment_type: map[], want map[employmentType:permanent]
+    work_rights: map[], want map[rights:australian work rights]
+    compensation: map[], want map[amount:150000 basis:annual currency:AUD]
+  site-reliability-brisbane: capture 44% (4/9), cited true, no unsupported true, constraints exact false
+    location: map[], want map[place:Brisbane]
+    work_arrangement: map[], want map[arrangement:hybrid]
+    employment_type: map[], want map[employmentType:permanent]
+    work_rights: map[], want map[rights:australian work rights]
+    compensation: map[], want map[amount:165000 basis:annual currency:AUD]
+  data-engineer-melbourne: capture 22% (2/9), cited true, no unsupported true, constraints exact false
+    location: missing
+    work_arrangement: map[], want map[arrangement:remote]
+    employment_type: map[], want map[employmentType:permanent]
+    work_rights: map[], want map[rights:australian work rights]
+    compensation: map[], want map[amount:155000 basis:annual currency:AUD]
+  staff-engineer-perth: capture 0% (0/9), cited true, no unsupported true, constraints exact false
+    location: missing
+    work_arrangement: missing
+    employment_type: missing
+    work_rights: missing
+    compensation: missing
+  frontend-engineer-sydney: capture 0% (0/9), cited true, no unsupported true, constraints exact false
+    location: missing
+    work_arrangement: missing
+    employment_type: missing
+    work_rights: missing
+    compensation: missing
+  security-engineer-canberra: capture 0% (0/9), cited true, no unsupported true, constraints exact false
+    location: missing
+    work_arrangement: missing
+    employment_type: missing
+    work_rights: missing
+    compensation: missing
+  ml-engineer-melbourne: capture 0% (0/9), cited true, no unsupported true, constraints exact false
+    location: missing
+    work_arrangement: missing
+    employment_type: missing
+    work_rights: missing
+    compensation: missing
+  devops-engineer-adelaide: capture 0% (0/9), cited true, no unsupported true, constraints exact false
+    location: missing
+    work_arrangement: missing
+    employment_type: missing
+    work_rights: missing
+    compensation: missing
+  mobile-engineer-sydney: capture 44% (4/9), cited true, no unsupported true, constraints exact false
+    location: map[], want map[place:Sydney]
+    work_arrangement: missing
+    employment_type: map[], want map[employmentType:permanent]
+    work_rights: map[], want map[rights:australian work rights]
+    compensation: map[], want map[amount:150000 basis:annual currency:AUD]
+  principal-engineer-melbourne: capture 0% (0/9), cited true, no unsupported true, constraints exact false
+    location: missing
+    work_arrangement: missing
+    employment_type: missing
+    work_rights: missing
+    compensation: missing
+  backend-contract-melbourne: capture 0% (0/9), cited true, no unsupported true, constraints exact false
+    location: missing
+    work_arrangement: missing
+    employment_type: missing
+    work_rights: missing
+    compensation: missing
+  platform-engineer-remote: capture 0% (0/9), cited true, no unsupported true, constraints exact false
+    location: missing
+    work_arrangement: missing
+    employment_type: missing
+    work_rights: missing
+    compensation: missing
+  qa-engineer-brisbane: capture 0% (0/9), cited true, no unsupported true, constraints exact false
+    location: missing
+    work_arrangement: missing
+    employment_type: missing
+    work_rights: missing
+    compensation: missing
+  data-platform-sydney: capture 0% (0/9), cited true, no unsupported true, constraints exact false
+    location: missing
+    work_arrangement: missing
+    employment_type: missing
+    work_rights: missing
+    compensation: missing
+  engineering-manager-melbourne: capture 0% (0/9), cited true, no unsupported true, constraints exact false
+    location: missing
+    work_arrangement: missing
+    employment_type: missing
+    work_rights: missing
+    compensation: missing
+  integration-engineer-hobart: capture 0% (0/9), cited true, no unsupported true, constraints exact false
+    location: missing
+    work_arrangement: missing
+    employment_type: missing
+    work_rights: missing
+    compensation: missing
+  embedded-engineer-perth: capture 44% (4/9), cited true, no unsupported true, constraints exact false
+    location: map[], want map[place:Perth]
+    work_arrangement: missing
+    employment_type: map[], want map[employmentType:permanent]
+    work_rights: map[], want map[rights:australian work rights]
+    compensation: map[], want map[amount:160000 basis:annual currency:AUD]
+  solutions-architect-sydney: capture 0% (0/9), cited true, no unsupported true, constraints exact false
+    location: missing
+    work_arrangement: missing
+    employment_type: missing
+    work_rights: missing
+    compensation: missing
+  junior-backend-melbourne: capture 0% (0/9), cited true, no unsupported true, constraints exact false
+    location: missing
+    work_arrangement: missing
+    employment_type: missing
+    work_rights: missing
+    compensation: missing
+
+Matching: 0 of 5 scenarios reached three plausible
+  go-platform-melbourne: 0 plausible of 0 distinct — no candidate profile: the classify model did not answer
+  data-python-melbourne: 0 plausible of 0 distinct — no candidate profile: the classify model did not answer
+  frontend-accessibility-sydney: 0 plausible of 0 distinct — no candidate profile: the classify model did not answer
+  sre-kubernetes-brisbane: 0 plausible of 0 distinct — no candidate profile: the classify model did not answer
+  embedded-c-perth: 0 plausible of 0 distinct — no candidate profile: the classify model did not answer
+
+Eligible roles: 20
+
+Outcome: fail
