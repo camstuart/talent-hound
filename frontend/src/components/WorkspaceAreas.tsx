@@ -10,6 +10,7 @@ import CriteriaPanel from "./CriteriaPanel";
 import DiscoveryPanel from "./DiscoveryPanel";
 import ShortlistPanel from "./ShortlistPanel";
 import MatchesPanel from "./MatchesPanel";
+import DraftsPanel from "./DraftsPanel";
 
 // The four areas every initiative workspace has. Each one says what will live
 // there; none of them pretends to a pipeline that does not exist yet.
@@ -68,6 +69,9 @@ export default function WorkspaceAreas(props: { initiativeId: number; type: Init
         <Show when={area() === "research"}>
           <DiscoveryPanel initiativeId={props.initiativeId} />
           <RoleProfilePanel initiativeId={props.initiativeId} />
+        </Show>
+        <Show when={area() === "drafts"}>
+          <DraftsPanel initiativeId={props.initiativeId} />
         </Show>
         <Show when={area() === "matches"}>
           <ShortlistPanel initiativeId={props.initiativeId} />

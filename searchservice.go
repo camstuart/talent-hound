@@ -49,7 +49,20 @@ type Hit struct {
 // candidate and roles when those pipelines exist and their evidence needs
 // finding from here.
 func (s *SearchService) Search(initiativeID uint, query string, limit int) ([]Hit, error) {
-	match := ftsQuery(query)
+	return s.search(initiativeID, ftsQuery(query), limit)
+}
+
+// SearchAny finds sections containing any of the query's words, best first.
+//
+// The AND of every term is right for a keyword search — a recruiter typing two
+// words wants both — and wrong for a question, where "how many years of
+// quokkastack do they have" would require the document to contain "how". So a
+// question ORs its terms and lets bm25 decide which sections are worth reading.
+func (s *SearchService) SearchAny(initiativeID uint, query string, limit int) ([]Hit, error) {
+	return s.search(initiativeID, ftsAnyQuery(query), limit)
+}
+
+func (s *SearchService) search(initiativeID uint, match string, limit int) ([]Hit, error) {
 	hits := []Hit{}
 	if match == "" {
 		return hits, nil
@@ -143,6 +156,11 @@ func location(artifact string, path models.StringList, ordinal int) string {
 		return fmt.Sprintf("%s — section %d", artifact, ordinal+1)
 	}
 	return fmt.Sprintf("%s — %s (section %d)", artifact, strings.Join(path, " › "), ordinal+1)
+}
+
+// ftsAnyQuery is ftsQuery with OR between the terms, for questions.
+func ftsAnyQuery(query string) string {
+	return strings.Join(strings.Fields(ftsQuery(query)), " OR ")
 }
 
 // ftsQuery turns whatever the recruiter typed into an FTS5 expression that

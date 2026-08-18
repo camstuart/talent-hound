@@ -577,6 +577,47 @@ var migrations = []migration{
 				" BEGIN SELECT RAISE(ABORT, 'failure reason must be a short code'); END",
 		},
 	},
+	{
+		Version: 15,
+		Name:    "drafts_and_answers",
+		SQL: []string{
+			"CREATE TABLE `drafts` (" +
+				"`id` integer PRIMARY KEY AUTOINCREMENT," +
+				"`initiative_id` integer NOT NULL REFERENCES `initiatives`(`id`)," +
+				"`candidate_id` integer REFERENCES `candidates`(`id`)," +
+				"`role_id` integer REFERENCES `roles`(`id`)," +
+				"`kind` text NOT NULL CHECK (`kind` IN ('pitch','outreach'))," +
+				// Two states, and copying is neither: a copy is an event, which
+				// is what makes "copied twice" expressible and what keeps
+				// discarding from ever looking like a send.
+				"`state` text NOT NULL DEFAULT 'active' " +
+				"CHECK (`state` IN ('active','discarded'))," +
+				"`subject` text NOT NULL DEFAULT ''," +
+				"`body` text NOT NULL," +
+				// The claim-to-evidence map as it was at generation, as JSON.
+				"`claims` text NOT NULL DEFAULT '[]'," +
+				"`created_at` datetime," +
+				"`updated_at` datetime)",
+			"CREATE INDEX `idx_drafts_initiative` ON `drafts`(`initiative_id`,`state`)",
+			"CREATE TABLE `answers` (" +
+				"`id` integer PRIMARY KEY AUTOINCREMENT," +
+				"`initiative_id` integer NOT NULL REFERENCES `initiatives`(`id`)," +
+				"`question` text NOT NULL," +
+				"`answer` text NOT NULL DEFAULT ''," +
+				// Supported says the evidence backs it. An unsupported answer
+				// carries no factual assertion at all.
+				"`supported` numeric NOT NULL DEFAULT 0," +
+				"`citations` text NOT NULL DEFAULT '[]'," +
+				"`asked_at` datetime NOT NULL," +
+				"`created_at` datetime," +
+				"`updated_at` datetime)",
+			"CREATE INDEX `idx_answers_initiative` ON `answers`(`initiative_id`,`asked_at`)",
+			// A copy is an audit event beside the disclosure ones, on the same
+			// terms: it records that, never what. The table already has no
+			// content column, which is the property being reused.
+			"ALTER TABLE `disclosure_events` ADD COLUMN `draft_id` integer REFERENCES `drafts`(`id`)",
+		},
+	},
 }
 
 // badVectorLength is the condition an embedding is refused on: a blob that is

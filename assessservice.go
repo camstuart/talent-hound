@@ -196,7 +196,15 @@ func (s *AssessService) assessOne(
 	return func(tx *gorm.DB) error {
 		// Whole or nothing: a partly-written match is a conclusion missing the
 		// requirement the recruiter cared about.
-		err := tx.Where("initiative_id = ? AND candidate_id = ? AND role_id = ?",
+		// Results first: they reference the match, and a foreign key does not
+		// care that the parent is about to go.
+		err := tx.Where("match_id IN (SELECT id FROM matches WHERE "+
+			"initiative_id = ? AND candidate_id = ? AND role_id = ?)",
+			initiativeID, candidateID, roleID).Delete(&models.MatchResult{}).Error
+		if err != nil {
+			return fmt.Errorf("clearing the previous match's results: %w", err)
+		}
+		err = tx.Where("initiative_id = ? AND candidate_id = ? AND role_id = ?",
 			initiativeID, candidateID, roleID).Delete(&models.Match{}).Error
 		if err != nil {
 			return fmt.Errorf("clearing the previous match: %w", err)

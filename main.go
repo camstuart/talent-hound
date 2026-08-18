@@ -81,6 +81,8 @@ func main() {
 			application.NewService(NewDiscoveryService(gdb, exa, profiles, criteria, records, artifacts)),
 			application.NewService(shortlist),
 			application.NewService(NewAssessService(gdb, jobs, registry, ollama, embed, criteria, profiles, roleProfiles, shortlist)),
+			application.NewService(NewQAService(gdb, registry, ollama, search, embed, profiles)),
+			application.NewService(NewDraftService(gdb, registry, ollama, profiles, roleProfiles)),
 			application.NewService(NewCredentialService()),
 		},
 		Assets: application.AssetOptions{

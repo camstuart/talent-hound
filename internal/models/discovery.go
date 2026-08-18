@@ -37,12 +37,16 @@ type DisclosureEvent struct {
 	Task       string    `gorm:"not null" json:"task"`
 	// Categories names the kinds of information disclosed — "professional
 	// requirements" — never the information.
-	Categories   string    `gorm:"not null;default:''" json:"categories"`
-	InitiativeID *uint     `json:"initiativeId"`
-	CandidateID  *uint     `json:"candidateId"`
-	RoleID       *uint     `json:"roleId"`
-	CreatedAt    time.Time `json:"createdAt"`
-	UpdatedAt    time.Time `json:"updatedAt"`
+	Categories   string `gorm:"not null;default:''" json:"categories"`
+	InitiativeID *uint  `json:"initiativeId"`
+	CandidateID  *uint  `json:"candidateId"`
+	RoleID       *uint  `json:"roleId"`
+	// DraftID is set for a copy-out event. Like every other reference here it
+	// is an identifier: this table records that something happened, never what
+	// it said.
+	DraftID   *uint     `json:"draftId"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
 }
 
 // The tasks a disclosure can be for. Role search is the only one this phase
