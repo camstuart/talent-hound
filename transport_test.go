@@ -189,3 +189,83 @@ func TestTheAuditVocabularyCannotExpressASend(t *testing.T) {
 func taskVocabulary() string {
 	return strings.Join([]string{"role_search", "copied_out"}, " ")
 }
+
+// reporters are what telemetry is made of: the SDKs, the hosted endpoints, and
+// the words a background reporter is usually called by.
+//
+// The PRD says no telemetry — not telemetry that is off by default, because a
+// reporter with a flag is a reporter.
+var reporters = []string{
+	"sentry", "posthog", "mixpanel", "segment.io", "segment.com", "amplitude",
+	"datadoghq", "bugsnag", "rollbar", "new relic", "newrelic", "opentelemetry",
+	"go.opentelemetry.io", "google-analytics", "googletagmanager", "plausible.io",
+	"analytics.", "telemetry.", "crashreport", "usage_reporting",
+}
+
+func TestNoTelemetryExistsInTheRepository(t *testing.T) {
+	root, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("finding the repository: %v", err)
+	}
+
+	found := []string{}
+	err = filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
+		if err != nil {
+			//nolint:nilerr // an unreadable entry is not a finding
+			return nil
+		}
+		if d.IsDir() {
+			if skipped[d.Name()] {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if !scannedExtensions[filepath.Ext(path)] {
+			return nil
+		}
+		text := string(mustRead(path))
+		if strings.Contains(text, exemptionMarker) {
+			return nil
+		}
+		lowered := strings.ToLower(text)
+		for _, reporter := range reporters {
+			if strings.Contains(lowered, reporter) {
+				found = append(found, path+" contains "+reporter)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("scanning: %v", err)
+	}
+	if len(found) > 0 {
+		t.Fatalf("the application must contain no telemetry, but:\n  %s",
+			strings.Join(found, "\n  "))
+	}
+}
+
+// A setting that enables telemetry is telemetry: there is nothing to opt into.
+func TestNoTelemetrySettingExists(t *testing.T) {
+	root, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("finding the repository: %v", err)
+	}
+	entries, err := os.ReadDir(root)
+	if err != nil {
+		t.Fatalf("reading the repository: %v", err)
+	}
+	for _, entry := range entries {
+		if entry.IsDir() || !strings.HasSuffix(entry.Name(), "service.go") {
+			continue
+		}
+		lowered := strings.ToLower(string(mustRead(filepath.Join(root, entry.Name()))))
+		// Words that would mean a setting, not prose about one: a comment
+		// explaining why a secret must never reach a crash report is the reason
+		// there is no crash reporter, not evidence of one.
+		for _, word := range []string{"telemetry", "analytics", "usage data", "crashreport"} {
+			if strings.Contains(lowered, word) {
+				t.Fatalf("%s offers %q", entry.Name(), word)
+			}
+		}
+	}
+}

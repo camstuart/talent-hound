@@ -23,6 +23,8 @@ import (
 // owns every deletion invariant.
 type ArtifactService struct {
 	db *gorm.DB
+	// Guard refuses artifacts in demo scope and on an unencrypted volume.
+	Guard DataGuard
 }
 
 // NewArtifactService returns an ArtifactService backed by db.
@@ -59,6 +61,9 @@ func (s *ArtifactService) create(
 	targetType models.LinkTarget,
 	targetID uint,
 ) (*models.Artifact, error) {
+	if err := guardAllows(s.Guard); err != nil {
+		return nil, err
+	}
 	// Checked before the row is built: a refused ingestion never allocates a
 	// 25 MB blob into a transaction.
 	if int64(len(data)) > models.MaxArtifactBytes {

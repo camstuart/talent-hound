@@ -1,0 +1,376 @@
+package main
+
+import (
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+
+	"camstuart/talent-hound/internal/extract"
+	"camstuart/talent-hound/internal/models"
+	"camstuart/talent-hound/internal/platform"
+	"camstuart/talent-hound/internal/setup"
+)
+
+// Every fixture here is invented. No real candidate information appears in this
+// repository's tests, fixtures, or output.
+
+// setupEnv is a setup service over a real database, a fake Ollama, and its own
+// config and data folders.
+type setupEnv struct {
+	*modelEnv
+	setup   *SetupService
+	confDir string
+	dataDir string
+}
+
+func newSetupEnv(t *testing.T, installed ...string) *setupEnv {
+	t.Helper()
+	// The stand-in sidecar, so a wizard test is about the wizard rather than
+	// about whether this machine has the packaged sidecar installed.
+	t.Setenv(extract.SidecarPathEnv, buildFakeSidecar(t))
+	base := newModelEnv(t, installed...)
+	confDir, dataDir := t.TempDir(), t.TempDir()
+	sv, err := NewSetupService(base.db, base.models, confDir, dataDir)
+	if err != nil {
+		t.Fatalf("creating the setup service: %v", err)
+	}
+	return &setupEnv{modelEnv: base, setup: sv, confDir: confDir, dataDir: dataDir}
+}
+
+// encrypted forces the gate's answer, so a test about scope is not a test about
+// this machine's disk.
+func (e *setupEnv) encrypted(status platform.EncryptionStatus) {
+	e.setup.mu.Lock()
+	e.setup.encryption = status
+	e.setup.mu.Unlock()
+}
+
+func (e *setupEnv) state(t *testing.T) *SetupStatus {
+	t.Helper()
+	st, err := e.setup.State()
+	if err != nil {
+		t.Fatalf("reading setup state: %v", err)
+	}
+	return st
+}
+
+func TestAFreshInstallStartsAtTheDataFolder(t *testing.T) {
+	e := newSetupEnv(t)
+	// A fresh install: nothing chosen, so the pointer is empty.
+	e.setup.mu.Lock()
+	e.setup.settings.DataFolder = ""
+	e.setup.mu.Unlock()
+
+	if got := e.state(t).Next; got != setup.StepDataFolder {
+		t.Fatalf("next step = %q, want the data folder", got)
+	}
+}
+
+func TestChoosingAFolderRecordsItAndItSurvivesARestart(t *testing.T) {
+	e := newSetupEnv(t)
+	chosen := filepath.Join(t.TempDir(), "Talent Hound")
+	if err := e.setup.ChooseFolder(chosen); err != nil {
+		t.Fatalf("choosing a folder: %v", err)
+	}
+
+	restarted, err := NewSetupService(e.db, e.models, e.confDir, "")
+	if err != nil {
+		t.Fatalf("restarting: %v", err)
+	}
+	st, err := restarted.State()
+	if err != nil {
+		t.Fatalf("reading state: %v", err)
+	}
+	if st.DataFolder != chosen {
+		t.Fatalf("data folder = %q, want %q", st.DataFolder, chosen)
+	}
+}
+
+func TestAnUnwritableFolderIsRefusedBeforeAnythingIsRecorded(t *testing.T) {
+	e := newSetupEnv(t)
+	dir := filepath.Join(t.TempDir(), "read-only")
+	if err := os.Mkdir(dir, 0o500); err != nil { //nolint:gosec // deliberately read-only
+		t.Fatalf("creating the folder: %v", err)
+	}
+	t.Cleanup(func() { _ = os.Chmod(dir, 0o700) }) //nolint:gosec // restoring a test folder so it can be removed
+
+	if err := e.setup.ChooseFolder(dir); err == nil {
+		t.Fatal("an unwritable folder was accepted")
+	} else if !strings.Contains(err.Error(), "written to") {
+		t.Fatalf("the refusal did not name writability: %v", err)
+	}
+	if st := e.state(t); st.DataFolder == dir {
+		t.Fatal("the refused folder was recorded anyway")
+	}
+}
+
+// The acknowledgement is required, is recorded with the version of the text
+// accepted, and survives a restart.
+func TestTheAcknowledgementIsRequiredAndRecordedWithItsVersion(t *testing.T) {
+	e := newSetupEnv(t, setup.Required[0].Model, setup.Required[1].Model)
+	e.encrypted(platform.StatusEncrypted)
+	assignAll(t, e)
+
+	if got := e.state(t).Next; got != setup.StepAcknowledgement {
+		t.Fatalf("next step = %q, want the acknowledgement", got)
+	}
+	if len(e.setup.Acknowledgements()) == 0 {
+		t.Fatal("there is no text to acknowledge")
+	}
+	if err := e.setup.Acknowledge(); err != nil {
+		t.Fatalf("acknowledging: %v", err)
+	}
+	if got := e.state(t).Next; got != setup.StepFirstInitiative {
+		t.Fatalf("next step = %q, want the first initiative", got)
+	}
+
+	settings, err := setup.Load(e.confDir)
+	if err != nil {
+		t.Fatalf("loading settings: %v", err)
+	}
+	if settings.Acknowledged != setup.AcknowledgementVersion {
+		t.Fatalf("acknowledgement recorded as %q, want the version", settings.Acknowledged)
+	}
+}
+
+func TestSetupIsCompleteOnlyAfterTheFirstInitiative(t *testing.T) {
+	e := newSetupEnv(t, setup.Required[0].Model, setup.Required[1].Model)
+	e.encrypted(platform.StatusEncrypted)
+	assignAll(t, e)
+	if err := e.setup.Acknowledge(); err != nil {
+		t.Fatalf("acknowledging: %v", err)
+	}
+	if got := e.state(t).Next; got != setup.StepFirstInitiative {
+		t.Fatalf("next step = %q, want the first initiative", got)
+	}
+
+	initiatives := NewInitiativeService(e.db)
+	if _, err := initiatives.Create("A first search", models.InitiativeTypeTalentSearch, nil); err != nil {
+		t.Fatalf("creating an initiative: %v", err)
+	}
+	st := e.state(t)
+	if !st.Complete || st.Next != setup.StepComplete {
+		t.Fatalf("setup is not complete: %+v", st.Next)
+	}
+}
+
+// Cancelling is simply not finishing a step: nothing earlier is lost, and the
+// state is the first unsatisfied step again.
+func TestCancellingLosesNothingEarlier(t *testing.T) {
+	e := newSetupEnv(t, setup.Required[0].Model, setup.Required[1].Model)
+	e.encrypted(platform.StatusEncrypted)
+	assignAll(t, e)
+	if err := e.setup.Acknowledge(); err != nil {
+		t.Fatalf("acknowledging: %v", err)
+	}
+
+	restarted, err := NewSetupService(e.db, e.models, e.confDir, e.dataDir)
+	if err != nil {
+		t.Fatalf("restarting: %v", err)
+	}
+	restarted.mu.Lock()
+	restarted.encryption = platform.StatusEncrypted
+	restarted.mu.Unlock()
+	st, err := restarted.State()
+	if err != nil {
+		t.Fatalf("reading state: %v", err)
+	}
+	if !st.Acknowledged {
+		t.Fatal("the acknowledgement was lost by restarting")
+	}
+	if st.Next != setup.StepFirstInitiative {
+		t.Fatalf("next step = %q, want the first initiative", st.Next)
+	}
+}
+
+func TestAMissingModelHoldsSetupAtTheModelsStep(t *testing.T) {
+	// Only the embedding model is installed.
+	e := newSetupEnv(t, setup.Required[0].Model)
+	e.encrypted(platform.StatusEncrypted)
+	assignAll(t, e)
+
+	st := e.state(t)
+	if st.Next != setup.StepModels {
+		t.Fatalf("next step = %q, want the models step", st.Next)
+	}
+	missing := 0
+	for _, m := range st.Models {
+		if m.ApproxBytes <= 0 {
+			t.Fatalf("model %q was listed with no download size", m.Model)
+		}
+		if !m.Installed {
+			missing++
+		}
+	}
+	if missing == 0 {
+		t.Fatal("no model was reported missing")
+	}
+}
+
+// Declining a pull is an answer, not a failure: setup stays where it is and
+// nothing earlier is lost.
+func TestDecliningAPullLeavesSetupResumable(t *testing.T) {
+	e := newSetupEnv(t, setup.Required[0].Model)
+	e.encrypted(platform.StatusEncrypted)
+	assignAll(t, e)
+
+	if err := e.setup.DeclineModel(models.RoleGenerate); err != nil {
+		t.Fatalf("declining: %v", err)
+	}
+	st := e.state(t)
+	if st.Next != setup.StepModels {
+		t.Fatalf("next step = %q, want the models step", st.Next)
+	}
+	if st.DataFolder == "" {
+		t.Fatal("declining a pull lost the data folder")
+	}
+	for _, m := range st.Models {
+		if m.Role == models.RoleGenerate && m.State != models.ModelPullDeclined {
+			t.Fatalf("the declined role reports %q", m.State)
+		}
+	}
+}
+
+func TestAFailedPullLeavesSetupResumable(t *testing.T) {
+	e := newSetupEnv(t, setup.Required[0].Model)
+	e.encrypted(platform.StatusEncrypted)
+	assignAll(t, e)
+	e.fake.set(func(f *fakeOllama) { f.pullErr = "no space left on device" })
+
+	job, err := e.setup.PullModel(models.RoleGenerate)
+	if err != nil {
+		t.Fatalf("starting the pull: %v", err)
+	}
+	if done := waitForJob(t, e.jobs, job.ID); done.State != models.JobFailed {
+		t.Fatalf("the pull job is %s, want failed", done.State)
+	}
+
+	st := e.state(t)
+	if st.Next != setup.StepModels {
+		t.Fatalf("next step = %q, want the models step", st.Next)
+	}
+	if st.DataFolder == "" {
+		t.Fatal("a failed pull lost the data folder")
+	}
+}
+
+// A dependency disappearing moves the state back, because the state is
+// recomputed rather than remembered.
+func TestOllamaDisappearingMovesTheWizardBack(t *testing.T) {
+	e := newSetupEnv(t, setup.Required[0].Model, setup.Required[1].Model)
+	e.encrypted(platform.StatusEncrypted)
+	assignAll(t, e)
+	if err := e.setup.Acknowledge(); err != nil {
+		t.Fatalf("acknowledging: %v", err)
+	}
+
+	e.fake.server.Close()
+	st := e.state(t)
+	if st.Next != setup.StepOllama {
+		t.Fatalf("next step = %q, want the Ollama step", st.Next)
+	}
+	for _, view := range st.Steps {
+		if view.Step == setup.StepOllama && !strings.Contains(view.Detail, "Ollama") {
+			t.Fatalf("the Ollama step did not name Ollama: %q", view.Detail)
+		}
+	}
+}
+
+func TestARealScopeOnAnUncheckableVolumeRefusesData(t *testing.T) {
+	e := newSetupEnv(t)
+	for _, status := range []platform.EncryptionStatus{
+		platform.StatusUnencrypted, platform.StatusUnavailable, platform.StatusPermissionDenied,
+	} {
+		e.encrypted(status)
+		if err := e.setup.AllowRealData(); err == nil {
+			t.Fatalf("%q permitted real data", status)
+		}
+	}
+	e.encrypted(platform.StatusEncrypted)
+	if err := e.setup.AllowRealData(); err != nil {
+		t.Fatalf("an encrypted volume refused real data: %v", err)
+	}
+}
+
+// A blocked real scope stays real: switching the recruiter to demo behind their
+// back would be a change to what the application holds, made silently.
+func TestABlockedRealScopeDoesNotBecomeDemo(t *testing.T) {
+	e := newSetupEnv(t)
+	e.encrypted(platform.StatusUnencrypted)
+	st := e.state(t)
+	if st.Scope != setup.ScopeReal {
+		t.Fatalf("scope = %q, want it unchanged", st.Scope)
+	}
+	if st.RealData || st.RealDataWhy == "" {
+		t.Fatal("a blocked scope did not say why")
+	}
+}
+
+func TestDemoScopeRefusesArtifactsAndCandidates(t *testing.T) {
+	e := newSetupEnv(t)
+	if err := e.setup.SetScope(setup.ScopeDemo); err != nil {
+		t.Fatalf("choosing demo scope: %v", err)
+	}
+	records := NewRecordService(e.db)
+	records.Guard = e.setup
+	artifacts := NewArtifactService(e.db)
+	artifacts.Guard = e.setup
+
+	if _, err := records.CreateCandidate(models.Candidate{FullName: "Nadia Frost"}); err == nil {
+		t.Fatal("demo scope accepted a candidate")
+	}
+	var candidates int64
+	if err := e.db.Model(&models.Candidate{}).Count(&candidates).Error; err != nil {
+		t.Fatalf("counting candidates: %v", err)
+	}
+	if candidates != 0 {
+		t.Fatalf("%d candidates were stored in demo scope", candidates)
+	}
+
+	if _, err := artifacts.create("notes", "notes.md", "test", []byte("# notes\n"),
+		models.LinkInitiative, 1); err == nil {
+		t.Fatal("demo scope accepted an artifact")
+	}
+	var stored int64
+	if err := e.db.Model(&models.Artifact{}).Count(&stored).Error; err != nil {
+		t.Fatalf("counting artifacts: %v", err)
+	}
+	if stored != 0 {
+		t.Fatalf("%d artifacts were stored in demo scope", stored)
+	}
+}
+
+// The refusal is at the write, not in the interface: calling the service
+// directly is refused identically.
+func TestTheScopeRefusalIsAtTheWrite(t *testing.T) {
+	e := newSetupEnv(t)
+	if err := e.setup.SetScope(setup.ScopeDemo); err != nil {
+		t.Fatalf("choosing demo scope: %v", err)
+	}
+	records := NewRecordService(e.db)
+	records.Guard = e.setup
+	if _, err := records.CreateCandidate(models.Candidate{FullName: "Nadia Frost"}); err == nil {
+		t.Fatal("a direct call was accepted")
+	}
+}
+
+func TestAnUnknownScopeIsRefused(t *testing.T) {
+	e := newSetupEnv(t)
+	if err := e.setup.SetScope("everything"); err == nil {
+		t.Fatal("an unknown scope was accepted")
+	}
+}
+
+// assignAll assigns every role a model, so the wizard is past the registry's
+// unassigned state and the missing-model case is about the model, not the
+// assignment.
+func assignAll(t *testing.T, e *setupEnv) {
+	t.Helper()
+	for _, req := range setup.Required {
+		in := AssignInput{Role: req.Role, Model: req.Model, Endpoint: e.fake.server.URL}
+		if _, err := e.models.Assign(in); err != nil {
+			t.Fatalf("assigning %q: %v", req.Role, err)
+		}
+	}
+}

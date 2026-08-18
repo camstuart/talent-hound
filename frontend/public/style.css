@@ -555,3 +555,24 @@ button {
 .setting-row input {
     grid-column: 1;
 }
+
+/* What is true right now, kept on screen while working. */
+.status-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 1.2rem;
+    padding: 0.35rem 0.8rem;
+    border-top: 1px solid var(--border, #2a2a2a);
+    font-size: 0.8rem;
+    opacity: 0.85;
+}
+
+.status-strip span {
+    white-space: nowrap;
+}
+
+/* A step that is done, the one to be on, and the ones not reached yet read
+   differently at a glance. */
+li[data-satisfied="yes"] .artifact-name {
+    opacity: 0.6;
+}

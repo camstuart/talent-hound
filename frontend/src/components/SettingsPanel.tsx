@@ -2,6 +2,8 @@ import { createSignal, For, onMount, Show } from "solid-js";
 import { CredentialService, ModelService } from "../../bindings/camstuart/talent-hound";
 import { ModelRole } from "../../bindings/camstuart/talent-hound/internal/models";
 import type { Status } from "../../bindings/camstuart/talent-hound";
+import FirstRunWizard from "./FirstRunWizard";
+import DiagnosticsPanel from "./DiagnosticsPanel";
 
 // What each availability state means, in the recruiter's terms. They are
 // separate states because the thing to do about each one is different.
@@ -168,6 +170,9 @@ export default function SettingsPanel() {
           </For>
         </ul>
       </section>
+
+      <FirstRunWizard />
+      <DiagnosticsPanel />
 
       <Show when={error()}>
         <p class="modal-error">{error()}</p>

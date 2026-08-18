@@ -8,6 +8,9 @@ import TabBar from "./components/TabBar";
 import NewInitiativeModal from "./components/NewInitiativeModal";
 import WorkspaceAreas from "./components/WorkspaceAreas";
 import SettingsPanel from "./components/SettingsPanel";
+import StatusStrip from "./components/StatusStrip";
+import FirstRunWizard from "./components/FirstRunWizard";
+import { SetupService } from "../bindings/camstuart/talent-hound";
 import { InitiativeIcon, INITIATIVE_TYPE_LABELS } from "./components/InitiativeIcon";
 
 export default function App() {
@@ -19,6 +22,9 @@ export default function App() {
   const [renaming, setRenaming] = createSignal(false);
   const [showSettings, setShowSettings] = createSignal(false);
   const [error, setError] = createSignal("");
+  // Setup is only in the way while there is no data folder: with nowhere to put
+  // anything, every other screen is a screen that cannot save what it collects.
+  const [needsSetup, setNeedsSetup] = createSignal(false);
 
   // The backend decides what "listed" means; the checkbox only asks a different
   // question. Archived initiatives are left out by default — except one that is
@@ -30,6 +36,10 @@ export default function App() {
     setInitiatives([...listed, ...stillOpen.filter((i): i is Initiative => i !== null)]);
   };
   onMount(() => reload());
+  onMount(async () => {
+    const state = await SetupService.State().catch(() => null);
+    setNeedsSetup(state?.next === "data_folder");
+  });
 
   const byId = (id: number) => initiatives().find((i) => i.id === id);
   const openTabs = () => openTabIds().map(byId).filter((i): i is Initiative => i !== undefined);
@@ -103,10 +113,17 @@ export default function App() {
           <TabBar tabs={openTabs()} activeId={activeId()} onActivate={setActiveId} onClose={closeTab} />
         </Show>
         <div class="content">
-          <Show when={showSettings()}>
+          <Show when={needsSetup()}>
+            <div class="container">
+              <h1>Welcome to Talent Hound</h1>
+              <p class="muted">Choose where this installation keeps its data before anything else.</p>
+              <FirstRunWizard />
+            </div>
+          </Show>
+          <Show when={!needsSetup() && showSettings()}>
             <SettingsPanel />
           </Show>
-          <Show when={!showSettings()}>
+          <Show when={!needsSetup() && !showSettings()}>
           <Show when={activeInitiative()} fallback={<Welcome />}>
             {(initiative) => (
               <section class="initiative-panel">
@@ -156,6 +173,7 @@ export default function App() {
           </Show>
           </Show>
         </div>
+        <StatusStrip initiativeId={activeInitiative()?.id} initiativeName={activeInitiative()?.name} />
       </main>
       <Show when={showModal()}>
         <NewInitiativeModal onCreate={createInitiative} onCancel={() => setShowModal(false)} />

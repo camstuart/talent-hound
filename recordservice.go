@@ -16,6 +16,24 @@ import (
 // behaviour the others do not share.
 type RecordService struct {
 	db *gorm.DB
+	// Guard refuses personal-data entry in demo scope and on an unencrypted
+	// volume. It is checked here, at the write, rather than in the interface:
+	// the interface is not the only caller.
+	Guard DataGuard
+}
+
+// DataGuard decides whether this installation may hold candidate data. It is
+// set at startup; nil means unguarded, which is what a test with no setup
+// service is.
+type DataGuard interface {
+	AllowRealData() error
+}
+
+func guardAllows(g DataGuard) error {
+	if g == nil {
+		return nil
+	}
+	return g.AllowRealData()
 }
 
 // NewRecordService returns a RecordService backed by db.
@@ -29,6 +47,9 @@ func NewRecordService(db *gorm.DB) *RecordService {
 
 // CreateCandidate validates and persists a candidate.
 func (s *RecordService) CreateCandidate(candidate models.Candidate) (*models.Candidate, error) {
+	if err := guardAllows(s.Guard); err != nil {
+		return nil, err
+	}
 	candidate.ID = 0
 	if err := candidate.Validate(); err != nil {
 		return nil, err

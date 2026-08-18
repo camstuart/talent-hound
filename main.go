@@ -5,6 +5,7 @@ package main
 import (
 	"embed"
 	"log"
+	"os"
 	"path/filepath"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
@@ -20,6 +21,20 @@ import (
 
 //go:embed all:frontend/dist
 var assets embed.FS
+
+// configDir is where the pointer to the data folder lives — outside the data
+// folder itself. TALENT_HOUND_CONFIG_DIR overrides it, so an E2E run never
+// reads or writes the recruiter's own setup.
+func configDir() string {
+	if dir := os.Getenv("TALENT_HOUND_CONFIG_DIR"); dir != "" {
+		return dir
+	}
+	conf, err := os.UserConfigDir()
+	if err != nil {
+		log.Fatal(err)
+	}
+	return filepath.Join(conf, "talent-hound")
+}
 
 // main function serves as the application's entry point. It initializes the application, creates a window,
 // and runs the application, logging any error that might occur.
@@ -55,6 +70,16 @@ func main() {
 	embed := NewEmbedService(gdb, jobs, registry, ollama)
 	roleProfiles := NewRoleProfileService(gdb, classify)
 	shortlist := NewShortlistService(gdb, search, embed, criteria, profiles, roleProfiles)
+	// The data folder is the folder holding the database: the one folder the
+	// recruiter copies for recovery.
+	dataDir := filepath.Dir(dbPath)
+	setupSv, err := NewSetupService(gdb, registry, configDir(), dataDir)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// Personal-data entry is refused at the write, not in the interface.
+	records.Guard = setupSv
+	artifacts.Guard = setupSv
 
 	// Create a new Wails application by providing the necessary options.
 	// Variables 'Name' and 'Description' are for application metadata.
@@ -87,6 +112,8 @@ func main() {
 			application.NewService(credentials),
 			application.NewService(NewCloudService(gdb, ollama, records, profiles, credentials)),
 			application.NewService(NewDeletionService(gdb)),
+			application.NewService(setupSv),
+			application.NewService(NewDiagnosticsService(gdb, setupSv, dataDir)),
 		},
 		Assets: application.AssetOptions{
 			Handler: application.AssetFileServerFS(assets),

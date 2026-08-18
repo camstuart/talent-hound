@@ -71,6 +71,13 @@ vi.mock("../bindings/camstuart/talent-hound", () => ({
     ListForTarget: mocks.ListForTarget,
     ListOrphans: mocks.ListOrphans,
   },
+  // The shell mounts the status strip and asks whether setup is finished.
+  SetupService: {
+    State: vi.fn(async () => ({ next: "complete", scope: "real", realData: true })),
+    Scope: vi.fn(async () => ({ scope: "real", realData: true })),
+  },
+  ModelService: { Check: vi.fn(async () => []) },
+  CloudService: { Tasks: vi.fn(async () => []) },
 }));
 
 beforeEach(() => {
