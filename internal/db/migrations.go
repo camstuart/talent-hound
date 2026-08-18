@@ -316,6 +316,66 @@ var migrations = []migration{
 				" BEGIN SELECT RAISE(ABORT, 'validated needs a benchmark reference'); END",
 		},
 	},
+	{
+		Version: 9,
+		Name:    "embedding_spaces_and_embeddings",
+		// A vector is a number only relative to the model that produced it, and
+		// two incompatible geometries are indistinguishable as bytes. So the
+		// identity of the space is a row, the unique index makes it the only
+		// one, and every vector names it.
+		SQL: []string{
+			"CREATE TABLE `embedding_spaces` (" +
+				"`id` integer PRIMARY KEY AUTOINCREMENT," +
+				"`endpoint` text NOT NULL," +
+				"`model` text NOT NULL," +
+				"`digest` text NOT NULL DEFAULT ''," +
+				// The embed assignment revision that produced this space. Phase 8
+				// made this append-only precisely so it could be pointed at.
+				"`revision` integer NOT NULL," +
+				"`dimensions` integer NOT NULL CHECK (`dimensions` > 0)," +
+				"`metric` text NOT NULL CHECK (`metric` IN ('cosine'))," +
+				"`normalized` numeric NOT NULL DEFAULT 0," +
+				"`created_at` datetime," +
+				"`updated_at` datetime)",
+			// Every column of the identity, so the same configuration can never
+			// end up as two spaces whose vectors then never meet.
+			"CREATE UNIQUE INDEX `idx_embedding_spaces_identity` ON `embedding_spaces`" +
+				"(`endpoint`,`model`,`digest`,`revision`,`dimensions`,`metric`,`normalized`)",
+			"CREATE TABLE `embeddings` (" +
+				"`id` integer PRIMARY KEY AUTOINCREMENT," +
+				"`space_id` integer NOT NULL REFERENCES `embedding_spaces`(`id`)," +
+				"`owner_kind` text NOT NULL CHECK (`owner_kind` IN ('chunk','aspect'))," +
+				"`owner_id` integer NOT NULL," +
+				"`dimensions` integer NOT NULL CHECK (`dimensions` > 0)," +
+				// Little-endian float32, exactly 4×dimensions bytes.
+				"`vector` blob NOT NULL," +
+				"`created_at` datetime," +
+				"`updated_at` datetime)",
+			// One vector per retrieval unit per space: this is what makes a retry
+			// an upsert into a slot rather than a way to grow duplicates.
+			"CREATE UNIQUE INDEX `idx_embeddings_unit` ON `embeddings`" +
+				"(`space_id`,`owner_kind`,`owner_id`)",
+			// The blob length is the whole integrity story, and it is exact:
+			// there is no corruption that keeps the length and changes the
+			// meaning, so a length check catches everything a header would.
+			"CREATE TRIGGER `embeddings_length_insert` BEFORE INSERT ON `embeddings` " +
+				"FOR EACH ROW WHEN " + badVectorLength("NEW") +
+				" BEGIN SELECT RAISE(ABORT, 'vector length does not match its dimensions'); END",
+			"CREATE TRIGGER `embeddings_length_update` BEFORE UPDATE ON `embeddings` " +
+				"FOR EACH ROW WHEN " + badVectorLength("NEW") +
+				" BEGIN SELECT RAISE(ABORT, 'vector length does not match its dimensions'); END",
+			"CREATE INDEX `idx_embeddings_owner` ON `embeddings`(`owner_kind`,`owner_id`)",
+		},
+	},
+}
+
+// badVectorLength is the condition an embedding is refused on: a blob that is
+// not exactly four bytes per dimension, or one whose dimensions disagree with
+// the space it names.
+func badVectorLength(row string) string {
+	return "(length(" + row + ".`vector`) <> " + row + ".`dimensions` * 4" +
+		" OR " + row + ".`dimensions` <> (SELECT `dimensions` FROM `embedding_spaces`" +
+		" WHERE `id` = " + row + ".`space_id`))"
 }
 
 // unevidencedValidation is the condition an assignment is refused on: claiming

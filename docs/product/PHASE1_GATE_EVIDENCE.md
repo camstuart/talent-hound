@@ -73,6 +73,30 @@ Credential Manager, because there is deliberately no other store to test.
 | Credential service: store, replace, revoke, missing entry | _PASS / FAIL_ | |
 | Stored credential absent from the database, data folder, and a folder copy | _PASS / FAIL_ | paste the `EVIDENCE` line |
 
+## Phase 9 exact-scan measurements
+
+Added by Phase 9. Unlike every other table here these are **not** Windows-gated
+— `go test ./internal/vector/ -run TestExactScanCost` prints them anywhere. The
+figures below were recorded on the development machine; rerun on the target
+laptop and replace them, because the decision they support is a decision about
+the target laptop.
+
+The PRD leaves exact scanning in place unless it is measured and found wanting.
+These are that measurement, and no approximate index or vector extension is
+added while they hold.
+
+| Corpus (vectors) | Dimensions | Per query | Per vector | Machine |
+| --- | --- | --- | --- | --- |
+| 100 | 1024 | 346 µs | 3.46 µs | dev (Apple silicon) |
+| 1,000 | 1024 | 3.09 ms | 3.09 µs | dev (Apple silicon) |
+| 5,000 | 1024 | 10.91 ms | 2.18 µs | dev (Apple silicon) |
+| 20,000 | 1024 | 38.54 ms | 1.93 µs | dev (Apple silicon) |
+| | | | | _target laptop — record here_ |
+
+A realistic initiative holds a few thousand chunks, which lands under 11 ms per
+query with no index at all. The test fails above 250 ms, which is the point at
+which an approximate index would start being worth its correctness risk.
+
 ## Model measurements
 
 | Model | Role | Digest | Wall clock | Resident bytes | VRAM bytes | Embedding dims |

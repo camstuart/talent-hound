@@ -38,6 +38,10 @@ func main() {
 	// Extraction stages temporary plaintext beside the database, because that
 	// is the folder the PRD says is encrypted.
 	extraction := NewExtractService(gdb, jobs, filepath.Dir(dbPath))
+	// One Ollama client for the registry and for embedding: they talk to the
+	// same local endpoint, and the registry is what says which model answers.
+	ollama := platform.NewOllama()
+	registry := NewModelService(gdb, jobs, ollama)
 
 	// Create a new Wails application by providing the necessary options.
 	// Variables 'Name' and 'Description' are for application metadata.
@@ -56,7 +60,8 @@ func main() {
 			application.NewService(extraction),
 			application.NewService(NewChunkService(gdb, jobs)),
 			application.NewService(NewSearchService(gdb)),
-			application.NewService(NewModelService(gdb, jobs, platform.NewOllama())),
+			application.NewService(registry),
+			application.NewService(NewEmbedService(gdb, jobs, registry, ollama)),
 			application.NewService(NewCredentialService()),
 		},
 		Assets: application.AssetOptions{

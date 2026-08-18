@@ -3,15 +3,28 @@ import { render, screen, fireEvent, waitFor } from "@solidjs/testing-library";
 import SearchPanel from "./SearchPanel";
 
 // The Go backend is not running: bindings are mocked. Fixtures are invented.
-const { state, searchMocks, chunkMocks } = vi.hoisted(() => {
+const { state, searchMocks, chunkMocks, embedMocks } = vi.hoisted(() => {
   const state = {
     hits: [] as Record<string, unknown>[],
+    semantic: [] as Record<string, unknown>[],
     citation: null as Record<string, unknown> | null,
     count: 0,
     searchError: "",
+    semanticError: "",
+    coverage: null as Record<string, unknown> | null,
   };
   return {
     state,
+    embedMocks: {
+      Coverage: vi.fn(async () => state.coverage ?? { space: null, total: 0, embedded: 0, outstanding: 0 }),
+      SemanticSearch: vi.fn(async () => {
+        if (state.semanticError) throw new Error(state.semanticError);
+        return state.semantic;
+      }),
+      EmbedAll: vi.fn(async () => ({ id: 11, kind: "embed", state: "queued", totalItems: 3 })),
+      CurrentSpace: vi.fn(async () => state.coverage?.space ?? null),
+      Spaces: vi.fn(async () => []),
+    },
     searchMocks: {
       Search: vi.fn(async () => {
         if (state.searchError) throw new Error(state.searchError);
@@ -32,6 +45,7 @@ const { state, searchMocks, chunkMocks } = vi.hoisted(() => {
 vi.mock("../../bindings/camstuart/talent-hound", () => ({
   SearchService: searchMocks,
   ChunkService: chunkMocks,
+  EmbedService: embedMocks,
 }));
 
 const aHit = (over: Record<string, unknown> = {}) => ({
@@ -44,17 +58,32 @@ const aHit = (over: Record<string, unknown> = {}) => ({
   ...over,
 });
 
+const aSemanticHit = (over: Record<string, unknown> = {}) => ({
+  ...aHit(),
+  score: 0.8421,
+  spaceId: 1,
+  ...over,
+});
+
 beforeEach(() => {
   state.hits = [];
+  state.semantic = [];
   state.citation = null;
   state.count = 0;
   state.searchError = "";
+  state.semanticError = "";
+  state.coverage = null;
   vi.clearAllMocks();
 });
 
 const searchFor = async (query: string) => {
   fireEvent.input(screen.getByLabelText("Search evidence"), { target: { value: query } });
   fireEvent.click(screen.getByRole("button", { name: "Search" }));
+};
+
+const searchByMeaning = async (query: string) => {
+  fireEvent.change(screen.getByLabelText("Search by"), { target: { value: "meaning" } });
+  await searchFor(query);
 };
 
 describe("SearchPanel", () => {
@@ -128,5 +157,46 @@ describe("SearchPanel", () => {
     render(() => <SearchPanel initiativeId={1} />);
     await searchFor("anything");
     await screen.findByText("the search index is being rebuilt");
+  });
+
+  it("searches by meaning and shows the similarity of each hit", async () => {
+    state.semantic = [aSemanticHit()];
+    render(() => <SearchPanel initiativeId={4} />);
+    await searchByMeaning("someone who has run infrastructure");
+
+    await screen.findByText(/similarity 0\.842/);
+    expect(embedMocks.SemanticSearch).toHaveBeenCalledWith(4, "someone who has run infrastructure", 0);
+    // The two modes are two lists; asking for meaning does not also run words.
+    expect(searchMocks.Search).not.toHaveBeenCalled();
+  });
+
+  it("says which model indexed the workspace and how much of it", async () => {
+    state.coverage = {
+      space: { id: 1, model: "nomic-embed-text", revision: 2, dimensions: 768 },
+      total: 40,
+      embedded: 40,
+      outstanding: 0,
+    };
+    render(() => <SearchPanel initiativeId={1} />);
+    await screen.findByText(/40 of 40 sections embedded with nomic-embed-text \(revision 2, 768 dimensions\)/);
+  });
+
+  it("says what is outstanding when nothing has been embedded", async () => {
+    state.coverage = { space: null, total: 12, embedded: 0, outstanding: 12 };
+    render(() => <SearchPanel initiativeId={1} />);
+    await screen.findByText(/no embedding model has indexed this initiative — 12 sections outstanding/);
+  });
+
+  it("embeds the workspace's sections on request", async () => {
+    render(() => <SearchPanel initiativeId={5} />);
+    fireEvent.click(await screen.findByLabelText("Embed this initiative's sections"));
+    await waitFor(() => expect(embedMocks.EmbedAll).toHaveBeenCalledWith(5));
+  });
+
+  it("shows the backend's own words when a semantic search cannot run", async () => {
+    state.semanticError = "nothing is embedded yet for the current model — index this initiative first";
+    render(() => <SearchPanel initiativeId={1} />);
+    await searchByMeaning("anything");
+    await screen.findByText("nothing is embedded yet for the current model — index this initiative first");
   });
 });

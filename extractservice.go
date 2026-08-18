@@ -142,6 +142,11 @@ func (s *ExtractService) setState(
 	// Chunks are derived from the Markdown this call just replaced. They go in
 	// the same transaction, not a later cleanup: a chunk that outlives its
 	// Markdown by a moment is a chunk something could cite in that moment.
+	// Vectors first: they are derived from the chunks, and deleting the chunks
+	// out from under them would leave the lookup with nothing to name.
+	if err := dropChunkVectors(tx, id); err != nil {
+		return err
+	}
 	if err := tx.Where("artifact_id = ?", id).Delete(&models.Chunk{}).Error; err != nil {
 		return fmt.Errorf("clearing chunks derived from artifact %d: %w", id, err)
 	}

@@ -146,6 +146,9 @@ func (s *ChunkService) work(_ context.Context, job models.Job, item int) (JobCom
 // replaceChunks swaps an artifact's chunks for a new set inside tx. The FTS
 // index follows through the triggers, so it rolls back with them.
 func replaceChunks(tx *gorm.DB, artifactID uint, rows []models.Chunk) error {
+	if err := dropChunkVectors(tx, artifactID); err != nil {
+		return err
+	}
 	if err := tx.Where("artifact_id = ?", artifactID).Delete(&models.Chunk{}).Error; err != nil {
 		return fmt.Errorf("clearing chunks for artifact %d: %w", artifactID, err)
 	}
@@ -154,6 +157,22 @@ func replaceChunks(tx *gorm.DB, artifactID uint, rows []models.Chunk) error {
 	}
 	if err := tx.Create(&rows).Error; err != nil {
 		return fmt.Errorf("storing chunks for artifact %d: %w", artifactID, err)
+	}
+	return nil
+}
+
+// dropChunkVectors deletes the embeddings of an artifact's chunks, inside tx.
+//
+// A vector whose chunk is gone is not stale data — it is a retrieval result
+// that cannot be cited, which is worse than no result. So it goes in the same
+// transaction that removes the chunks, exactly as chunks go in the transaction
+// that replaces the Markdown they came from.
+func dropChunkVectors(tx *gorm.DB, artifactID uint) error {
+	err := tx.Where("owner_kind = ?", models.OwnerChunk).
+		Where("owner_id IN (SELECT id FROM chunks WHERE artifact_id = ?)", artifactID).
+		Delete(&models.Embedding{}).Error
+	if err != nil {
+		return fmt.Errorf("clearing vectors derived from artifact %d: %w", artifactID, err)
 	}
 	return nil
 }

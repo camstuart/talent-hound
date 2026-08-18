@@ -2,6 +2,8 @@ module camstuart/talent-hound
 
 go 1.25.0
 
+toolchain go1.26.6
+
 require (
 	github.com/glebarez/sqlite v1.11.0
 	github.com/wailsapp/wails/v3 v3.0.0-beta.4

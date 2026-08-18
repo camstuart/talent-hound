@@ -50,6 +50,25 @@ test("extracts, indexes, searches, and cites through the real backend", async ({
   await expect(search.getByText(/Characters \d+–\d+ of/)).toBeVisible();
 });
 
+test("reports embedding coverage and refuses a semantic search with nothing embedded", async ({ page }) => {
+  await openWorkspace(page, `Semantic ${stamp}`);
+  const search = page.getByRole("region", { name: "Search" });
+
+  // No embed model is assigned in the test environment, so coverage says what
+  // is outstanding rather than the results quietly narrowing to nothing.
+  await expect(search.getByLabel("Embedding coverage")).toContainText(/no embedding model has indexed this initiative/);
+
+  await search.getByLabel("Search by").selectOption("meaning");
+  await search.getByLabel("Search evidence").fill("someone who has run infrastructure at scale");
+  await search.getByRole("button", { name: "Search" }).click();
+
+  // The backend's own words: a semantic search with no space is a refusal, not
+  // an empty list that looks like "no candidates match".
+  await expect(search.getByText(/nothing is embedded yet|no embedding model is assigned/)).toBeVisible({
+    timeout: 15_000,
+  });
+});
+
 test("a search with no matches says so rather than showing nothing", async ({ page }) => {
   await openWorkspace(page, `Empty search ${stamp}`);
   const search = page.getByRole("region", { name: "Search" });
