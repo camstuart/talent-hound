@@ -119,7 +119,18 @@ func open(path string, migs []migration) (*gorm.DB, error) {
 // openRaw opens a connection and applies the connection pragmas, with no
 // integrity, version, or FTS5 handling.
 func openRaw(path string) (*gorm.DB, error) {
-	gdb, err := gorm.Open(sqlite.Open(path), &gorm.Config{
+	// busy_timeout and foreign_keys are per-connection, and the pool opens more
+	// connections than the one Exec below would reach — so they go in the DSN,
+	// where every connection gets them.
+	// No file: prefix: the driver then strips the query from the path itself, so
+	// a Windows path needs no URI escaping.
+	//
+	// _txlock=immediate takes the write lock when a transaction begins rather
+	// than when it first writes: a deferred transaction that upgrades gets
+	// SQLITE_BUSY immediately, which busy_timeout does not retry.
+	dsn := fmt.Sprintf("%s?_pragma=busy_timeout(%d)&_pragma=foreign_keys(1)&_txlock=immediate",
+		path, busyTimeoutMS)
+	gdb, err := gorm.Open(sqlite.Open(dsn), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Warn),
 	})
 	if err != nil {

@@ -86,6 +86,7 @@ func main() {
 			application.NewService(NewDraftService(gdb, registry, ollama, profiles, roleProfiles)),
 			application.NewService(credentials),
 			application.NewService(NewCloudService(gdb, ollama, records, profiles, credentials)),
+			application.NewService(NewDeletionService(gdb)),
 		},
 		Assets: application.AssetOptions{
 			Handler: application.AssetFileServerFS(assets),
