@@ -20,10 +20,10 @@ const (
 	// the object with no properties, which under strict decoding permitted
 	// nothing at all.
 	SchemaVersion = "2"
-	// PromptVersion 2 requires structured values for the five types that carry
-	// them where the source is explicit. Version 1 called them optional, and
-	// models obliged.
-	PromptVersion = "2"
+	// PromptVersion 3 names the permitted values for every enumerated
+	// structured field. Version 2 required the values and listed only the field
+	// names, so a model told never to guess left them out.
+	PromptVersion = "3"
 )
 
 // Citation is one piece of evidence for one aspect.
@@ -210,8 +210,22 @@ func Prompt(kind SubjectKind, sources []Source) string {
 	}
 	sort.Strings(kinds)
 	for _, t := range kinds {
-		fields := structuredFields[AspectType(t)]
-		b.WriteString("- " + t + ": " + strings.Join(fields, ", ") + "\n")
+		b.WriteString("- " + t + ":")
+		for i, field := range structuredFields[AspectType(t)] {
+			if i > 0 {
+				b.WriteString(",")
+			}
+			b.WriteString(" " + field)
+			// The permitted values, where a field has them. Listing the field
+			// name and nothing else, beside a rule saying never guess a value,
+			// asks a careful model to omit the field — which is what it did:
+			// the validator refuses a value outside these enumerations, and the
+			// model was never told what they are.
+			if values, ok := structuredEnums[field]; ok {
+				b.WriteString(" (one of: " + strings.Join(values, ", ") + ")")
+			}
+		}
+		b.WriteString("\n")
 	}
 	b.WriteString("\nSources:\n")
 	for _, s := range sources {

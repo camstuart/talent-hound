@@ -66,3 +66,20 @@ func TestANullStructuredFieldIsAbsenceNotAnInvalidValue(t *testing.T) {
 		t.Fatalf("a proposal with null fields was rejected: %v", problems)
 	}
 }
+
+// A field name beside a rule saying never guess a value asks a careful model to
+// omit the field. The validator refuses anything outside these enumerations, so
+// the prompt has to say what they are.
+func TestThePromptNamesThePermittedValues(t *testing.T) {
+	prompt := Prompt(SubjectRole, []Source{{ChunkID: 1, Text: "Melbourne, hybrid."}})
+	for field, values := range structuredEnums {
+		for _, value := range values {
+			if !strings.Contains(prompt, value) {
+				t.Fatalf("the prompt never mentions %q, a permitted value for %q", value, field)
+			}
+		}
+	}
+	if !strings.Contains(prompt, "arrangement (one of: onsite, hybrid, remote, unknown)") {
+		t.Fatalf("the values are not listed beside their field:\n%s", prompt)
+	}
+}
