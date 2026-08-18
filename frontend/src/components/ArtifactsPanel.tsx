@@ -1,4 +1,5 @@
-import { createSignal, For, onCleanup, onMount, Show } from "solid-js";
+import { createEffect, createSignal, For, onCleanup, onMount, Show } from "solid-js";
+import { workspaceRevision } from "../workspaceRevision";
 import { ArtifactService, ExtractService } from "../../bindings/camstuart/talent-hound";
 import { ExtractionState, LinkTarget } from "../../bindings/camstuart/talent-hound/internal/models";
 import type { Artifact } from "../../bindings/camstuart/talent-hound/internal/models";
@@ -53,6 +54,13 @@ export default function ArtifactsPanel(props: { initiativeId: number }) {
     );
     setExtracting((ids) => ids.filter((id) => !settled.has(id)));
   };
+  // Another panel may attach an artifact — a dropped resume, for one — so this
+  // list follows the workspace revision as well as its own actions.
+  createEffect(() => {
+    workspaceRevision();
+    void reload();
+  });
+
   onMount(() => {
     void reload();
     const timer = setInterval(() => {

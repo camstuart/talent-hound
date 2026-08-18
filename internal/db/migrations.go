@@ -426,6 +426,25 @@ var migrations = []migration{
 				" BEGIN SELECT RAISE(ABORT, 'failure reason must be a short code'); END",
 		},
 	},
+	{
+		Version: 11,
+		Name:    "profile_approval",
+		// Approval is a fact about a version, and staleness is deliberately not
+		// a column: it is the comparison between the source hash an approval
+		// was about and the sources in force now. A stored flag would need
+		// something to notice a source changed, and that something is exactly
+		// what will be missing the next time a new way to attach evidence is
+		// added.
+		SQL: []string{
+			"ALTER TABLE `profiles` ADD COLUMN `approved_at` datetime",
+			// The evidence the approval was about. Equal to source_hash at the
+			// moment of approval, and kept separately so a later edit-derived
+			// version cannot quietly move what was approved.
+			"ALTER TABLE `profiles` ADD COLUMN `approved_source_hash` text NOT NULL DEFAULT ''",
+			"CREATE INDEX `idx_profiles_approved` ON " +
+				"`profiles`(`subject_kind`,`subject_id`,`approved_at`)",
+		},
+	},
 }
 
 // badVectorLength is the condition an embedding is refused on: a blob that is

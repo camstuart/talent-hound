@@ -4,6 +4,7 @@ import RecordsPanel from "./RecordsPanel";
 import ArtifactsPanel from "./ArtifactsPanel";
 import JobsPanel from "./JobsPanel";
 import SearchPanel from "./SearchPanel";
+import CandidateProfilePanel from "./CandidateProfilePanel";
 
 // The four areas every initiative workspace has. Each one says what will live
 // there; none of them pretends to a pipeline that does not exist yet.
@@ -53,6 +54,7 @@ export default function WorkspaceAreas(props: { initiativeId: number; type: Init
         <p class="muted">{current().blurb}</p>
         <Show when={area() === "context"}>
           <ArtifactsPanel initiativeId={props.initiativeId} />
+          <CandidateProfilePanel initiativeId={props.initiativeId} />
           <SearchPanel initiativeId={props.initiativeId} />
           <JobsPanel initiativeId={props.initiativeId} />
           <RecordsPanel />

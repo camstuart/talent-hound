@@ -40,11 +40,17 @@ type Profile struct {
 	SourceHash    string `gorm:"not null" json:"sourceHash"`
 	// Identity is the hash of the four above: two profiles with the same
 	// identity are the same derived record.
-	Identity      string          `gorm:"not null" json:"identity"`
-	FailureReason string          `gorm:"not null;default:''" json:"failureReason"`
-	CreatedAt     time.Time       `json:"createdAt"`
-	UpdatedAt     time.Time       `json:"updatedAt"`
-	Aspects       []ProfileAspect `gorm:"-" json:"aspects"`
+	Identity      string `gorm:"not null" json:"identity"`
+	FailureReason string `gorm:"not null;default:''" json:"failureReason"`
+	// ApprovedAt is when a person said yes, and ApprovedSourceHash is what they
+	// said yes about. Staleness is the comparison between the second and the
+	// evidence in force now — it is not a stored state, because a stored state
+	// needs something to notice, and that something is what goes missing.
+	ApprovedAt         *time.Time      `json:"approvedAt"`
+	ApprovedSourceHash string          `gorm:"not null;default:''" json:"approvedSourceHash"`
+	CreatedAt          time.Time       `json:"createdAt"`
+	UpdatedAt          time.Time       `json:"updatedAt"`
+	Aspects            []ProfileAspect `gorm:"-" json:"aspects"`
 }
 
 // ProfileAspect is one typed, citable statement within a profile.

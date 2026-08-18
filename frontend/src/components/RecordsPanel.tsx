@@ -1,4 +1,5 @@
-import { createSignal, For, onMount, Show } from "solid-js";
+import { createEffect, createSignal, For, onMount, Show } from "solid-js";
+import { workspaceRevision } from "../workspaceRevision";
 import { RecordService } from "../../bindings/camstuart/talent-hound";
 import type { Candidate, Company, Contact, Role } from "../../bindings/camstuart/talent-hound/internal/models";
 import RecordForm, { list, num, type FieldSpec } from "./RecordForm";
@@ -44,6 +45,13 @@ export default function RecordsPanel() {
     setRoles((await RecordService.ListRoles()) ?? []);
   };
   onMount(reload);
+  // Records are created elsewhere too — a new initiative can create its
+  // candidate, and a dropped resume creates one — so this list follows the
+  // workspace revision rather than only its own actions.
+  createEffect(() => {
+    workspaceRevision();
+    void reload();
+  });
 
   const companyOptions = () => [
     { value: "", label: "— none —" },

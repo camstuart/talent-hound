@@ -42,6 +42,8 @@ func main() {
 	// same local endpoint, and the registry is what says which model answers.
 	ollama := platform.NewOllama()
 	registry := NewModelService(gdb, jobs, ollama)
+	records := NewRecordService(gdb)
+	classify := NewClassifyService(gdb, registry, ollama)
 
 	// Create a new Wails application by providing the necessary options.
 	// Variables 'Name' and 'Description' are for application metadata.
@@ -54,7 +56,7 @@ func main() {
 		Services: []application.Service{
 			application.NewService(&GreetService{}),
 			application.NewService(NewInitiativeService(gdb)),
-			application.NewService(NewRecordService(gdb)),
+			application.NewService(records),
 			application.NewService(NewArtifactService(gdb)),
 			application.NewService(jobs),
 			application.NewService(extraction),
@@ -62,7 +64,8 @@ func main() {
 			application.NewService(NewSearchService(gdb)),
 			application.NewService(registry),
 			application.NewService(NewEmbedService(gdb, jobs, registry, ollama)),
-			application.NewService(NewClassifyService(gdb, registry, ollama)),
+			application.NewService(classify),
+			application.NewService(NewCandidateProfileService(gdb, classify, records)),
 			application.NewService(NewCredentialService()),
 		},
 		Assets: application.AssetOptions{

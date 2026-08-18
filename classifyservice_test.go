@@ -103,11 +103,12 @@ const roleListing = `# Senior platform engineer
 Must have Go and SQLite. Melbourne based, hybrid.
 `
 
-// chunkQuoting finds the chunk that actually contains a phrase. The chunker
+// chunkQuoting finds the chunk that actually contains skillQuote. The chunker
 // splits at heading boundaries, so which chunk holds a given sentence is its
 // decision, not the fixture's — and a citation has to name the real one.
-func (e *classifyEnv) chunkQuoting(t *testing.T, quote string) uint {
+func (e *classifyEnv) chunkQuoting(t *testing.T) uint {
 	t.Helper()
+	const quote = skillQuote
 	for _, c := range e.chunks2 {
 		if strings.Contains(c.Text, quote) {
 			return c.ID
@@ -122,7 +123,7 @@ func (e *classifyEnv) chunkQuoting(t *testing.T, quote string) uint {
 func (e *classifyEnv) response(t *testing.T, aspects ...profile.Aspect) string {
 	t.Helper()
 	quote := skillQuote
-	id := e.chunkQuoting(t, quote)
+	id := e.chunkQuoting(t)
 	for i := range aspects {
 		if aspects[i].Citations == nil {
 			aspects[i].Citations = []profile.Citation{{ChunkID: id, Quote: quote}}
@@ -579,4 +580,10 @@ func itoa(u uint) string {
 		u /= 10
 	}
 	return string(b)
+}
+
+// jsonMarshal is json.Marshal returning a string, for the profile fixtures.
+func jsonMarshal(v any) (string, error) {
+	raw, err := json.Marshal(v)
+	return string(raw), err
 }

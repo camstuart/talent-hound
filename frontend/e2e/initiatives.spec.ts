@@ -49,7 +49,11 @@ test("creates each initiative type, including a job search with its one candidat
 
   const jobSearch = `Find a Go role ${stamp}`;
   await newInitiative(page, jobSearch, "job_search", `Priya Raman ${stamp}`);
-  await expect(page.getByRole("tabpanel", { name: "Context" }).getByText(`Priya Raman ${stamp}`)).toBeVisible();
+  // Scoped to the Candidates list: the candidate profile panel's picker lists
+  // the same names, and an <option> in a closed select is not visible.
+  await expect(
+    page.getByRole("region", { name: "Candidates" }).getByText(`Priya Raman ${stamp}`),
+  ).toBeVisible();
 
   await newInitiative(page, `Hire designers ${stamp}`, "talent_search");
   await expect(page.getByText(/Talent Search is a workspace shell/)).toBeVisible();

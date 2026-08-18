@@ -1,3 +1,4 @@
+import { bumpWorkspace } from "./workspaceRevision";
 import { createSignal, onMount, Show } from "solid-js";
 import { InitiativeService } from "../bindings/camstuart/talent-hound";
 import { InitiativeStatus } from "../bindings/camstuart/talent-hound/internal/models";
@@ -53,6 +54,9 @@ export default function App() {
 
   const createInitiative = async (name: string, type: InitiativeType, candidateIDs: number[]) => {
     const created = await InitiativeService.Create(name, type, candidateIDs);
+    // Creating a job search can create its candidate, which the records and
+    // profile panels are showing.
+    bumpWorkspace();
     if (created) {
       setInitiatives([...initiatives(), created]);
       openInitiative(created.id);
