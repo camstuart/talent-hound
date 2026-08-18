@@ -474,3 +474,60 @@ func TestTrimmingTheEdgeDoesNotAdmitInventedWording(t *testing.T) {
 		}
 	}
 }
+
+// A model reading four chunks and quoting the third while writing "chunkId: 2"
+// has not invented evidence. The pointer is corrected; nothing else is.
+func TestACitationNamingTheWrongChunkIsRepaired(t *testing.T) {
+	sources := []Source{
+		{ChunkID: 1, Text: "# Nadia Frost\n\n## Summary\n\nData engineer, five years."},
+		{ChunkID: 2, Text: "## Experience\n\nOwned the analytics warehouse and its dbt models."},
+	}
+	proposal := Proposal{Aspects: []Aspect{{
+		Type: Experience, Wording: "Owned the analytics warehouse",
+		Citations: []Citation{{ChunkID: 1, Quote: "Owned the analytics warehouse"}},
+	}}}
+
+	RepairCitations(&proposal, sources)
+	if got := proposal.Aspects[0].Citations[0].ChunkID; got != 2 {
+		t.Fatalf("citation points at chunk %d, want 2", got)
+	}
+	if problems := Validate(SubjectRole, proposal, sources); len(problems) != 0 {
+		t.Fatalf("the repaired profile was refused: %v", problems)
+	}
+}
+
+// A quote in no supplied chunk is left exactly as it was, for Validate to
+// refuse: welding a heading to a body is a synthesised quote, not a slip.
+func TestASynthesisedQuoteIsNotRepairedAway(t *testing.T) {
+	sources := []Source{
+		{ChunkID: 1, Text: "## Experience\n\nBuilt editorial interfaces in TypeScript."},
+	}
+	proposal := Proposal{Aspects: []Aspect{{
+		Type: Experience, Wording: "editorial interfaces",
+		Citations: []Citation{{ChunkID: 1,
+			Quote: "Frontend engineer, Ashgrove Media: Built editorial interfaces in TypeScript."}},
+	}}}
+
+	RepairCitations(&proposal, sources)
+	if problems := Validate(SubjectRole, proposal, sources); len(problems) == 0 {
+		t.Fatal("a synthesised quote was accepted")
+	}
+}
+
+// A quote appearing in two chunks resolves the same way on every run.
+func TestRepairIsDeterministicWhenAQuoteAppearsTwice(t *testing.T) {
+	sources := []Source{
+		{ChunkID: 3, Text: "Go and SQLite."},
+		{ChunkID: 7, Text: "Go and SQLite."},
+	}
+	for i := 0; i < 20; i++ {
+		proposal := Proposal{Aspects: []Aspect{{
+			Type: Skill, Wording: "Go",
+			Citations: []Citation{{ChunkID: 99, Quote: "Go and SQLite"}},
+		}}}
+		RepairCitations(&proposal, sources)
+		if got := proposal.Aspects[0].Citations[0].ChunkID; got != 3 {
+			t.Fatalf("resolved to chunk %d, want the lowest matching chunk", got)
+		}
+	}
+}

@@ -35,9 +35,17 @@ func TestDiagnoseRejections(t *testing.T) {
 	ollama := platform.NewOllama()
 
 	kinds := map[string]int{}
-	for _, listing := range corpus.Listings[:6] {
-		// One chunk, so a citation can only resolve against this text.
-		sources := []profile.Source{{ChunkID: 1, Text: listing.Markdown}}
+	// The resumes are chunked in the real flow, so a citation can name the
+	// wrong chunk while quoting wording that is plainly in another one.
+	for _, scenario := range corpus.Scenarios {
+		sources := []profile.Source{}
+		for i, part := range strings.Split(scenario.Resume, "\n## ") {
+			if i > 0 {
+				part = "## " + part
+			}
+			sources = append(sources, profile.Source{ChunkID: uint(i + 1), Text: part})
+		}
+		listing := bench.Listing{ID: scenario.ID, Markdown: scenario.Resume}
 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
 		raw, err := ollama.Chat(ctx, model, profile.Prompt(profile.SubjectRole, sources),
 			profile.Schema(profile.SubjectRole))
@@ -64,8 +72,25 @@ func TestDiagnoseRejections(t *testing.T) {
 		// guessed at.
 		for _, a := range proposal.Aspects {
 			for _, c := range a.Citations {
-				if !strings.Contains(squash(listing.Markdown), squash(c.Quote)) {
-					t.Logf("  unresolved quote: %q", c.Quote)
+				cited, elsewhere := "", ""
+				for _, src := range sources {
+					if !strings.Contains(squash(src.Text), squash(c.Quote)) {
+						continue
+					}
+					if src.ChunkID == c.ChunkID {
+						cited = "here"
+					} else {
+						elsewhere = "elsewhere"
+					}
+				}
+				switch {
+				case cited != "":
+				case elsewhere != "":
+					kinds["quote is in another supplied chunk"]++
+					t.Logf("  wrong chunk: cited %d for %q", c.ChunkID, c.Quote)
+				default:
+					kinds["quote is in no supplied chunk"]++
+					t.Logf("  absent everywhere: %q", c.Quote)
 				}
 			}
 		}

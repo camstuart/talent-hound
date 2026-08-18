@@ -132,6 +132,11 @@ func (s *ClassifyService) attempt(
 	if len(problems) > 0 {
 		return proposal, problems, raw, nil
 	}
+	// A citation naming the wrong chunk for wording that is plainly in another
+	// one is a bookkeeping slip, not invented evidence. Repaired before
+	// validation, so the profile is refused only for what it actually got
+	// wrong.
+	profile.RepairCitations(&proposal, sources)
 	return proposal, profile.Validate(kind, proposal, sources), raw, nil
 }
 

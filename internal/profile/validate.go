@@ -246,6 +246,49 @@ func meaningKey(a Aspect) string {
 	return b.String()
 }
 
+// RepairCitations points a citation at the chunk that actually contains its
+// quote, when it named a different one.
+//
+// A model reading four chunks and quoting the third while writing "chunkId: 2"
+// has not invented evidence — the wording is there, in a source it was given,
+// and the pointer is off by one. Refusing the whole profile for it discards
+// every other aspect over a bookkeeping slip, and storing the corrected
+// pointer is strictly better data than storing nothing.
+//
+// It repairs nothing else. A quote that appears in no supplied chunk — the
+// model welding a heading to a body, or paraphrasing — is left exactly as it
+// was, for Validate to refuse.
+func RepairCitations(p *Proposal, sources []Source) {
+	byID := make(map[uint]string, len(sources))
+	for _, s := range sources {
+		byID[s.ChunkID] = normalizeSpace(s.Text)
+	}
+	for i := range p.Aspects {
+		for j, c := range p.Aspects[i].Citations {
+			quote := trimBoundary(normalizeSpace(c.Quote))
+			if quote == "" {
+				continue
+			}
+			if text, ok := byID[c.ChunkID]; ok && strings.Contains(text, quote) {
+				continue
+			}
+			// Sorted, so a quote appearing in two chunks resolves the same way
+			// on every run.
+			ids := make([]uint, 0, len(byID))
+			for id := range byID {
+				ids = append(ids, id)
+			}
+			sort.Slice(ids, func(a, b int) bool { return ids[a] < ids[b] })
+			for _, id := range ids {
+				if strings.Contains(byID[id], quote) {
+					p.Aspects[i].Citations[j].ChunkID = id
+					break
+				}
+			}
+		}
+	}
+}
+
 // normalizeSpace collapses runs of whitespace, so a quote that differs from its
 // source only in line wrapping still resolves.
 func normalizeSpace(s string) string { return strings.Join(strings.Fields(s), " ") }
