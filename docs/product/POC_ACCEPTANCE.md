@@ -97,6 +97,9 @@ Machine: macOS on Apple silicon, Ollama at `http://localhost:11434`.
 | `just gate-model` embeddings | `nomic-embed-text` | PASS — 768 dimensions, 0.29 s |
 | `just gate-model-classify` contract | `qwen2.5:3b-instruct` | **FAIL** — duplicate aspects, and citations quoting wording absent from the chunk |
 | `just gate-model-classify` injection | `qwen2.5:3b-instruct` | PASS — the injected instruction was refused |
+| `just gate-model` chat | `qwen3:4b` | PASS — 4.4 s |
+| `just gate-model` constrained JSON | `qwen3:4b` | PASS on output, **4 m 28 s** — over the 3-minute classify budget |
+| One decomposition-sized call | `qwen3:4b` | **4 m 21 s with reasoning, 4 m 35 s with `think:false`** — suppressing the reasoning field does not make it faster, the model writes the same volume into the content instead |
 
 ### Frozen benchmark run, development machine
 
@@ -132,13 +135,27 @@ demanded identical wording and so scored correctly decomposed listings at zero.
 It is retained because deleting a wrong measurement is how a corrected one
 stops being checkable.
 
-**Model selection consequence.** `gemma4:12b-mlx` cannot serve any role that
-needs a schema, which is every role this product uses a model for.
-`qwen2.5:3b-instruct` holds the schema but not the contract: it invents
-citations, which is the failure the contract exists to catch. Neither is a
-candidate for the pinned classify model. The PoC's recommended
-`qwen2.5:7b-instruct` was not testable here — the pull needs about 5 GB free and
-this machine had less.
+**Model selection consequence.** Three models were tried on this machine and
+none is a candidate for the pinned classify role:
+
+- `gemma4:12b-mlx` ignores JSON schemas and returns prose, so it cannot serve
+  any role this product uses a model for.
+- `qwen2.5:3b-instruct` holds the schema but not the contract: it invents
+  citations and leaves structured values empty, which is exactly what the
+  contract exists to catch.
+- `qwen3:4b` holds the schema, but one decomposition takes about four and a
+  half minutes against a three-minute budget. It is a reasoning model, and
+  `think:false` does not recover the time — it stops emitting the reasoning
+  field and writes the same volume into the answer.
+
+A reasoning model is the wrong shape for this work regardless of quality: the
+product makes one constrained call per listing on a CPU-only laptop, and
+tokens spent deliberating are latency with no place to go.
+
+The PoC's recommended `qwen2.5:7b-instruct` is untested here. It is 4.7 GB and
+this volume has 5.1 GB free, which is too thin a margin to pull it safely — an
+earlier attempt on this machine filled the disk. Testing it needs either more
+free space or an explicit decision to accept that margin.
 
 ## Target-laptop measurements
 
