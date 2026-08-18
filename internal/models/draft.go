@@ -73,3 +73,38 @@ const (
 	ReasonUnsupportedAnswer = "unsupported_answer"
 	ReasonBadDraft          = "bad_draft"
 )
+
+// CloudConsent is one approval: one initiative, one endpoint revision, one
+// task.
+//
+// There is no row that could match more broadly, which is what makes "consent
+// does not generalize" a property of the schema rather than of a query someone
+// might write differently next time.
+type CloudConsent struct {
+	ID               uint      `gorm:"primarykey" json:"id"`
+	InitiativeID     uint      `gorm:"not null" json:"initiativeId"`
+	EndpointRevision int       `gorm:"not null" json:"endpointRevision"`
+	Task             string    `gorm:"not null" json:"task"`
+	ApprovedAt       time.Time `gorm:"not null" json:"approvedAt"`
+	// RevokedAt is set when the recruiter takes it back. The row stays, so what
+	// was permitted remains answerable.
+	RevokedAt *time.Time `json:"revokedAt"`
+	CreatedAt time.Time  `json:"createdAt"`
+	UpdatedAt time.Time  `json:"updatedAt"`
+}
+
+// CloudEndpointRow is one cloud configuration, append-only like the model
+// registry's assignments — a revision has to identify something that cannot
+// change under the approvals pointing at it.
+type CloudEndpointRow struct {
+	ID        uint      `gorm:"primarykey" json:"id"`
+	URL       string    `gorm:"not null" json:"url"`
+	Model     string    `gorm:"not null;default:''" json:"model"`
+	Revision  int       `gorm:"not null" json:"revision"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
+}
+
+// TableName is explicit because GORM would pluralise this into
+// "cloud_endpoint_rows"; the migration names the table.
+func (CloudEndpointRow) TableName() string { return "cloud_endpoints" }

@@ -50,6 +50,7 @@ func main() {
 	// The Exa key lives in the Windows credential store and is read at call
 	// time; an empty key means searches refuse rather than being unavailable.
 	exa := platform.NewExa("")
+	credentials := NewCredentialService()
 	search := NewSearchService(gdb)
 	embed := NewEmbedService(gdb, jobs, registry, ollama)
 	roleProfiles := NewRoleProfileService(gdb, classify)
@@ -83,7 +84,8 @@ func main() {
 			application.NewService(NewAssessService(gdb, jobs, registry, ollama, embed, criteria, profiles, roleProfiles, shortlist)),
 			application.NewService(NewQAService(gdb, registry, ollama, search, embed, profiles)),
 			application.NewService(NewDraftService(gdb, registry, ollama, profiles, roleProfiles)),
-			application.NewService(NewCredentialService()),
+			application.NewService(credentials),
+			application.NewService(NewCloudService(gdb, ollama, records, profiles, credentials)),
 		},
 		Assets: application.AssetOptions{
 			Handler: application.AssetFileServerFS(assets),

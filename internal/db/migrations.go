@@ -618,6 +618,44 @@ var migrations = []migration{
 			"ALTER TABLE `disclosure_events` ADD COLUMN `draft_id` integer REFERENCES `drafts`(`id`)",
 		},
 	},
+	{
+		Version: 16,
+		Name:    "cloud_consents",
+		// An approval is for one initiative, one endpoint revision, and one
+		// task. The unique index is that sentence: there is no row that could
+		// match more broadly, so there is no fallback to a wider approval —
+		// which is the generalization the PRD forbids.
+		SQL: []string{
+			"CREATE TABLE `cloud_consents` (" +
+				"`id` integer PRIMARY KEY AUTOINCREMENT," +
+				"`initiative_id` integer NOT NULL REFERENCES `initiatives`(`id`)," +
+				// The endpoint revision an approval was given for. An endpoint
+				// change makes a new revision, and old approvals simply stop
+				// matching — nothing has to sweep them.
+				"`endpoint_revision` integer NOT NULL," +
+				"`task` text NOT NULL CHECK (`task` IN " +
+				"('role_extraction','assessment','drafting','chat'))," +
+				"`approved_at` datetime NOT NULL," +
+				// Set when the recruiter takes it back; a revoked row is kept so
+				// the history of what was permitted survives.
+				"`revoked_at` datetime," +
+				"`created_at` datetime," +
+				"`updated_at` datetime)",
+			"CREATE UNIQUE INDEX `idx_cloud_consents_scope` ON " +
+				"`cloud_consents`(`initiative_id`,`endpoint_revision`,`task`)",
+			"CREATE TABLE `cloud_endpoints` (" +
+				"`id` integer PRIMARY KEY AUTOINCREMENT," +
+				"`url` text NOT NULL," +
+				"`model` text NOT NULL DEFAULT ''," +
+				// Append-only, like the model registry's assignments, so a
+				// revision identifies a configuration that cannot change under
+				// the approvals pointing at it.
+				"`revision` integer NOT NULL," +
+				"`created_at` datetime," +
+				"`updated_at` datetime)",
+			"CREATE UNIQUE INDEX `idx_cloud_endpoints_revision` ON `cloud_endpoints`(`revision`)",
+		},
+	},
 }
 
 // badVectorLength is the condition an embedding is refused on: a blob that is
