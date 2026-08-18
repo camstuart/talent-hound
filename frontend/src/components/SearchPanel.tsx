@@ -1,3 +1,4 @@
+import { createAction } from "../act";
 import { createSignal, For, onMount, Show } from "solid-js";
 import { ChunkService, EmbedService, SearchService } from "../../bindings/camstuart/talent-hound";
 import type { Citation, Coverage, Hit, SemanticHit } from "../../bindings/camstuart/talent-hound";
@@ -20,17 +21,8 @@ export default function SearchPanel(props: { initiativeId: number }) {
   const [chunks, setChunks] = createSignal(0);
   const [coverage, setCoverage] = createSignal<Coverage | null>(null);
   const [citation, setCitation] = createSignal<Citation | null>(null);
-  const [error, setError] = createSignal("");
-
-  // Every action reports the backend's own words: it knows rules the UI does not.
-  const act = async (run: () => Promise<unknown>) => {
-    setError("");
-    try {
-      await run();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    }
-  };
+  // The backend's own words, verbatim: it knows rules the UI does not.
+  const { act, error } = createAction();
 
   const count = () =>
     act(async () => {

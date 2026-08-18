@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { newWorkspace } from "./support";
 
 // Unique per run: the E2E database persists across local runs. All content is
 // invented — no real candidate information is uploaded.
@@ -7,15 +8,6 @@ const stamp = Date.now();
 // The candidate dropdown lists every candidate in the database, so these two
 // specs would otherwise be reaching into one shared list concurrently.
 test.describe.configure({ mode: "serial" });
-
-async function openWorkspace(page: import("@playwright/test").Page, name: string) {
-  await page.goto("/");
-  await page.getByRole("button", { name: "New initiative" }).click();
-  await page.getByPlaceholder("Initiative name").fill(name);
-  await page.getByLabel("Initiative type").selectOption("talent_search");
-  await page.getByRole("button", { name: "Create" }).click();
-  await expect(page.getByRole("tab", { name: new RegExp(name) })).toBeVisible();
-}
 
 async function addCandidate(page: import("@playwright/test").Page, name: string, location: string) {
   const form = page.getByRole("form", { name: "New candidate" });
@@ -26,7 +18,7 @@ async function addCandidate(page: import("@playwright/test").Page, name: string,
 }
 
 test("blocks matching until a candidate profile is approved, and shows its evidence", async ({ page }) => {
-  await openWorkspace(page, `Profile ${stamp}`);
+  await newWorkspace(page, `Profile ${stamp}`);
   const name = `Kalinda Reyes ${stamp}`;
   await addCandidate(page, name, "Melbourne, VIC");
 
@@ -65,7 +57,7 @@ test("blocks matching until a candidate profile is approved, and shows its evide
 });
 
 test("a dropped resume creates the candidate and makes an approved profile stale", async ({ page }) => {
-  await openWorkspace(page, `Stale ${stamp}`);
+  await newWorkspace(page, `Stale ${stamp}`);
   const name = `Tobias Fenn ${stamp}`;
   await addCandidate(page, name, "Perth, WA");
 

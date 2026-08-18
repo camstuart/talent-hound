@@ -1,9 +1,10 @@
+import { createAction } from "../act";
 import { createEffect, createSignal, For, Show } from "solid-js";
-import { RoleProfileService, RecordService } from "../../bindings/camstuart/talent-hound";
+import { DiscoveryService, RoleProfileService, RecordService } from "../../bindings/camstuart/talent-hound";
 import type { AspectCitation, RoleStatus } from "../../bindings/camstuart/talent-hound";
 import type { Priority } from "../../bindings/camstuart/talent-hound/internal/profile";
 import type { Role } from "../../bindings/camstuart/talent-hound/internal/models";
-import { workspaceRevision } from "../workspaceRevision";
+import { bumpWorkspace, workspaceRevision } from "../workspaceRevision";
 
 // Role profiles are created automatically and never approved — the asymmetry
 // with candidates is deliberate, because approving twenty discovered listings
@@ -20,7 +21,7 @@ const STATE_LABELS: Record<string, string> = {
   unprofiled: "not profiled yet",
 };
 
-export default function RoleProfilePanel() {
+export default function RoleProfilePanel(props: { initiativeId: number }) {
   const [statuses, setStatuses] = createSignal<RoleStatus[]>([]);
   const [roles, setRoles] = createSignal<Role[]>([]);
   const [shown, setShown] = createSignal<string | null>(null);
@@ -28,21 +29,9 @@ export default function RoleProfilePanel() {
   const [editing, setEditing] = createSignal<string | null>(null);
   const [draft, setDraft] = createSignal("");
   const [manual, setManual] = createSignal<Record<number, string>>({});
-  const [error, setError] = createSignal("");
-  const [busy, setBusy] = createSignal(false);
-
-  // Every action reports the backend's own words: it knows rules the UI does not.
-  const act = async (run: () => Promise<unknown>) => {
-    setError("");
-    setBusy(true);
-    try {
-      await run();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setBusy(false);
-    }
-  };
+  const [listing, setListing] = createSignal<Record<number, string>>({});
+  // The backend's own words, verbatim: it knows rules the UI does not.
+  const { act, error, busy } = createAction();
 
   const reload = () =>
     act(async () => {
@@ -100,6 +89,24 @@ export default function RoleProfilePanel() {
       await reload();
     });
 
+  // A recruiter-entered role has no listing until someone supplies one. This is
+  // Phase 14's manual-paste fallback, surfaced where the role is: the artifact
+  // lands on the role and in the workspace, so retrieval can reach it.
+  const pasteListing = (roleId: number) =>
+    act(async () => {
+      const text = (listing()[roleId] ?? "").trim();
+      if (!text) return;
+      await DiscoveryService.Paste({
+        roleId,
+        initiativeId: props.initiativeId,
+        text,
+        name: "",
+      } as never);
+      setListing({ ...listing(), [roleId]: "" });
+      bumpWorkspace();
+      await reload();
+    });
+
   return (
     <section class="record-section" aria-label="Role profiles">
       <h3>Role profiles</h3>
@@ -133,6 +140,21 @@ export default function RoleProfilePanel() {
               >
                 {status.state === "unprofiled" ? "Profile this listing" : "Profile again"}
               </button>
+
+              <span class="search-bar">
+                <input
+                  aria-label={`Listing text for ${titleOf(status.roleId)}`}
+                  placeholder="Paste the listing"
+                  value={listing()[status.roleId] ?? ""}
+                  onInput={(e) => setListing({ ...listing(), [status.roleId]: e.currentTarget.value })}
+                />
+                <button
+                  aria-label={`Attach a listing to ${titleOf(status.roleId)}`}
+                  onClick={() => pasteListing(status.roleId)}
+                >
+                  Attach listing
+                </button>
+              </span>
 
               <Show when={status.state === "failed" || status.state === "unprofiled"}>
                 <span class="search-bar">

@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { newWorkspace } from "./support";
 
 // Unique per run: the E2E database persists across local runs. All content is
 // invented — no real candidate information is uploaded.
@@ -6,15 +7,6 @@ const stamp = Date.now();
 
 // The role listing is global, so these specs share it and must not race.
 test.describe.configure({ mode: "serial" });
-
-async function openWorkspace(page: import("@playwright/test").Page, name: string) {
-  await page.goto("/");
-  await page.getByRole("button", { name: "New initiative" }).click();
-  await page.getByPlaceholder("Initiative name").fill(name);
-  await page.getByLabel("Initiative type").selectOption("talent_search");
-  await page.getByRole("button", { name: "Create" }).click();
-  await expect(page.getByRole("tab", { name: new RegExp(name) })).toBeVisible();
-}
 
 async function addRole(page: import("@playwright/test").Page, title: string) {
   const form = page.getByRole("form", { name: "New role" });
@@ -24,7 +16,7 @@ async function addRole(page: import("@playwright/test").Page, title: string) {
 }
 
 test("shows every role's profile state and lets a failed listing be completed by hand", async ({ page }) => {
-  await openWorkspace(page, `Roles ${stamp}`);
+  await newWorkspace(page, `Roles ${stamp}`);
   const title = `Senior platform engineer ${stamp}`;
   await addRole(page, title);
 
@@ -52,7 +44,7 @@ test("shows every role's profile state and lets a failed listing be completed by
 });
 
 test("a hand-entered requirement can be edited and shows its evidence", async ({ page }) => {
-  await openWorkspace(page, `Role edits ${stamp}`);
+  await newWorkspace(page, `Role edits ${stamp}`);
   const title = `Data engineer ${stamp}`;
   await addRole(page, title);
 

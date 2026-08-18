@@ -1,3 +1,4 @@
+import { createAction } from "../act";
 import { createEffect, createSignal, For, Show } from "solid-js";
 import { DiscoveryService, RecordService } from "../../bindings/camstuart/talent-hound";
 import type { QueryPreview, SearchOutcome } from "../../bindings/camstuart/talent-hound";
@@ -19,21 +20,8 @@ export default function DiscoveryPanel(props: { initiativeId: number }) {
   const [query, setQuery] = createSignal("");
   const [outcome, setOutcome] = createSignal<SearchOutcome | null>(null);
   const [searches, setSearches] = createSignal<Search[]>([]);
-  const [error, setError] = createSignal("");
-  const [busy, setBusy] = createSignal(false);
-
-  // Every action reports the backend's own words: it knows rules the UI does not.
-  const act = async (run: () => Promise<unknown>) => {
-    setError("");
-    setBusy(true);
-    try {
-      await run();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setBusy(false);
-    }
-  };
+  // The backend's own words, verbatim: it knows rules the UI does not.
+  const { act, error, busy, setError } = createAction();
 
   const reload = () =>
     act(async () => {

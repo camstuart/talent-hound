@@ -1,17 +1,9 @@
 import { test, expect } from "@playwright/test";
+import { newWorkspace } from "./support";
 
 // Unique per run: the E2E database persists across local runs. All content is
 // invented — no real candidate information is uploaded.
 const stamp = Date.now();
-
-async function openWorkspace(page: import("@playwright/test").Page, name: string) {
-  await page.goto("/");
-  await page.getByRole("button", { name: "New initiative" }).click();
-  await page.getByPlaceholder("Initiative name").fill(name);
-  await page.getByLabel("Initiative type").selectOption("talent_search");
-  await page.getByRole("button", { name: "Create" }).click();
-  await expect(page.getByRole("tab", { name: new RegExp(name) })).toBeVisible();
-}
 
 test("extracts, indexes, searches, and cites through the real backend", async ({ page }) => {
   const filename = `brief-${stamp}.md`;
@@ -19,7 +11,7 @@ test("extracts, indexes, searches, and cites through the real backend", async ({
   const term = `quokkastack${stamp}`;
   const body = `# Platform engineer\n\n## Requirements\n\nFive years of ${term} in Go. Melbourne based.\n`;
 
-  await openWorkspace(page, `Search ${stamp}`);
+  await newWorkspace(page, `Search ${stamp}`);
   const artifacts = page.getByRole("region", { name: "Artifacts", exact: true });
   const search = page.getByRole("region", { name: "Search" });
 
@@ -51,7 +43,7 @@ test("extracts, indexes, searches, and cites through the real backend", async ({
 });
 
 test("reports embedding coverage and refuses a semantic search with nothing embedded", async ({ page }) => {
-  await openWorkspace(page, `Semantic ${stamp}`);
+  await newWorkspace(page, `Semantic ${stamp}`);
   const search = page.getByRole("region", { name: "Search" });
 
   // No embed model is assigned in the test environment, so coverage says what
@@ -70,7 +62,7 @@ test("reports embedding coverage and refuses a semantic search with nothing embe
 });
 
 test("a search with no matches says so rather than showing nothing", async ({ page }) => {
-  await openWorkspace(page, `Empty search ${stamp}`);
+  await newWorkspace(page, `Empty search ${stamp}`);
   const search = page.getByRole("region", { name: "Search" });
 
   await search.getByLabel("Search evidence").fill(`nothinghere${stamp}`);

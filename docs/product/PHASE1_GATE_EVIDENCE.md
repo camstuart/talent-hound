@@ -92,6 +92,20 @@ A failure here is a model-selection decision, not a validator bug.
 | The contract holds against the selected local model | _PASS / FAIL_ | paste the `EVIDENCE classify-contract` lines |
 | An injected instruction cannot widen the contract on a live model | _PASS / FAIL_ | paste the `EVIDENCE classify-injection` line |
 
+## Phase 15 shortlist measurements
+
+Added by Phase 15, and not Windows-gated:
+`go test -run TestShortlistTiming -v .` prints them anywhere.
+
+| Roles in scope | Criteria | Per build | Machine |
+| --- | --- | --- | --- |
+| 40 | 3 | 4 ms | dev (Apple silicon) |
+| | | | _target laptop — record here_ |
+
+Six retrievals per build (one lexical and one semantic per criterion) over the
+roles in scope. The test fails above five seconds, which is the point at which
+the shortlist would stop being cheap relative to the assessment it precedes.
+
 ## Phase 9 exact-scan measurements
 
 Added by Phase 9. Unlike every other table here these are **not** Windows-gated

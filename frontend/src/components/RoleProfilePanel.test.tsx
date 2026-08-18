@@ -30,6 +30,7 @@ const { state, roleMocks, recordMocks } = vi.hoisted(() => {
 vi.mock("../../bindings/camstuart/talent-hound", () => ({
   RoleProfileService: roleMocks,
   RecordService: recordMocks,
+  DiscoveryService: { Paste: vi.fn(async () => ({ id: 3 })) },
 }));
 
 const anAspect = (over: Record<string, unknown> = {}) => ({
@@ -65,7 +66,7 @@ beforeEach(() => {
 describe("RoleProfilePanel", () => {
   it("labels a ready profile as used in assessment", async () => {
     state.statuses = [aStatus()];
-    render(() => <RoleProfilePanel />);
+    render(() => <RoleProfilePanel initiativeId={1} />);
     await screen.findByText(/ready — used in assessment/);
   });
 
@@ -77,7 +78,7 @@ describe("RoleProfilePanel", () => {
         aspects: [],
       }),
     ];
-    render(() => <RoleProfilePanel />);
+    render(() => <RoleProfilePanel initiativeId={1} />);
 
     // Both the label and the reason say it; the label is what the row leads with.
     await screen.findByLabelText("Why Senior platform engineer is not assessed");
@@ -92,14 +93,14 @@ describe("RoleProfilePanel", () => {
     state.statuses = [
       aStatus({ state: "stale", reason: "the listing has changed since this profile was made — profile it again" }),
     ];
-    render(() => <RoleProfilePanel />);
+    render(() => <RoleProfilePanel initiativeId={1} />);
     await screen.findByText(/the listing changed since this was made/);
     await screen.findByText(/profile it again/);
   });
 
   it("shows a role that has never been profiled rather than omitting it", async () => {
     state.statuses = [aStatus({ state: "unprofiled", reason: "this role has not been profiled yet", aspects: [] })];
-    render(() => <RoleProfilePanel />);
+    render(() => <RoleProfilePanel initiativeId={1} />);
     await screen.findByText(/not profiled yet/);
     expect(await screen.findByText("Profile this listing")).toBeTruthy();
   });
@@ -110,7 +111,7 @@ describe("RoleProfilePanel", () => {
         aspects: [anAspect(), anAspect({ ordinal: 1, priority: "unspecified", origin: "recruiter_supplied" })],
       }),
     ];
-    render(() => <RoleProfilePanel />);
+    render(() => <RoleProfilePanel initiativeId={1} />);
 
     await screen.findByText(/must have, extracted/);
     await screen.findByText(/unspecified, Recruiter supplied/);
@@ -119,7 +120,7 @@ describe("RoleProfilePanel", () => {
   it("shows a requirement literally, never as markup", async () => {
     // A listing a stranger wrote. Nothing here interprets it.
     state.statuses = [aStatus({ aspects: [anAspect({ wording: "<script>alert('x')</script>" })] })];
-    render(() => <RoleProfilePanel />);
+    render(() => <RoleProfilePanel initiativeId={1} />);
 
     const shown = await screen.findByLabelText("Requirement 1 of Senior platform engineer");
     expect(shown.tagName).toBe("PRE");
@@ -138,7 +139,7 @@ describe("RoleProfilePanel", () => {
         record: "",
       },
     ];
-    render(() => <RoleProfilePanel />);
+    render(() => <RoleProfilePanel initiativeId={1} />);
 
     fireEvent.click(await screen.findByLabelText("Show the evidence for requirement 1 of Senior platform engineer"));
     await screen.findByText("listing.md (section 2)");
@@ -148,7 +149,7 @@ describe("RoleProfilePanel", () => {
 
   it("edits a requirement and saves on Enter, keeping its priority", async () => {
     state.statuses = [aStatus()];
-    render(() => <RoleProfilePanel />);
+    render(() => <RoleProfilePanel initiativeId={1} />);
 
     fireEvent.click(await screen.findByLabelText("Edit requirement 1 of Senior platform engineer"));
     const field = await screen.findByLabelText("Wording for requirement 1 of Senior platform engineer");
@@ -162,7 +163,7 @@ describe("RoleProfilePanel", () => {
 
   it("abandons an edit on Escape", async () => {
     state.statuses = [aStatus()];
-    render(() => <RoleProfilePanel />);
+    render(() => <RoleProfilePanel initiativeId={1} />);
 
     fireEvent.click(await screen.findByLabelText("Edit requirement 1 of Senior platform engineer"));
     const field = await screen.findByLabelText("Wording for requirement 1 of Senior platform engineer");
@@ -176,14 +177,14 @@ describe("RoleProfilePanel", () => {
 
   it("removes a requirement", async () => {
     state.statuses = [aStatus()];
-    render(() => <RoleProfilePanel />);
+    render(() => <RoleProfilePanel initiativeId={1} />);
     fireEvent.click(await screen.findByLabelText("Remove requirement 1 of Senior platform engineer"));
     await waitFor(() => expect(roleMocks.RemoveAspect).toHaveBeenCalledWith(1, 0));
   });
 
   it("adds a requirement by hand to a failed profile", async () => {
     state.statuses = [aStatus({ state: "failed", reason: "could not be decomposed", aspects: [] })];
-    render(() => <RoleProfilePanel />);
+    render(() => <RoleProfilePanel initiativeId={1} />);
 
     const field = await screen.findByLabelText("Requirement to add to Senior platform engineer");
     fireEvent.input(field, { target: { value: "Must have Go" } });
@@ -199,7 +200,7 @@ describe("RoleProfilePanel", () => {
   it("shows the backend's own words when profiling fails", async () => {
     state.statuses = [aStatus({ state: "unprofiled", reason: "not profiled yet", aspects: [] })];
     state.profileError = "no model resolves for the classify role — assign classify or generate";
-    render(() => <RoleProfilePanel />);
+    render(() => <RoleProfilePanel initiativeId={1} />);
 
     fireEvent.click(await screen.findByLabelText("Profile Senior platform engineer"));
     await screen.findByText("no model resolves for the classify role — assign classify or generate");

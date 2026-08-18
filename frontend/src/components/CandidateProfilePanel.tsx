@@ -1,3 +1,4 @@
+import { createAction } from "../act";
 import { createSignal, For, onMount, Show } from "solid-js";
 import { CandidateProfileService, RecordService } from "../../bindings/camstuart/talent-hound";
 import { bumpWorkspace } from "../workspaceRevision";
@@ -22,21 +23,8 @@ export default function CandidateProfilePanel(props: { initiativeId: number }) {
   const [take, setTake] = createSignal<Record<number, boolean>>({});
   const [editing, setEditing] = createSignal<number | null>(null);
   const [draft, setDraft] = createSignal("");
-  const [error, setError] = createSignal("");
-  const [busy, setBusy] = createSignal(false);
-
-  // Every action reports the backend's own words: it knows rules the UI does not.
-  const act = async (run: () => Promise<unknown>) => {
-    setError("");
-    setBusy(true);
-    try {
-      await run();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setBusy(false);
-    }
-  };
+  // The backend's own words, verbatim: it knows rules the UI does not.
+  const { act, error, busy } = createAction();
 
   const loadCandidates = () =>
     act(async () => {

@@ -418,9 +418,13 @@ func (s *DiscoveryService) historicize(roleID uint) error {
 
 // PasteInput is listing content the recruiter supplied themselves.
 type PasteInput struct {
-	RoleID uint   `json:"roleId"`
-	Text   string `json:"text"`
-	Name   string `json:"name"`
+	RoleID uint `json:"roleId"`
+	// InitiativeID puts the listing in a workspace as well as on the role, the
+	// same way a discovered listing lands in both. Without it the role has
+	// evidence that no initiative can see.
+	InitiativeID uint   `json:"initiativeId"`
+	Text         string `json:"text"`
+	Name         string `json:"name"`
 }
 
 // Paste stores listing content a person supplied.
@@ -437,7 +441,17 @@ func (s *DiscoveryService) Paste(in PasteInput) (*models.Artifact, error) {
 		return nil, fmt.Errorf("loading role %d: %w", in.RoleID, err)
 	}
 	name := firstNonEmpty(in.Name, role.Title+" (pasted)")
-	return s.artifacts.create(name, "", "recruiter paste", []byte(in.Text), models.LinkRole, in.RoleID)
+	artifact, err := s.artifacts.create(name, "", "recruiter paste", []byte(in.Text),
+		models.LinkRole, in.RoleID)
+	if err != nil {
+		return nil, err
+	}
+	if in.InitiativeID != 0 {
+		if err := s.artifacts.Link(artifact.ID, models.LinkInitiative, in.InitiativeID); err != nil {
+			return nil, err
+		}
+	}
+	return artifact, nil
 }
 
 // Fetch would retrieve a page directly. It always refuses, so it returns only

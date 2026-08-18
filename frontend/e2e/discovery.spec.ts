@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { newWorkspace } from "./support";
 
 // Unique per run: the E2E database persists across local runs. All content is
 // invented — no real candidate information is uploaded, and no request reaches
@@ -12,17 +13,8 @@ const tag = `quokkastack${stamp.toString(36)}`;
 
 test.describe.configure({ mode: "serial" });
 
-async function openWorkspace(page: import("@playwright/test").Page, name: string) {
-  await page.goto("/");
-  await page.getByRole("button", { name: "New initiative" }).click();
-  await page.getByPlaceholder("Initiative name").fill(name);
-  await page.getByLabel("Initiative type").selectOption("talent_search");
-  await page.getByRole("button", { name: "Create" }).click();
-  await expect(page.getByRole("tab", { name: new RegExp(name) })).toBeVisible();
-}
-
 test("previews a query built from criteria, edits it, and cancels without sending", async ({ page }) => {
-  await openWorkspace(page, `Discovery ${stamp}`);
+  await newWorkspace(page, `Discovery ${stamp}`);
 
   const criteria = page.getByRole("region", { name: "Search criteria" });
   await criteria.getByLabel("New criterion").fill(`five years of production ${tag} engineering`);
@@ -48,7 +40,7 @@ test("previews a query built from criteria, edits it, and cancels without sendin
 });
 
 test("a re-added organization warns and a re-added identifier warns more strongly", async ({ page }) => {
-  await openWorkspace(page, `Warnings ${stamp}`);
+  await newWorkspace(page, `Warnings ${stamp}`);
 
   const name = `Kalinda Reyes ${stamp}`;
   const form = page.getByRole("form", { name: "New candidate" });
@@ -94,7 +86,7 @@ test("a re-added organization warns and a re-added identifier warns more strongl
 });
 
 test("a search with no provider key fails in the backend's own words", async ({ page }) => {
-  await openWorkspace(page, `Send ${stamp}`);
+  await newWorkspace(page, `Send ${stamp}`);
 
   const criteria = page.getByRole("region", { name: "Search criteria" });
   await criteria.getByLabel("New criterion").fill(`five years of production ${tag} engineering`);

@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { newWorkspace } from "./support";
 
 // Unique per run: the E2E database persists across local runs. All content is
 // invented — no real candidate information is uploaded.
@@ -8,17 +9,8 @@ const stamp = Date.now();
 // in order rather than racing each other through it.
 test.describe.configure({ mode: "serial" });
 
-async function openWorkspace(page: import("@playwright/test").Page, name: string) {
-  await page.goto("/");
-  await page.getByRole("button", { name: "New initiative" }).click();
-  await page.getByPlaceholder("Initiative name").fill(name);
-  await page.getByLabel("Initiative type").selectOption("talent_search");
-  await page.getByRole("button", { name: "Create" }).click();
-  await expect(page.getByRole("tab", { name: new RegExp(name) })).toBeVisible();
-}
-
 test("adds lawful criteria, reorders them, and refuses a protected one outright", async ({ page }) => {
-  await openWorkspace(page, `Criteria ${stamp}`);
+  await newWorkspace(page, `Criteria ${stamp}`);
   const panel = page.getByRole("region", { name: "Search criteria" });
 
   await panel.getByLabel("New criterion").fill(`five years of production Go ${stamp}`);
@@ -57,7 +49,7 @@ test("adds lawful criteria, reorders them, and refuses a protected one outright"
 });
 
 test("a nationality criterion is refused where a work-rights one is not", async ({ page }) => {
-  await openWorkspace(page, `Nationality ${stamp}`);
+  await newWorkspace(page, `Nationality ${stamp}`);
   const panel = page.getByRole("region", { name: "Search criteria" });
 
   await panel.getByLabel("New criterion").fill("must be an Australian citizen");
@@ -70,7 +62,7 @@ test("a nationality criterion is refused where a work-rights one is not", async 
 });
 
 test("proposals need an approved profile and never apply themselves", async ({ page }) => {
-  await openWorkspace(page, `Proposals ${stamp}`);
+  await newWorkspace(page, `Proposals ${stamp}`);
   const name = `Priya Raman ${stamp}`;
   const form = page.getByRole("form", { name: "New candidate" });
   await form.getByLabel("Full name").fill(name);
