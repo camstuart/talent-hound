@@ -478,3 +478,31 @@ func TestShortlistTimingAtRepresentativeSize(t *testing.T) {
 			roles, per)
 	}
 }
+
+// The matching benchmark's shape: a candidate profile, a corpus of roles, and
+// no search criteria at all. The recruiter has not stated any intent yet — the
+// approved profile is the intent — and a shortlist that needs criteria to
+// return anything would make that benchmark unrunnable.
+func TestAnApprovedProfileAloneDrivesTheShortlist(t *testing.T) {
+	e := newShortlistEnv(t)
+	wanted := e.roleWithListing(t, "Platform engineer",
+		"Must have Go and SQLite in production. Melbourne, hybrid.")
+	e.roleWithListing(t, "Pastry chef",
+		"Must have patisserie experience and early starts. Hobart, onsite.")
+
+	candidateID := e.approvedCandidate(t)
+	// Deliberately no criteria.
+	if criteria, err := e.criteria.List(e.initiative); err != nil {
+		t.Fatalf("listing criteria: %v", err)
+	} else if len(criteria) != 0 {
+		t.Fatalf("%d criteria exist, want none", len(criteria))
+	}
+
+	out := e.build(t, candidateID)
+	if len(out.Entries) == 0 {
+		t.Fatal("an approved profile returned no roles at all")
+	}
+	if out.Entries[0].RoleID != wanted {
+		t.Fatalf("the top role is %d, want the platform role %d", out.Entries[0].RoleID, wanted)
+	}
+}

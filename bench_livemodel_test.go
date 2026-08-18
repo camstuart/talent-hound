@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"camstuart/talent-hound/internal/bench"
+	"camstuart/talent-hound/internal/fusion"
 	"camstuart/talent-hound/internal/models"
 	"camstuart/talent-hound/internal/platform"
 	"camstuart/talent-hound/internal/profile"
@@ -158,6 +159,12 @@ func runMatching(t *testing.T, corpus *bench.Corpus, classifyModel, embedModel s
 		eligible = shortlist.Eligible
 
 		top := bench.TopFive{ScenarioID: scenario.ID, RoleIDs: []string{}, Note: note}
+		if len(shortlist.Entries) == 0 && top.Note == "" {
+			// An empty list with a profile in place is a different failure from
+			// an empty list with no profile, and the record has to be able to
+			// tell them apart.
+			top.Note = whyNothingRanked(t, e, candidateID)
+		}
 		for _, entry := range shortlist.Entries {
 			if len(top.RoleIDs) == 5 {
 				break
@@ -168,6 +175,32 @@ func runMatching(t *testing.T, corpus *bench.Corpus, classifyModel, embedModel s
 		results = append(results, top)
 	}
 	return bench.ScoreMatching(corpus, results), eligible
+}
+
+// whyNothingRanked reports what the shortlist had to work with, so an empty
+// list is diagnosable from the record alone.
+func whyNothingRanked(t *testing.T, e *shortlistEnv, candidateID uint) string {
+	t.Helper()
+	ready, err := e.profiles.Readiness(candidateID)
+	if err != nil {
+		return "readiness could not be read: " + err.Error()
+	}
+	if !ready.Ready {
+		return "no roles ranked: the candidate profile is not ready"
+	}
+	approved, err := e.profiles.Approved(candidateID)
+	if err != nil || approved == nil {
+		return "no roles ranked: no approved profile could be read"
+	}
+	searchable := 0
+	for _, a := range approved.Aspects {
+		typ := profile.AspectType(a.Type)
+		if fusion.Searchable(typ) && len(fusion.RoleAspectsFor(typ)) > 0 {
+			searchable++
+		}
+	}
+	return fmt.Sprintf("no roles ranked: the approved profile has %d aspects, %d of them searchable",
+		len(approved.Aspects), searchable)
 }
 
 // scenarioCandidate creates the scenario's candidate, attaches its resume, and
