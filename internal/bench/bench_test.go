@@ -824,6 +824,11 @@ func TestEveryStructuredLabelMatchesWhatItsListingStates(t *testing.T) {
 					t.Fatalf("%s names a country and its label omits it: %+v",
 						listing.ID, a.Structured)
 				}
+			case a.Type == profile.Location && strings.Contains(text, "remote role"):
+				if a.Structured["remote_ok"] != true {
+					t.Fatalf("%s says it is a remote role and its label omits remote_ok: %+v",
+						listing.ID, a.Structured)
+				}
 			}
 		}
 	}

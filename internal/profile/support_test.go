@@ -312,3 +312,62 @@ func TestALocationCountryIsNotDerivedFromWorkRightsWording(t *testing.T) {
 		t.Fatalf("the work rights lost their country: %+v", rights.Aspects[0].Structured)
 	}
 }
+
+// A rate quoted once states a floor, not a ceiling. Moving it is arithmetic:
+// there is one figure and the source says what it is.
+func TestALoneFigureRecordedAsAMaximumBecomesTheMinimum(t *testing.T) {
+	proposal := Proposal{Aspects: []Aspect{
+		aspectWith(Compensation, "AUD 900 per day", "offered at AUD 900 per day",
+			map[string]any{"currency": "AUD", "maximum": float64(900), "period": "day", "basis": "rate"}),
+	}}
+	NormalizeStructured(&proposal)
+	got := proposal.Aspects[0].Structured
+	if got["minimum"] != float64(900) {
+		t.Fatalf("the lone figure did not become the minimum: %+v", got)
+	}
+	if _, ok := got["maximum"]; ok {
+		t.Fatalf("the maximum survived: %+v", got)
+	}
+}
+
+// Two figures are a range, and which is which is the model's to say.
+func TestARangeIsLeftAlone(t *testing.T) {
+	proposal := Proposal{Aspects: []Aspect{
+		aspectWith(Compensation, "AUD 150,000 to 180,000", "paying AUD 150,000 to 180,000",
+			map[string]any{"maximum": float64(180000)}),
+	}}
+	NormalizeStructured(&proposal)
+	if _, ok := proposal.Aspects[0].Structured["maximum"]; !ok {
+		t.Fatalf("a range was rewritten: %+v", proposal.Aspects[0].Structured)
+	}
+}
+
+// A stated minimum is never overwritten by a maximum.
+func TestAStatedMinimumIsLeftAlone(t *testing.T) {
+	proposal := Proposal{Aspects: []Aspect{
+		aspectWith(Compensation, "AUD 900 per day", "AUD 900 per day",
+			map[string]any{"minimum": float64(900), "maximum": float64(900)}),
+	}}
+	NormalizeStructured(&proposal)
+	got := proposal.Aspects[0].Structured
+	if got["minimum"] != float64(900) || got["maximum"] != float64(900) {
+		t.Fatalf("a stated pair was rewritten: %+v", got)
+	}
+}
+
+// A listing that says it is a remote role has said so of its location.
+func TestARemoteRoleStatesItsLocationIsRemote(t *testing.T) {
+	proposal := Proposal{Aspects: []Aspect{
+		aspectWith(Location, "Melbourne", "hiring a data engineer in Melbourne. This is a remote role.",
+			map[string]any{"city": "Melbourne"}),
+		aspectWith(Location, "Sydney", "hiring an engineer in Sydney. This is a hybrid role.",
+			map[string]any{"city": "Sydney"}),
+	}}
+	DeriveStructured(&proposal)
+	if proposal.Aspects[0].Structured["remote_ok"] != true {
+		t.Fatalf("a remote role did not state remote_ok: %+v", proposal.Aspects[0].Structured)
+	}
+	if _, ok := proposal.Aspects[1].Structured["remote_ok"]; ok {
+		t.Fatalf("a hybrid role stated remote_ok: %+v", proposal.Aspects[1].Structured)
+	}
+}

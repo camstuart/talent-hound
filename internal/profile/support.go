@@ -232,6 +232,11 @@ var derivable = []struct {
 	{[]AspectType{Compensation}, "period", "hour", []string{"per hour", "hourly", "per hr"}, nil},
 	{[]AspectType{Compensation}, "period", "year",
 		[]string{"per year", "per annum", "annually", "a year"}, nil},
+	// A listing that says it is a remote role states that of its location too:
+	// the taxonomy keeps remote_ok there, and a source saying "this is a remote
+	// role" has said it.
+	{[]AspectType{Location}, "remote_ok", true,
+		[]string{"remote role", "fully remote", "remote (", "work from anywhere"}, nil},
 	{[]AspectType{WorkArrangement}, "arrangement", "hybrid", []string{"hybrid"}, nil},
 	{[]AspectType{WorkArrangement}, "arrangement", "remote", []string{"fully remote", "remote role"}, nil},
 	{[]AspectType{WorkArrangement}, "arrangement", "onsite",
@@ -240,6 +245,40 @@ var derivable = []struct {
 		[]string{"permanent", "ongoing"}, nil},
 	{[]AspectType{EmploymentType}, "employment_type", "contract",
 		[]string{"contract", "fixed term", "fixed-term"}, nil},
+}
+
+// NormalizeStructured corrects a value the model put in the wrong field, where
+// the correction is arithmetic rather than judgement.
+//
+// A rate quoted once — "AUD 900 per day" — states a floor, not a ceiling, and a
+// model recording it as a maximum has misfiled the only number the source
+// gives. Moving it is not inference: there is one figure, and the source says
+// what it is.
+func NormalizeStructured(p *Proposal) []string {
+	moved := []string{}
+	for i := range p.Aspects {
+		aspect := &p.Aspects[i]
+		if aspect.Type != Compensation || len(aspect.Structured) == 0 {
+			continue
+		}
+		maximum, hasMax := aspect.Structured["maximum"]
+		if _, hasMin := aspect.Structured["minimum"]; hasMin || !hasMax {
+			continue
+		}
+		evidence := ""
+		for _, c := range aspect.Citations {
+			evidence += " " + normalizeSpace(c.Quote)
+		}
+		// Only when the source quotes exactly one figure. Two figures are a
+		// range, and which is which is the model's to say.
+		if len(numbersIn(evidence)) != 1 {
+			continue
+		}
+		aspect.Structured["minimum"] = maximum
+		delete(aspect.Structured, "maximum")
+		moved = append(moved, string(aspect.Type)+".maximum->minimum")
+	}
+	return moved
 }
 
 // DeriveStructured fills a structured field the evidence states outright and

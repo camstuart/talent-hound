@@ -186,6 +186,7 @@ func (s *ClassifyService) attempt(
 	// that is there, and doing it in code is more reliable than asking a model
 	// to remember on every listing.
 	profile.DeriveStructured(&proposal)
+	profile.NormalizeStructured(&proposal)
 	return proposal, profile.Validate(kind, proposal, sources), raw, nil
 }
 

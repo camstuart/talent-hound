@@ -778,7 +778,8 @@
           "type": "location",
           "wording": "Melbourne",
           "structured": {
-            "city": "Melbourne"
+            "city": "Melbourne",
+            "remote_ok": true
           }
         },
         {
@@ -818,7 +819,8 @@
           "type": "location",
           "wording": "Melbourne",
           "structured": {
-            "city": "Melbourne"
+            "city": "Melbourne",
+            "remote_ok": true
           }
         },
         {
@@ -1618,7 +1620,8 @@
           "type": "location",
           "wording": "Melbourne",
           "structured": {
-            "city": "Melbourne"
+            "city": "Melbourne",
+            "remote_ok": true
           }
         },
         {
@@ -1659,7 +1662,8 @@
           "type": "location",
           "wording": "Melbourne",
           "structured": {
-            "city": "Melbourne"
+            "city": "Melbourne",
+            "remote_ok": true
           }
         },
         {
