@@ -664,3 +664,73 @@ func TestAFailingConstraintsPassLeavesTheProfileIntact(t *testing.T) {
 		t.Fatalf("stored %+v", p.Aspects)
 	}
 }
+
+// Each pass normalizes what it produced, and the merge is the first moment the
+// two are one profile: a location from the decomposition and an arrangement
+// from the constraints pass have nothing to say to each other until then.
+func TestTheMergedProfileIsNormalizedAsAWhole(t *testing.T) {
+	e := newClassifyEnv(t)
+	const listing = `# Data engineer
+
+## About
+
+Hiring a data engineer in Melbourne. This is a remote role.
+`
+	ids := e.withSource(t, "role", listing)
+	e.assignClassify(t, "synthetic-classify")
+
+	chunk := ids[0]
+	for _, c := range e.chunks2 {
+		if strings.Contains(c.Text, "Melbourne") {
+			chunk = c.ID
+		}
+	}
+	cite := func(quote string) []profile.Citation {
+		return []profile.Citation{{ChunkID: chunk, Quote: quote}}
+	}
+
+	proposal := func(aspects ...profile.Aspect) string {
+		raw, err := json.Marshal(profile.Proposal{Aspects: aspects})
+		if err != nil {
+			t.Fatalf("building a response: %v", err)
+		}
+		return string(raw)
+	}
+	e.model.responses = []string{
+		// The decomposition records the location, with no remoteness.
+		proposal(profile.Aspect{
+			Type: profile.Location, Wording: "Melbourne",
+			Structured: map[string]any{"city": "Melbourne"},
+			Citations:  cite("in Melbourne"),
+		}),
+		// The constraints pass records the arrangement, which states it.
+		proposal(profile.Aspect{
+			Type: profile.WorkArrangement, Wording: "remote",
+			Structured: map[string]any{"arrangement": "remote"},
+			Citations:  cite("This is a remote role"),
+		}),
+	}
+
+	p, err := e.classify.Classify(ClassifyInput{
+		SubjectKind: profile.SubjectRole, SubjectID: 1, ChunkIDs: ids})
+	if err != nil {
+		t.Fatalf("classifying: %v", err)
+	}
+	aspects, err := e.classify.Aspects(p.ID)
+	if err != nil {
+		t.Fatalf("reading aspects: %v", err)
+	}
+	for _, a := range aspects {
+		if a.Type != profile.Location {
+			continue
+		}
+		if a.Structured["remote_ok"] != true {
+			t.Fatalf("the merged location did not follow the merged arrangement: %+v", a.Structured)
+		}
+		if a.Structured["city"] != "Melbourne" {
+			t.Fatalf("the stated city was lost in the merge: %+v", a.Structured)
+		}
+		return
+	}
+	t.Fatal("no location survived the merge")
+}

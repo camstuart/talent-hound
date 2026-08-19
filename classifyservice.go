@@ -125,6 +125,16 @@ func (s *ClassifyService) Classify(in ClassifyInput) (*models.Profile, error) {
 	// already produced a valid one, and this only fills gaps.
 	if extra, err := s.constraints(ctx, assignment.Model, in.SubjectKind, sources); err == nil {
 		profile.MergeConstraints(&proposal, extra)
+		// Normalized again over the merged whole. Each pass normalizes what it
+		// produced, and the merge is the first moment the two are one profile —
+		// a location from the decomposition and an arrangement from the
+		// constraints pass have nothing to say to each other until then.
+		normalize(&proposal, sources)
+		if problems := profile.Validate(in.SubjectKind, proposal, sources); len(problems) > 0 {
+			return nil, s.fail(in, models.ReasonInvalidProposal, assignment.Revision, assignment.Model,
+				fmt.Errorf("the merged profile did not satisfy the contract:\n- %s",
+					strings.Join(problems, "\n- ")))
+		}
 	}
 
 	identity := profile.Identity{
@@ -155,6 +165,21 @@ func (s *ClassifyService) constraints(
 	return proposal, nil
 }
 
+// normalize is everything done to a proposal between reading it and judging it.
+//
+// A structured value has to be supported by the evidence cited for it: the
+// contract asked that of the aspect and never of the value beside it, so a
+// model could cite "we do not sponsor" and record a citizenship status.
+// Unsupported values are dropped, like nulls. Then what the cited sentences
+// state outright and the model left out is filled in, a lone figure is filed as
+// the floor it is, and facts one aspect states for another are carried across.
+func normalize(proposal *profile.Proposal, sources []profile.Source) {
+	profile.DropUnsupportedStructured(proposal, sources)
+	profile.DeriveStructured(proposal, sources)
+	profile.NormalizeStructured(proposal)
+	profile.AlignAcrossAspects(proposal)
+}
+
 // attempt makes one model call and validates what comes back.
 func (s *ClassifyService) attempt(
 	ctx context.Context, model, prompt string, schema map[string]any,
@@ -175,19 +200,7 @@ func (s *ClassifyService) attempt(
 	// validation, so the profile is refused only for what it actually got
 	// wrong.
 	profile.RepairCitations(&proposal, sources)
-	// A structured value has to be supported by the evidence cited for it. The
-	// contract asked that of the aspect and never of the value beside it, so a
-	// model could cite "we do not sponsor" and record a citizenship status.
-	// Unsupported values are dropped, like nulls: the wording still carries
-	// what the source said.
-	profile.DropUnsupportedStructured(&proposal, sources)
-	// And fill what the evidence states outright and the model left out.
-	// Normalizing "AUD 180,000 base" into a basis of base is reading a word
-	// that is there, and doing it in code is more reliable than asking a model
-	// to remember on every listing.
-	profile.DeriveStructured(&proposal, sources)
-	profile.NormalizeStructured(&proposal)
-	profile.AlignAcrossAspects(&proposal)
+	normalize(&proposal, sources)
 	return proposal, profile.Validate(kind, proposal, sources), raw, nil
 }
 
