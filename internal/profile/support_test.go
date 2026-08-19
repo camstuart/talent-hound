@@ -371,3 +371,71 @@ func TestARemoteRoleStatesItsLocationIsRemote(t *testing.T) {
 		t.Fatalf("a hybrid role stated remote_ok: %+v", proposal.Aspects[1].Structured)
 	}
 }
+
+// A location says its country in place phrasing — "Remote (Australia)" — and
+// the adjective in "Australian work rights" is about the rights, not the place.
+func TestALocationCountryComesFromPlacePhrasing(t *testing.T) {
+	stated := Proposal{Aspects: []Aspect{
+		aspectWith(Location, "Remote (Australia)", "hiring a platform engineer in Remote (Australia)",
+			map[string]any{"remote_ok": true}),
+	}}
+	DeriveStructured(&stated)
+	if stated.Aspects[0].Structured["country"] != "Australia" {
+		t.Fatalf("a stated country was not read: %+v", stated.Aspects[0].Structured)
+	}
+
+	adjective := Proposal{Aspects: []Aspect{
+		aspectWith(Location, "Melbourne", "in Melbourne. You must have Australian work rights.",
+			map[string]any{"city": "Melbourne"}),
+	}}
+	DeriveStructured(&adjective)
+	if _, ok := adjective.Aspects[0].Structured["country"]; ok {
+		t.Fatalf("a country was read off the work-rights adjective: %+v", adjective.Aspects[0].Structured)
+	}
+}
+
+// A listing whose arrangement is remote has said its location is
+// remote-friendly: same profile, same document, already evidenced.
+func TestARemoteArrangementSaysTheLocationIsRemoteFriendly(t *testing.T) {
+	proposal := Proposal{Aspects: []Aspect{
+		aspectWith(Location, "Melbourne", "hiring a data engineer in Melbourne",
+			map[string]any{"city": "Melbourne"}),
+		aspectWith(WorkArrangement, "remote", "This is a remote role.",
+			map[string]any{"arrangement": "remote"}),
+	}}
+	AlignAcrossAspects(&proposal)
+	if proposal.Aspects[0].Structured["remote_ok"] != true {
+		t.Fatalf("the location did not follow the arrangement: %+v", proposal.Aspects[0].Structured)
+	}
+	if proposal.Aspects[0].Structured["city"] != "Melbourne" {
+		t.Fatal("the stated city was lost")
+	}
+}
+
+// It runs one way: a location allowing remote work does not make the role a
+// remote role.
+func TestALocationSayingRemoteDoesNotSetTheArrangement(t *testing.T) {
+	proposal := Proposal{Aspects: []Aspect{
+		aspectWith(Location, "Melbourne", "Melbourne, remote work considered",
+			map[string]any{"city": "Melbourne", "remote_ok": true}),
+		aspectWith(WorkArrangement, "hybrid", "This is a hybrid role.",
+			map[string]any{"arrangement": "hybrid"}),
+	}}
+	AlignAcrossAspects(&proposal)
+	if proposal.Aspects[1].Structured["arrangement"] != "hybrid" {
+		t.Fatalf("the arrangement was rewritten: %+v", proposal.Aspects[1].Structured)
+	}
+}
+
+// An onsite role says nothing about remote work.
+func TestAnOnsiteArrangementFillsNothing(t *testing.T) {
+	proposal := Proposal{Aspects: []Aspect{
+		aspectWith(Location, "Perth", "in Perth", map[string]any{"city": "Perth"}),
+		aspectWith(WorkArrangement, "onsite", "This is an onsite role.",
+			map[string]any{"arrangement": "onsite"}),
+	}}
+	AlignAcrossAspects(&proposal)
+	if _, ok := proposal.Aspects[0].Structured["remote_ok"]; ok {
+		t.Fatalf("an onsite role set remote_ok: %+v", proposal.Aspects[0].Structured)
+	}
+}

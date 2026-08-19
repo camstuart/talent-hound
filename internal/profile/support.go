@@ -215,13 +215,18 @@ var derivable = []struct {
 	// PoC's market and the two countries its listings name, not a gazetteer.
 	// "Australian work rights" states Australia, and the model records the
 	// sponsorship and drops the country on six of twenty listings.
-	// Work rights only. Deriving a location's country from the word
-	// "Australian" in a sentence about work rights is the same inference this
-	// check exists to remove — eleven of twenty-three introduced values.
+	// A country stated as a country. The adjective belongs to work rights —
+	// "Australian work rights" — and reading a location's country off it was
+	// eleven of twenty-three introduced values. A location says it in place
+	// phrasing instead: "Remote (Australia)", "based in Australia".
 	{[]AspectType{WorkRights}, "country", "Australia",
 		[]string{"australia", "australian"}, nil},
 	{[]AspectType{WorkRights}, "country", "New Zealand",
 		[]string{"new zealand", "nz "}, nil},
+	{[]AspectType{Location}, "country", "Australia",
+		[]string{"(australia)", "in australia", "australia)", ", australia"}, nil},
+	{[]AspectType{Location}, "country", "New Zealand",
+		[]string{"(new zealand)", "in new zealand", "new zealand)", ", new zealand"}, nil},
 	{[]AspectType{Compensation}, "basis", "base",
 		[]string{"base salary", "base plus", "base package", " base "}, nil},
 	{[]AspectType{Compensation}, "basis", "rate",
@@ -245,6 +250,43 @@ var derivable = []struct {
 		[]string{"permanent", "ongoing"}, nil},
 	{[]AspectType{EmploymentType}, "employment_type", "contract",
 		[]string{"contract", "fixed term", "fixed-term"}, nil},
+}
+
+// AlignAcrossAspects fills a value one aspect states and another needs.
+//
+// The taxonomy keeps remote_ok on a location and the arrangement on a work
+// arrangement, so a listing whose arrangement is remote has said its location
+// is remote-friendly — in the same profile, from the same document, already
+// evidenced. That is a restatement, not an inference about the world.
+//
+// It runs only in that direction. A location saying remote_ok does not set an
+// arrangement, because a role can allow remote work without being a remote
+// role.
+func AlignAcrossAspects(p *Proposal) []string {
+	remote := false
+	for _, a := range p.Aspects {
+		if a.Type == WorkArrangement && a.Structured["arrangement"] == "remote" {
+			remote = true
+		}
+	}
+	if !remote {
+		return nil
+	}
+	filled := []string{}
+	for i := range p.Aspects {
+		if p.Aspects[i].Type != Location {
+			continue
+		}
+		if p.Aspects[i].Structured == nil {
+			p.Aspects[i].Structured = map[string]any{}
+		}
+		if _, already := p.Aspects[i].Structured["remote_ok"]; already {
+			continue
+		}
+		p.Aspects[i].Structured["remote_ok"] = true
+		filled = append(filled, "location.remote_ok")
+	}
+	return filled
 }
 
 // NormalizeStructured corrects a value the model put in the wrong field, where

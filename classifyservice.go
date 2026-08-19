@@ -187,6 +187,7 @@ func (s *ClassifyService) attempt(
 	// to remember on every listing.
 	profile.DeriveStructured(&proposal)
 	profile.NormalizeStructured(&proposal)
+	profile.AlignAcrossAspects(&proposal)
 	return proposal, profile.Validate(kind, proposal, sources), raw, nil
 }
 
