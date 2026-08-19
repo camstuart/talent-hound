@@ -25,7 +25,7 @@ func TestDiagnoseConstraints(t *testing.T) {
 		t.Fatalf("loading: %v", err)
 	}
 
-	for _, want := range []string{"data-engineer-melbourne", "platform-engineer-remote"} {
+	for _, want := range []string{"backend-contract-melbourne", "data-engineer-melbourne"} {
 		for _, listing := range corpus.Listings {
 			if listing.ID != want {
 				continue

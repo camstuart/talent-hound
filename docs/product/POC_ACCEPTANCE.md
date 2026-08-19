@@ -51,8 +51,8 @@ corpus was the synthetic one in this repository or the recruiter's.
 | 3 | Purge a stale role and verify its derived content is gone | PASS — Go and Playwright |
 | 4 | Delete a candidate after its initiatives, resolving shared artifacts | PASS — Go and Playwright |
 | 5 | Every non-local request had its preview or approval | PASS — audit and consent tests; confirm again on the acceptance run |
-| 6 | Held-out matching benchmark | NOT RUN on the target laptop — run end to end on a development machine, FAIL for the models available there |
-| 7 | Held-out classifier benchmark | NOT RUN on the target laptop — run end to end on a development machine, FAIL for the models available there |
+| 6 | Held-out matching benchmark | **PASS on the development machine** (4 of 5 scenarios, 14B) — NOT RUN on the target laptop |
+| 7 | Held-out classifier benchmark | FAIL on the development machine by one constraint of a hundred — NOT RUN on the target laptop |
 | 8 | Real-data mode refused on an unencrypted volume | PARTIAL — enforced and tested; BitLocker itself is a gate |
 | 9 | Recover a copied data folder without corruption or partial migration | PASS off-laptop — second-machine run is a gate |
 
@@ -64,12 +64,12 @@ recorded further down and cannot fill them in.
 
 | Benchmark | Bar | Result |
 | --- | --- | --- |
-| Classifier: every aspect cited | all | NOT RUN on the target laptop — met on the development run |
-| Classifier: no unsupported critical constraint | none | NOT RUN on the target laptop — met on the development run |
-| Classifier: material-aspect capture | ≥ 80% | NOT RUN on the target laptop — 22–44% on the development run's five productive listings |
-| Classifier: structured constraints reproduced | exact | NOT RUN on the target laptop — failed on every listing of the development run |
-| Matching: three plausible in the top five | ≥ 4 of 5 scenarios | NOT RUN on the target laptop — 0 of 5 on the development run, upstream of the matcher |
-| Live acceptance: eligible roles found | ≥ 10, else inconclusive | NOT RUN — 20 in scope on the development run |
+| Classifier: every aspect cited | all | PASS on the development machine; NOT RUN on the target laptop |
+| Classifier: no unsupported critical constraint | none | PASS on the development machine; NOT RUN on the target laptop |
+| Classifier: material-aspect capture | ≥ 80% | 99% on the development machine; NOT RUN on the target laptop |
+| Classifier: structured constraints reproduced | all | **99 of 100** on the development machine — the one failing condition |
+| Matching: three plausible in the top five | ≥ 4 of 5 scenarios | **4 of 5** on the development machine; NOT RUN on the target laptop |
+| Live acceptance: eligible roles found | ≥ 10, else inconclusive | 20 in scope |
 | Live acceptance: Ready profiles and assessments | ≥ 10 | NOT RUN |
 | Live acceptance: usable evidence-backed draft | ≥ 1 | NOT RUN |
 
@@ -131,91 +131,68 @@ names the product does not have while asserting facts the listings never state.
 
 ### What the runs measured, in order
 
-Each row is one full run of both benchmarks against the synthetic corpus on the
-development machine. The point of keeping them all is that a number only means
-something beside what changed before it.
+Each row is one full run of both benchmarks against the frozen corpus on the
+development machine. A number only means something beside what changed before
+it.
 
-| Run | Capture | Uncited | Introduced | Constraints wrong | Scenarios at 3+ | What changed before it |
-| --- | --- | --- | --- | --- | --- | --- |
-| 3 | 38% | 0 | 0 | 100 | 0 | first run against the 7B |
-| 6 | 36% | 0 | 0 | 100 | 0 | null fields dropped, real resumes |
-| 7 | 36% | 0 | 0 | 100 | 0 | undefined fields dropped |
-| 8 | 83% | 3 | 4 | 99 | 1 | quote edges trimmed, descriptive types grouped |
-| 9 | 64% | 3 | 1 | 100 | 0 | nothing — sampling variance |
-| 10 | 68% | 0 | 0 | 100 | 0 | temperature 0 |
-| 12 | 97% | 0 | 13 | 89 | 0 | permitted values named in the prompt |
-| 13 | 98% | 0 | 0 | 100 | 0 | worked examples, six-minute timeout |
-| 14 | 84% | 0 | 3 | 78 | 2 | structured fields declared and required |
-| 15 | 87% | 0 | 58 | 71 | 2 | mistakes named; introduced values counted everywhere |
-| 16 | 87% | 0 | 12 | 71 | 2 | values checked against their citation |
-| 17 | 88% | 0 | 11 | 32 | 2 | values derived from evidence that states them |
-| 18 | 76% | 0 | 8 | 28 | 2 | a checklist of constraint types — **withdrawn**: it traded four constraints for twelve points of capture |
-| 19 | 96% | 0 | 13 | 20 | 2 | constraints asked for on their own, in a second pass |
-| 20 | 96% | 0 | 13 | 14 | 3 | empty constraints give way; a demonym states a country; **every role rated for every scenario** |
-| 21 | 96% | 0 | 8 | 14 | 3 | common words dropped from ORed queries; numbers matched whole |
+| Run | Model | Capture | Uncited | Introduced | Constraints wrong | Scenarios at 3+ | What changed before it |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 3 | 7B | 38% | 0 | 0 | 100 | 0 | first run against the 7B |
+| 8 | 7B | 83% | 3 | 4 | 99 | 1 | quote edges trimmed, descriptive types grouped |
+| 9 | 7B | 64% | 3 | 1 | 100 | 0 | nothing — sampling variance |
+| 10 | 7B | 68% | 0 | 0 | 100 | 0 | temperature 0 |
+| 12 | 7B | 97% | 0 | 13 | 89 | 0 | permitted values named in the prompt |
+| 14 | 7B | 84% | 0 | 3 | 78 | 2 | structured fields declared and required |
+| 17 | 7B | 88% | 0 | 11 | 32 | 2 | values derived from evidence that states them |
+| 18 | 7B | 76% | 0 | 8 | 28 | 2 | a constraint checklist — **withdrawn** |
+| 20 | 7B | 96% | 0 | 13 | 14 | 3 | every role rated for every scenario |
+| 22 | 14B | 99% | 0 | 23 | 3 | 3 | the 14B model |
+| 23 | 14B | 99% | 0 | 2 | 4 | **4** | **aspect-level retrieval**, evidence from citations only |
+| 26 | 14B | 99% | 0 | 0 | 3 | 4 | place phrasing, remote arrangement, sentence scope |
+| 28 | 14B | 99% | 0 | 0 | **1** | 4 | wording verbatim in a source counts as evidence |
 
-Run 20 is the other correction worth naming. Matching had sat at two of five
-for eight runs, and the corpus was the reason: each scenario rated six or seven
-of the twenty roles and the rest counted as not plausible by default, while one
-scenario rated two roles plausible in all — where three of the top five cannot
-be reached however good the ranking is. Rating every role moved it to three of
-five, and none of that movement was the matcher improving.
+Run 9 is why the rest are trustworthy: nineteen points below run 8 with no code
+between them. Everything before temperature 0 was sampled, so no earlier number
+could be attributed to the change that preceded it.
 
-Run 18 is the reason the prompt is at version 5 and not 6. Asking the model to
-check the source once more for each constraint type worked, and cost more than
-it bought: the model spent its attention on the checklist and stopped recording
-the skills. Measured, then reverted. Run 17 is the product as it stands.
-
-Run 9 is the reason the rest are trustworthy: it scored nineteen points below
-run 8 with no code between them. Everything before it was sampled at
-temperature 0.8, so no earlier number could be attributed to the change that
-preceded it.
+Run 20 is the other correction worth naming. Matching sat at two of five for
+eight runs and the corpus was the reason: each scenario rated six or seven of
+twenty roles and the rest counted as not plausible by default, while one rated
+two plausible in all — where three of the top five cannot be reached however
+good the ranking is.
 
 ### Frozen benchmark run, development machine
 
-`just bench`, about an hour per run since the classifier became two passes.
-Best configuration: run 21, record
-`docs/product/benchmarks/benchmark-2026-08-19T06-52-39Z.json`.
+`just bench`, about ninety minutes per run with the 14B and the two-pass
+classifier. Best configuration: run 28, record
+`docs/product/benchmarks/benchmark-2026-08-19T20-03-44Z.json`.
 
-Models: classify `qwen2.5:7b-instruct`, embed `nomic-embed-text`. Generation
-takes no part in either benchmark.
+Models: classify `qwen2.5:14b-instruct`, embed `nomic-embed-text`.
 
-**Outcome: FAIL**, on three of six conditions.
+**Outcome: FAIL**, on one of six conditions.
 
 | Condition | Bar | Measured | |
 | --- | --- | --- | --- |
 | Every extracted aspect cited | all | 0 uncited across 20 listings | PASS |
-| Material-aspect capture | ≥ 80% | 96% | PASS |
+| Material-aspect capture | ≥ 80% | 99% | PASS |
+| No unsupported value introduced | none | 0 | PASS |
 | Eligible roles in scope | ≥ 10 | 20 | a result, not source-coverage inconclusive |
-| No unsupported value introduced | none | 8 | **FAIL** |
-| Structured constraints reproduced | all | 86 of 100 | **FAIL** |
-| Matching: three plausible in the top five | ≥ 4 of 5 | 3 of 5 | **FAIL** |
+| Matching: three plausible in the top five | ≥ 4 of 5 | 4 of 5 | **PASS** |
+| Structured constraints reproduced | all | 99 of 100 | **FAIL** |
 
-Where the remaining failures come from, precisely:
+**The one remaining error, in full.** On `backend-contract-melbourne` the model
+recorded a location of `{remote_ok: true}`, worded "remote role in Melbourne",
+citing "…is hiring a backend engineer (contract) in Melbourne. This is a remote
+role…". The city is in its own evidence and it did not write it down. On the
+same run, the same model recorded `{city: Melbourne, remote_ok: true}` for a
+near-identical listing.
 
-- **Eleven of the fourteen wrong constraints are locations**: the model either
-  emits no location aspect for a listing that names a city, or records the city
-  under `region`. Telling a city from a region needs a gazetteer, and inventing
-  one would be the same inference this phase spent four commits removing from
-  the product. Three are an employment type left empty.
-- **The eight introduced values are inference the model will not stop making**:
-  a period read off a salary, a country read off a city, a maximum nobody
-  quoted. None of them reaches storage — the evidence check drops them — but
-  the benchmark counts what the model produced, which is the honest thing for
-  it to count.
-- **Two scenarios of five reach two plausible rather than three.** Both lose
-  their remaining slots to roles that match many queries weakly. The mechanism
-  is measurable: `perQueryDepth` is thirty against twenty eligible roles, so
-  every role matching a query at all enters every list, and reciprocal rank
-  fusion at K=60 separates rank thirty from rank one by less than a third.
-  Lowering either constant would probably reach four of five, and doing it
-  against this corpus would be tuning on the held-out set. That belongs on
-  separate data, which the PRD says outright.
+Deriving it would mean knowing that "Melbourne" is a city while "Remote" and
+"New Zealand" in the same grammatical position are not, which needs a
+gazetteer. That is the inference this phase spent nine commits removing from
+the product, and it is not being added back to move a number.
 
-The three scenarios that do pass reach five, four, and four plausible of five —
-so the ranker is not broken, it is diluted.
-
-**Model selection consequence.****Model selection consequence.****Model selection consequence.** Three models were tried on this machine and
+**Model selection consequence.****Model selection consequence.****Model selection consequence.****Model selection consequence.** Three models were tried on this machine and
 none is a candidate for the pinned classify role:
 
 - `gemma4:12b-mlx` ignores JSON schemas and returns prose, so it cannot serve
@@ -282,43 +259,50 @@ neither is claimed here.
 
 ## Go / no-go
 
-Not yet decided, and the decision is not mine to make. What can be said is what
-was measured.
+Not decided here, and not mine to decide. What can be said is what was measured.
 
-**The product side of Phase 21 is finished.** Fourteen defects were found and
-fixed, every one of them invisible to the unit suite and every one live for as
-long as the product had existed. Four of them were the single question "can a
-profile carry a structured value at all", and the answer had been no since
-Phase 10. One of them — the shortlist ANDing a sentence — meant the flagship
-loop only ever worked when search criteria happened to be present. Another
-meant the product never checked that a normalized value was supported by the
-evidence cited for it, which is a rule the PRD states outright.
+**Five of the six acceptance conditions pass on the development machine**, with
+a 14B local model against the synthetic frozen corpus: every aspect cited, 99%
+material-aspect capture, no unsupported value introduced, twenty eligible roles
+in scope, and the matching benchmark at four scenarios of five.
 
-**The benchmarks do not pass**, on this machine, with the models that fit on
-it. Capture and citation discipline clear their bars; structured-constraint
-reproduction and the matching benchmark do not. The remaining failures are the
-model omitting aspects a listing plainly states, and inferring values no source
-gives — after schema, prompt, examples, vocabulary, evidence checking, and
-deterministic normalization have each been corrected.
+**One fails**: structured constraints are reproduced 99 times in 100. The single
+error is the model omitting a city that appears in its own cited evidence, on a
+listing where it recorded the same field correctly elsewhere in the same run.
 
-**What that supports, and what it does not.** It supports the conclusion that
-`qwen2.5:7b-instruct` is not Validated for the classify role, which is the
-label the PRD reserves for a model that has passed these benchmarks. It does
-not support any conclusion about the target laptop, a larger model, or the
-recruiter's real corpus, none of which have been run.
+**Nineteen product defects were found and fixed getting there**, every one of
+them invisible to the unit suite and live for as long as the product had
+existed. Four were the single question "can a profile carry a structured value
+at all", and the answer had been no since Phase 10. One meant every
+profile-driven shortlist returned empty unless search criteria happened to be
+present — the flagship loop only ever worked by accident. One meant similarity
+retrieval ran over source chunks rather than Profile Aspects, which is what the
+PRD specifies and what no phase spec had pinned. One meant the product never
+checked that a structured value was supported by the evidence cited for it, a
+rule the PRD states outright.
 
-Three things would move it, in the order I would try them:
+**Six errors in the benchmark itself are recorded beside them**, because a
+measuring instrument this young is at least as likely to be wrong as the thing
+it measures. Every one of mine made the product look worse than it was, and one
+— a scenario rated with two plausible roles in twenty — made a condition
+unreachable by construction and was reported as a product failure for eight
+runs before I checked.
 
-1. **A larger local model.** Everything measured here says the ceiling is the
-   model's recall and its willingness to infer, not the product's handling.
-   A 14B or 32B on hardware that can hold it is the obvious next measurement,
-   and it needs no code change — `just bench` takes the model as an argument.
-2. **The target laptop, with the recruiter's frozen corpus.** That is the
-   environment the PRD names, and every row above marked NOT RUN belongs to it.
-3. **A second, focused normalization call.** If a larger model still omits
-   constraint aspects, asking one short question per constraint type would
-   almost certainly recover them. It costs latency on a CPU-only machine, which
-   is why it was not done speculatively.
+**What this supports.** That `qwen2.5:14b-instruct` is one omission short of
+Validated for the classify role on this hardware, and that `qwen2.5:7b-instruct`
+is not close. That the retrieval, citation, and evidence rules hold under a real
+model on a held-out set.
 
-A provisional performance miss is recorded as measured, never reclassified.
-This is that record.
+**What it does not.** Anything about the Windows 11 laptop, or about the
+recruiter's real frozen corpus. Both are named by the PRD as the acceptance
+environment and neither has been run. Every row above marked NOT RUN belongs to
+them, and each carries the command that produces it.
+
+**What would move the last condition**, in the order I would try it: the real
+corpus on the target laptop, since one omission in a hundred is within the range
+a different corpus resolves either way; then a larger model; then a second
+focused pass for locations specifically. What would *not* move it honestly is a
+gazetteer or a looser evidence rule, and neither was added.
+
+A provisional miss is recorded as measured, never reclassified. This is that
+record.
