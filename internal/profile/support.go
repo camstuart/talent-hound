@@ -178,6 +178,14 @@ var derivable = []struct {
 	{[]AspectType{WorkRights}, "sponsorship_required", true,
 		[]string{"sponsorship available", "will sponsor", "can sponsor", "offer sponsorship",
 			"sponsorship provided"}, []string{"not", "no ", "cannot", "don't"}},
+	// A country stated by name or by demonym. Deliberately short: this is the
+	// PoC's market and the two countries its listings name, not a gazetteer.
+	// "Australian work rights" states Australia, and the model records the
+	// sponsorship and drops the country on six of twenty listings.
+	{[]AspectType{WorkRights, Location}, "country", "Australia",
+		[]string{"australia", "australian"}, nil},
+	{[]AspectType{WorkRights, Location}, "country", "New Zealand",
+		[]string{"new zealand", "nz "}, nil},
 	{[]AspectType{Compensation}, "basis", "base",
 		[]string{"base salary", "base plus", "base package", " base "}, nil},
 	{[]AspectType{Compensation}, "basis", "rate",

@@ -148,3 +148,45 @@ func TestTheSchemaRequiresAStructuredObjectWithDeclaredFields(t *testing.T) {
 		}
 	}
 }
+
+// The merge never replaces an aspect, with one exception: an empty structured
+// value gives way to a populated one of the same type. Keeping the empty one
+// held back exactly what the second pass exists to supply.
+func TestAnEmptyConstraintGivesWayToAPopulatedOne(t *testing.T) {
+	base := Proposal{Aspects: []Aspect{
+		{Type: Skill, Wording: "Go"},
+		{Type: EmploymentType, Wording: "permanent", Structured: map[string]any{}},
+		{Type: Location, Wording: "Melbourne", Structured: map[string]any{"city": "Melbourne"}},
+	}}
+	extra := Proposal{Aspects: []Aspect{
+		{Type: EmploymentType, Wording: "offered as permanent work",
+			Structured: map[string]any{"employment_type": "permanent"}},
+		// The location is already populated, so this one is ignored entirely.
+		{Type: Location, Wording: "Melbourne office", Structured: map[string]any{"region": "Victoria"}},
+	}}
+
+	MergeConstraints(&base, extra)
+
+	var employment, location Aspect
+	count := map[AspectType]int{}
+	for _, a := range base.Aspects {
+		count[a.Type]++
+		switch a.Type {
+		case EmploymentType:
+			employment = a
+		case Location:
+			location = a
+		}
+	}
+	for kind, n := range count {
+		if n != 1 {
+			t.Fatalf("%d aspects of type %q survived", n, kind)
+		}
+	}
+	if employment.Structured["employment_type"] != "permanent" {
+		t.Fatalf("the empty employment type was kept: %+v", employment.Structured)
+	}
+	if location.Structured["city"] != "Melbourne" || location.Structured["region"] != nil {
+		t.Fatalf("a populated location was replaced: %+v", location.Structured)
+	}
+}

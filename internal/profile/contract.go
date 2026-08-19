@@ -374,7 +374,26 @@ func MergeConstraints(base *Proposal, extra Proposal) []string {
 	}
 	added := []string{}
 	for _, a := range extra.Aspects {
-		if present[a.Type] || keys[MeaningKey(a)] {
+		if keys[MeaningKey(a)] {
+			continue
+		}
+		if present[a.Type] {
+			// One exception to never replacing: an aspect of this type is
+			// already there carrying no structured value, and this one has one.
+			// Skipping it kept an empty employment_type over a populated one,
+			// which is the gap this pass exists to fill.
+			for i := range base.Aspects {
+				if base.Aspects[i].Type != a.Type || len(base.Aspects[i].Structured) > 0 {
+					continue
+				}
+				if len(a.Structured) == 0 {
+					break
+				}
+				base.Aspects[i] = a
+				keys[MeaningKey(a)] = true
+				added = append(added, string(a.Type)+" (filled)")
+				break
+			}
 			continue
 		}
 		base.Aspects = append(base.Aspects, a)

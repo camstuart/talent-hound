@@ -215,3 +215,29 @@ func TestWhatIsDerivedIsAlsoSupported(t *testing.T) {
 		t.Fatalf("the evidence check removed what was derived from evidence: %v", dropped)
 	}
 }
+
+// "Australian work rights" states Australia. The model records the sponsorship
+// and drops the country on six listings of twenty.
+func TestACountryStatedByDemonymIsFilledIn(t *testing.T) {
+	proposal := Proposal{Aspects: []Aspect{
+		aspectWith(WorkRights, "existing Australian work rights",
+			"You must have existing Australian work rights; we do not sponsor.",
+			map[string]any{"sponsorship_required": false}),
+	}}
+	DeriveStructured(&proposal)
+	if got := proposal.Aspects[0].Structured["country"]; got != "Australia" {
+		t.Fatalf("country = %v, want Australia", got)
+	}
+}
+
+// And a source that names no country still names none.
+func TestNoCountryIsInventedFromSilence(t *testing.T) {
+	proposal := Proposal{Aspects: []Aspect{
+		aspectWith(WorkRights, "work rights required", "You must have the right to work here.",
+			map[string]any{}),
+	}}
+	DeriveStructured(&proposal)
+	if _, ok := proposal.Aspects[0].Structured["country"]; ok {
+		t.Fatalf("a country was invented: %+v", proposal.Aspects[0].Structured)
+	}
+}
