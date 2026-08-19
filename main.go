@@ -114,6 +114,9 @@ func main() {
 			application.NewService(NewDeletionService(gdb)),
 			application.NewService(setupSv),
 			application.NewService(NewDiagnosticsService(gdb, setupSv, dataDir)),
+			// Help is registered with the model it may use and works without
+			// it: it is read when the rest of this list is the problem.
+			application.NewService(NewHelpService(registry, ollama)),
 		},
 		Assets: application.AssetOptions{
 			Handler: application.AssetFileServerFS(assets),

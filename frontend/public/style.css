@@ -624,3 +624,67 @@ li[data-satisfied="yes"] .artifact-name {
     content: "Written by a model — check it";
     color: #c9902f;
 }
+
+/* Help: an index you can browse beside the page you are reading. */
+.help-search {
+    display: flex;
+    gap: 0.5rem;
+    margin: 0.6rem 0;
+}
+
+.help-search input {
+    flex: 1;
+}
+
+.help-body {
+    display: grid;
+    grid-template-columns: minmax(12rem, 20rem) 1fr;
+    gap: 1.5rem;
+    align-items: start;
+}
+
+.help-index h4 {
+    margin: 0.8rem 0 0.3rem;
+    font-size: 0.8rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    opacity: 0.7;
+}
+
+.help-index li {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    padding: 0.25rem 0;
+}
+
+.help-index button {
+    text-align: left;
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.help-index button[data-current="yes"] {
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.help-article h5 {
+    margin: 1rem 0 0.2rem;
+}
+
+/* Documentation is text, and stays text: newlines survive, markup does not. */
+.help-text {
+    white-space: pre-wrap;
+    margin: 0;
+}
+
+@media (max-width: 60rem) {
+    .help-body {
+        grid-template-columns: 1fr;
+    }
+}

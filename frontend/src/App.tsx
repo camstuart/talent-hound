@@ -8,6 +8,7 @@ import TabBar from "./components/TabBar";
 import NewInitiativeModal from "./components/NewInitiativeModal";
 import WorkspaceAreas from "./components/WorkspaceAreas";
 import SettingsPanel from "./components/SettingsPanel";
+import HelpPanel from "./components/HelpPanel";
 import StatusStrip from "./components/StatusStrip";
 import FirstRunWizard from "./components/FirstRunWizard";
 import { SetupService } from "../bindings/camstuart/talent-hound";
@@ -21,6 +22,7 @@ export default function App() {
   const [showArchived, setShowArchived] = createSignal(false);
   const [renaming, setRenaming] = createSignal(false);
   const [showSettings, setShowSettings] = createSignal(false);
+  const [showHelp, setShowHelp] = createSignal(false);
   const [error, setError] = createSignal("");
   // Setup is only in the way while there is no data folder: with nowhere to put
   // anything, every other screen is a screen that cannot save what it collects.
@@ -106,24 +108,34 @@ export default function App() {
         onSelect={openInitiative}
         onNew={() => setShowModal(true)}
         onToggleArchived={toggleArchived}
-        onSettings={() => setShowSettings((on) => !on)}
+        onSettings={() => {
+          setShowHelp(false);
+          setShowSettings((on) => !on);
+        }}
+        onHelp={() => {
+          setShowSettings(false);
+          setShowHelp((on) => !on);
+        }}
       />
       <main class="main">
         <Show when={openTabs().length > 0}>
           <TabBar tabs={openTabs()} activeId={activeId()} onActivate={setActiveId} onClose={closeTab} />
         </Show>
         <div class="content">
-          <Show when={needsSetup()}>
+          <Show when={showHelp()}>
+            <HelpPanel />
+          </Show>
+          <Show when={!showHelp() && needsSetup()}>
             <div class="container">
               <h1>Welcome to Talent Hound</h1>
               <p class="muted">Choose where this installation keeps its data before anything else.</p>
               <FirstRunWizard />
             </div>
           </Show>
-          <Show when={!needsSetup() && showSettings()}>
+          <Show when={!showHelp() && !needsSetup() && showSettings()}>
             <SettingsPanel />
           </Show>
-          <Show when={!needsSetup() && !showSettings()}>
+          <Show when={!showHelp() && !needsSetup() && !showSettings()}>
           <Show when={activeInitiative()} fallback={<Welcome />}>
             {(initiative) => (
               <section class="initiative-panel">

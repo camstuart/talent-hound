@@ -11,6 +11,7 @@ interface Props {
   onNew: () => void;
   onToggleArchived: (show: boolean) => void;
   onSettings: () => void;
+  onHelp: () => void;
 }
 
 export default function Sidebar(props: Props) {
@@ -52,6 +53,9 @@ export default function Sidebar(props: Props) {
         </For>
       </ul>
       {/* Model roles and provider keys are application-wide, not per workspace. */}
+      <button class="sidebar-settings" aria-label="Help" onClick={() => props.onHelp()}>
+        Help
+      </button>
       <button class="sidebar-settings" aria-label="Settings" onClick={() => props.onSettings()}>
         Settings
       </button>

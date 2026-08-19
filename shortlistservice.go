@@ -141,11 +141,10 @@ func (s *ShortlistService) Build(initiativeID, candidateID uint) (*Shortlist, er
 		}
 		lists = append(lists, fusion.Ranked{Source: q.source, Method: "lexical", Keys: lexical})
 
-		semantic, err := s.semantic(initiativeID, q.text, allowed)
-		if err != nil {
-			return nil, err
-		}
-		lists = append(lists, fusion.Ranked{Source: q.source, Method: "semantic", Keys: semantic})
+		lists = append(lists, fusion.Ranked{
+			Source: q.source, Method: "semantic",
+			Keys: s.semantic(initiativeID, q.text, allowed),
+		})
 	}
 
 	byID := make(map[uint]models.Role, len(eligible))
@@ -288,7 +287,7 @@ func (s *ShortlistService) lexical(
 }
 
 // semantic retrieves role chunks by meaning, grouped to roles in rank order.
-func (s *ShortlistService) semantic(initiativeID uint, text string, allowed map[uint]bool) ([]uint, error) {
+func (s *ShortlistService) semantic(initiativeID uint, text string, allowed map[uint]bool) []uint {
 	// Aspects, not chunks. The PRD asks for exact-cosine aspect KNN, and a
 	// chunk carries a listing's blurb along with its requirements — so a
 	// similarity query matched the sentences every listing shares. An aspect is
@@ -300,8 +299,7 @@ func (s *ShortlistService) semantic(initiativeID uint, text string, allowed map[
 		// before anything is embedded, and it is not a failure of the
 		// shortlist.
 		//
-		//nolint:nilerr // an unembedded corpus is a state, not an error
-		return nil, nil
+		return nil
 	}
 	seen := map[uint]bool{}
 	ids := make([]uint, 0, len(hits))
@@ -312,7 +310,7 @@ func (s *ShortlistService) semantic(initiativeID uint, text string, allowed map[
 		seen[h.RoleID] = true
 		ids = append(ids, h.RoleID)
 	}
-	return ids, nil
+	return ids
 }
 
 // artifactIDs is the artifacts a lexical result names, in rank order.
