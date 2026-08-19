@@ -1,6 +1,6 @@
 {
   "synthetic": true,
-  "note": "Every candidate, company, role, and rating in this corpus is invented. It exists so the benchmark harness, its thresholds, and its record can be exercised end to end before the recruiter's real frozen corpus arrives, and it is not a substitute for that corpus. No real candidate information appears in this repository. Structured labels use the product's own field vocabulary from internal/profile/taxonomy.go, and state only what each listing says in words: a benchmark that demands inference is measuring something the source never asked for.",
+  "note": "Every candidate, company, role, and rating in this corpus is invented. It exists so the benchmark harness, its thresholds, and its record can be exercised end to end before the recruiter's real frozen corpus arrives, and it is not a substitute for that corpus. No real candidate information appears in this repository. Structured labels use the product's own field vocabulary from internal/profile/taxonomy.go, and state only what each listing says in words: a benchmark that demands inference is measuring something the source never asked for. Every role is rated for every scenario: rating a subset left the rest counting as not plausible by default, and left one scenario with two plausible roles in twenty, where three of the top five cannot be met however good the ranking is.",
   "scenarios": [
     {
       "id": "go-platform-melbourne",
@@ -11,7 +11,47 @@
           "plausible": true
         },
         {
+          "roleId": "backend-engineer-sydney",
+          "plausible": true
+        },
+        {
+          "roleId": "site-reliability-brisbane",
+          "plausible": true
+        },
+        {
+          "roleId": "data-engineer-melbourne",
+          "plausible": false
+        },
+        {
+          "roleId": "staff-engineer-perth",
+          "plausible": true
+        },
+        {
+          "roleId": "frontend-engineer-sydney",
+          "plausible": false
+        },
+        {
+          "roleId": "security-engineer-canberra",
+          "plausible": false
+        },
+        {
+          "roleId": "ml-engineer-melbourne",
+          "plausible": false
+        },
+        {
+          "roleId": "devops-engineer-adelaide",
+          "plausible": true
+        },
+        {
+          "roleId": "mobile-engineer-sydney",
+          "plausible": false
+        },
+        {
           "roleId": "principal-engineer-melbourne",
+          "plausible": true
+        },
+        {
+          "roleId": "backend-contract-melbourne",
           "plausible": true
         },
         {
@@ -19,19 +59,31 @@
           "plausible": true
         },
         {
-          "roleId": "backend-contract-melbourne",
-          "plausible": false
-        },
-        {
-          "roleId": "junior-backend-melbourne",
-          "plausible": false
-        },
-        {
           "roleId": "qa-engineer-brisbane",
           "plausible": false
         },
         {
+          "roleId": "data-platform-sydney",
+          "plausible": true
+        },
+        {
           "roleId": "engineering-manager-melbourne",
+          "plausible": false
+        },
+        {
+          "roleId": "integration-engineer-hobart",
+          "plausible": false
+        },
+        {
+          "roleId": "embedded-engineer-perth",
+          "plausible": false
+        },
+        {
+          "roleId": "solutions-architect-sydney",
+          "plausible": false
+        },
+        {
+          "roleId": "junior-backend-melbourne",
           "plausible": false
         }
       ]
@@ -41,19 +93,71 @@
       "resume": "# Candidate profile — invented\n\n## Summary\n\nData engineer, five years. Melbourne, prefers remote, permanent, around AUD\n155,000.\n\n## Experience\n\n**Data engineer, Bellbird Retail Group (2021–present)**\nOwned the analytics warehouse: dimensional modelling, dbt transformations, and\nthe tests that guard them. Built ingestion in Python for fourteen source\nsystems. Cut the nightly batch from six hours to ninety minutes. Ran a Spark\npipeline for clickstream sessionisation.\n\n**Analytics engineer, Corella Health (2019–2021)**\nBuilt reporting models in dbt and SQL over a Postgres warehouse. Wrote the data\nquality checks that gated releases. Worked directly with clinicians to define\nmetrics.\n\n## Skills\n\nPython, dbt, SQL, dimensional modelling, Spark, Airflow, data quality testing,\nwarehouse design, stakeholder communication.\n",
       "ratings": [
         {
+          "roleId": "platform-engineer-melbourne",
+          "plausible": false
+        },
+        {
+          "roleId": "backend-engineer-sydney",
+          "plausible": false
+        },
+        {
+          "roleId": "site-reliability-brisbane",
+          "plausible": false
+        },
+        {
           "roleId": "data-engineer-melbourne",
           "plausible": true
         },
         {
-          "roleId": "data-platform-sydney",
-          "plausible": true
+          "roleId": "staff-engineer-perth",
+          "plausible": false
+        },
+        {
+          "roleId": "frontend-engineer-sydney",
+          "plausible": false
+        },
+        {
+          "roleId": "security-engineer-canberra",
+          "plausible": false
         },
         {
           "roleId": "ml-engineer-melbourne",
           "plausible": true
         },
         {
-          "roleId": "junior-backend-melbourne",
+          "roleId": "devops-engineer-adelaide",
+          "plausible": false
+        },
+        {
+          "roleId": "mobile-engineer-sydney",
+          "plausible": false
+        },
+        {
+          "roleId": "principal-engineer-melbourne",
+          "plausible": false
+        },
+        {
+          "roleId": "backend-contract-melbourne",
+          "plausible": true
+        },
+        {
+          "roleId": "platform-engineer-remote",
+          "plausible": false
+        },
+        {
+          "roleId": "qa-engineer-brisbane",
+          "plausible": false
+        },
+        {
+          "roleId": "data-platform-sydney",
+          "plausible": true
+        },
+        {
+          "roleId": "engineering-manager-melbourne",
+          "plausible": true
+        },
+        {
+          "roleId": "integration-engineer-hobart",
           "plausible": false
         },
         {
@@ -61,8 +165,12 @@
           "plausible": false
         },
         {
-          "roleId": "security-engineer-canberra",
+          "roleId": "solutions-architect-sydney",
           "plausible": false
+        },
+        {
+          "roleId": "junior-backend-melbourne",
+          "plausible": true
         }
       ]
     },
@@ -71,15 +179,55 @@
       "resume": "# Candidate profile — invented\n\n## Summary\n\nFrontend engineer, six years, with a focus on accessibility. Sydney, hybrid,\npermanent, around AUD 145,000.\n\n## Experience\n\n**Senior frontend engineer, Tidewater Retail (2021–present)**\nOwned the design system used by four product teams. Took the checkout flow from\npartial keyboard support to full WCAG 2.1 AA conformance, verified with screen\nreader testing. Introduced automated accessibility checks into CI.\n\n**Frontend engineer, Ashgrove Media (2019–2021)**\nBuilt editorial interfaces in TypeScript and React. Rebuilt the article renderer\nfor performance, halving time to first contentful paint.\n\n## Skills\n\nTypeScript, React, design systems, WCAG 2.1, screen reader testing, keyboard\nnavigation, component libraries, performance profiling, CSS architecture.\n",
       "ratings": [
         {
+          "roleId": "platform-engineer-melbourne",
+          "plausible": false
+        },
+        {
+          "roleId": "backend-engineer-sydney",
+          "plausible": false
+        },
+        {
+          "roleId": "site-reliability-brisbane",
+          "plausible": false
+        },
+        {
+          "roleId": "data-engineer-melbourne",
+          "plausible": false
+        },
+        {
+          "roleId": "staff-engineer-perth",
+          "plausible": false
+        },
+        {
           "roleId": "frontend-engineer-sydney",
           "plausible": true
+        },
+        {
+          "roleId": "security-engineer-canberra",
+          "plausible": false
+        },
+        {
+          "roleId": "ml-engineer-melbourne",
+          "plausible": false
+        },
+        {
+          "roleId": "devops-engineer-adelaide",
+          "plausible": false
         },
         {
           "roleId": "mobile-engineer-sydney",
           "plausible": true
         },
         {
-          "roleId": "solutions-architect-sydney",
+          "roleId": "principal-engineer-melbourne",
+          "plausible": false
+        },
+        {
+          "roleId": "backend-contract-melbourne",
+          "plausible": false
+        },
+        {
+          "roleId": "platform-engineer-remote",
           "plausible": false
         },
         {
@@ -87,11 +235,27 @@
           "plausible": true
         },
         {
+          "roleId": "data-platform-sydney",
+          "plausible": false
+        },
+        {
+          "roleId": "engineering-manager-melbourne",
+          "plausible": false
+        },
+        {
+          "roleId": "integration-engineer-hobart",
+          "plausible": false
+        },
+        {
           "roleId": "embedded-engineer-perth",
           "plausible": false
         },
         {
-          "roleId": "security-engineer-canberra",
+          "roleId": "solutions-architect-sydney",
+          "plausible": true
+        },
+        {
+          "roleId": "junior-backend-melbourne",
           "plausible": false
         }
       ]
@@ -101,27 +265,83 @@
       "resume": "# Candidate profile — invented\n\n## Summary\n\nSite reliability engineer, eight years in operations. Brisbane, hybrid,\npermanent, around AUD 170,000.\n\n## Experience\n\n**Site reliability engineer, Corella Health (2021–present)**\nRan Kubernetes clusters carrying a patient-facing platform. Owned alerting in\nPrometheus and the on-call rotation, and acted as incident commander for major\nincidents. Cut alert noise by sixty percent by rewriting the alerting rules\nagainst service level objectives.\n\n**Systems engineer, Derwent Utilities (2017–2021)**\nMaintained Linux fleets and the monitoring stack. Automated provisioning with\nAnsible and Terraform.\n\n## Skills\n\nKubernetes, Prometheus, Grafana, incident response and command, service level\nobjectives, Terraform, Ansible, Linux administration, capacity planning.\n",
       "ratings": [
         {
+          "roleId": "platform-engineer-melbourne",
+          "plausible": true
+        },
+        {
+          "roleId": "backend-engineer-sydney",
+          "plausible": false
+        },
+        {
           "roleId": "site-reliability-brisbane",
           "plausible": true
+        },
+        {
+          "roleId": "data-engineer-melbourne",
+          "plausible": false
+        },
+        {
+          "roleId": "staff-engineer-perth",
+          "plausible": false
+        },
+        {
+          "roleId": "frontend-engineer-sydney",
+          "plausible": false
+        },
+        {
+          "roleId": "security-engineer-canberra",
+          "plausible": false
+        },
+        {
+          "roleId": "ml-engineer-melbourne",
+          "plausible": false
         },
         {
           "roleId": "devops-engineer-adelaide",
           "plausible": true
         },
         {
+          "roleId": "mobile-engineer-sydney",
+          "plausible": false
+        },
+        {
+          "roleId": "principal-engineer-melbourne",
+          "plausible": false
+        },
+        {
+          "roleId": "backend-contract-melbourne",
+          "plausible": false
+        },
+        {
           "roleId": "platform-engineer-remote",
           "plausible": true
         },
         {
+          "roleId": "qa-engineer-brisbane",
+          "plausible": false
+        },
+        {
+          "roleId": "data-platform-sydney",
+          "plausible": false
+        },
+        {
+          "roleId": "engineering-manager-melbourne",
+          "plausible": false
+        },
+        {
           "roleId": "integration-engineer-hobart",
+          "plausible": true
+        },
+        {
+          "roleId": "embedded-engineer-perth",
+          "plausible": false
+        },
+        {
+          "roleId": "solutions-architect-sydney",
           "plausible": false
         },
         {
           "roleId": "junior-backend-melbourne",
-          "plausible": false
-        },
-        {
-          "roleId": "frontend-engineer-sydney",
           "plausible": false
         }
       ]
@@ -131,15 +351,7 @@
       "resume": "# Candidate profile — invented\n\n## Summary\n\nEmbedded engineer, nine years in industrial equipment. Perth, onsite,\npermanent, around AUD 160,000.\n\n## Experience\n\n**Senior embedded engineer, Redgum Mining Tech (2020–present)**\nFirmware in C for conveyor control units with hard real-time deadlines. Wrote\nthe CAN bus driver and the safety interlock logic. Brought a product through\nfunctional safety review.\n\n**Embedded engineer, Marlow Systems (2016–2020)**\nC firmware for sensor modules. Built the hardware-in-the-loop test rig used for\nrelease qualification.\n\n## Skills\n\nC, real-time systems, CAN bus, device drivers, hardware interfaces, functional\nsafety, hardware-in-the-loop testing, oscilloscope debugging, RTOS.\n",
       "ratings": [
         {
-          "roleId": "embedded-engineer-perth",
-          "plausible": true
-        },
-        {
-          "roleId": "staff-engineer-perth",
-          "plausible": true
-        },
-        {
-          "roleId": "integration-engineer-hobart",
+          "roleId": "platform-engineer-melbourne",
           "plausible": false
         },
         {
@@ -147,7 +359,71 @@
           "plausible": false
         },
         {
+          "roleId": "site-reliability-brisbane",
+          "plausible": false
+        },
+        {
+          "roleId": "data-engineer-melbourne",
+          "plausible": false
+        },
+        {
+          "roleId": "staff-engineer-perth",
+          "plausible": true
+        },
+        {
+          "roleId": "frontend-engineer-sydney",
+          "plausible": false
+        },
+        {
+          "roleId": "security-engineer-canberra",
+          "plausible": false
+        },
+        {
           "roleId": "ml-engineer-melbourne",
+          "plausible": false
+        },
+        {
+          "roleId": "devops-engineer-adelaide",
+          "plausible": false
+        },
+        {
+          "roleId": "mobile-engineer-sydney",
+          "plausible": false
+        },
+        {
+          "roleId": "principal-engineer-melbourne",
+          "plausible": false
+        },
+        {
+          "roleId": "backend-contract-melbourne",
+          "plausible": false
+        },
+        {
+          "roleId": "platform-engineer-remote",
+          "plausible": false
+        },
+        {
+          "roleId": "qa-engineer-brisbane",
+          "plausible": true
+        },
+        {
+          "roleId": "data-platform-sydney",
+          "plausible": false
+        },
+        {
+          "roleId": "engineering-manager-melbourne",
+          "plausible": false
+        },
+        {
+          "roleId": "integration-engineer-hobart",
+          "plausible": true
+        },
+        {
+          "roleId": "embedded-engineer-perth",
+          "plausible": true
+        },
+        {
+          "roleId": "solutions-architect-sydney",
           "plausible": false
         },
         {

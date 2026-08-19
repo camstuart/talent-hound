@@ -718,3 +718,37 @@ func TestAConstraintWithAWrongValueIsStillCaptured(t *testing.T) {
 		t.Fatal("a wrong city was reported as exact")
 	}
 }
+
+// A scenario with fewer than three plausible roles cannot meet "three of the
+// top five" however good the ranking is. That is a broken corpus, not a failing
+// matcher, and it is the kind of flaw that reads as a product problem for as
+// long as nobody checks.
+func TestEveryScenarioCanReachTheBar(t *testing.T) {
+	corpus, err := Load()
+	if err != nil {
+		t.Fatalf("loading: %v", err)
+	}
+	roles := map[string]bool{}
+	for _, l := range corpus.Listings {
+		roles[l.ID] = true
+	}
+	for _, s := range corpus.Scenarios {
+		plausible := 0
+		for _, r := range s.Ratings {
+			if !roles[r.RoleID] {
+				t.Fatalf("%s rates %q, which is not in the corpus", s.ID, r.RoleID)
+			}
+			if r.Plausible {
+				plausible++
+			}
+		}
+		if plausible < 3 {
+			t.Fatalf("%s has %d plausible roles: three of the top five is unreachable", s.ID, plausible)
+		}
+		// Every role rated, so nothing counts as not plausible merely by being
+		// unrated.
+		if len(s.Ratings) != len(corpus.Listings) {
+			t.Fatalf("%s rates %d of %d roles", s.ID, len(s.Ratings), len(corpus.Listings))
+		}
+	}
+}
