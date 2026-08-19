@@ -156,8 +156,9 @@ func TestAValidFirstResponseMakesNoRepairCall(t *testing.T) {
 	if err != nil {
 		t.Fatalf("classifying: %v", err)
 	}
-	if got := e.model.callCount(); got != 1 {
-		t.Fatalf("made %d model calls for a valid first response, want 1", got)
+	// One decomposition and one constraints pass: no repair.
+	if got := e.model.callCount(); got != 2 {
+		t.Fatalf("made %d model calls for a valid first response, want the decomposition and the constraints pass", got)
 	}
 	if len(p.Aspects) != 1 || p.Aspects[0].Type != string(profile.Skill) {
 		t.Fatalf("stored %+v", p.Aspects)
@@ -193,8 +194,9 @@ func TestAnInvalidThenValidResponseMakesExactlyOneRepairCall(t *testing.T) {
 	if err != nil {
 		t.Fatalf("classifying: %v", err)
 	}
-	if got := e.model.callCount(); got != 2 {
-		t.Fatalf("made %d model calls for invalid-then-valid, want exactly 2", got)
+	// The decomposition, exactly one repair, and the constraints pass.
+	if got := e.model.callCount(); got != 3 {
+		t.Fatalf("made %d model calls for invalid-then-valid, want the decomposition, one repair, and the constraints pass", got)
 	}
 	if len(p.Aspects) != 1 {
 		t.Fatalf("stored %d aspects", len(p.Aspects))
@@ -594,4 +596,71 @@ func itoa(u uint) string {
 func jsonMarshal(v any) (string, error) {
 	raw, err := json.Marshal(v)
 	return string(raw), err
+}
+
+// The constraints pass fills gaps and never overwrites: the decomposition saw
+// the whole document, and its aspect carries the wording it chose.
+func TestTheConstraintsPassFillsGapsWithoutOverwriting(t *testing.T) {
+	e := newClassifyEnv(t)
+	ids := e.withSource(t, "role", roleListing)
+	e.assignClassify(t, "synthetic-classify")
+
+	e.model.responses = []string{
+		// The decomposition records a skill and a location.
+		e.response(t,
+			profile.Aspect{Type: profile.Skill, Wording: "Go and SQLite"},
+			profile.Aspect{Type: profile.Location, Wording: "Melbourne",
+				Structured: map[string]any{"city": "Melbourne"}}),
+		// The constraints pass repeats the location differently and adds one.
+		e.response(t,
+			profile.Aspect{Type: profile.Location, Wording: "Melbourne office",
+				Structured: map[string]any{"city": "Melbourne", "region": "Victoria"}},
+			profile.Aspect{Type: profile.EmploymentType, Wording: "permanent",
+				Structured: map[string]any{"employment_type": "permanent"}}),
+	}
+
+	p, err := e.classify.Classify(ClassifyInput{
+		SubjectKind: profile.SubjectRole, SubjectID: 1, ChunkIDs: ids})
+	if err != nil {
+		t.Fatalf("classifying: %v", err)
+	}
+
+	byType := map[string]string{}
+	for _, a := range p.Aspects {
+		if _, repeated := byType[a.Type]; repeated {
+			t.Fatalf("two aspects of type %q survived the merge", a.Type)
+		}
+		byType[a.Type] = a.Wording
+	}
+	if byType[string(profile.Location)] != "Melbourne" {
+		t.Fatalf("the constraints pass overwrote the location: %q", byType[string(profile.Location)])
+	}
+	if byType[string(profile.EmploymentType)] == "" {
+		t.Fatal("the constraints pass did not add the employment type")
+	}
+	if byType[string(profile.Skill)] == "" {
+		t.Fatal("the merge lost the skill the decomposition found")
+	}
+}
+
+// A constraints pass that fails changes nothing: the profile is already valid
+// without it.
+func TestAFailingConstraintsPassLeavesTheProfileIntact(t *testing.T) {
+	e := newClassifyEnv(t)
+	ids := e.withSource(t, "role", roleListing)
+	e.assignClassify(t, "synthetic-classify")
+	e.model.responses = []string{
+		e.response(t, profile.Aspect{Type: profile.Skill, Wording: "Go and SQLite"}),
+		`{"aspects":[{"type":"location","wording":"Perth","structured":{},` +
+			`"citations":[{"chunkId":1,"quote":"nothing like this appears in the source"}]}]}`,
+	}
+
+	p, err := e.classify.Classify(ClassifyInput{
+		SubjectKind: profile.SubjectRole, SubjectID: 1, ChunkIDs: ids})
+	if err != nil {
+		t.Fatalf("a failing constraints pass failed the profile: %v", err)
+	}
+	if len(p.Aspects) != 1 || p.Aspects[0].Type != string(profile.Skill) {
+		t.Fatalf("stored %+v", p.Aspects)
+	}
 }

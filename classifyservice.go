@@ -114,6 +114,19 @@ func (s *ClassifyService) Classify(in ClassifyInput) (*models.Profile, error) {
 				strings.Join(problems, "\n- ")))
 	}
 
+	// A second pass for the five constraint types, asked on their own.
+	//
+	// One prompt holding ten rules gets whichever the prompt pushed last:
+	// measured against the frozen corpus, adding a constraint checklist to the
+	// decomposition prompt recovered four constraints and cost twelve points of
+	// capture, because the model stopped recording skills. Asking twice, each
+	// time for one job, costs a call and asks the model to do one thing at a
+	// time. A failure here is not a failure of the profile: the first pass
+	// already produced a valid one, and this only fills gaps.
+	if extra, err := s.constraints(ctx, assignment.Model, in.SubjectKind, sources); err == nil {
+		profile.MergeConstraints(&proposal, extra)
+	}
+
 	identity := profile.Identity{
 		SchemaVersion: profile.SchemaVersion,
 		PromptVersion: profile.PromptVersion,
@@ -121,6 +134,25 @@ func (s *ClassifyService) Classify(in ClassifyInput) (*models.Profile, error) {
 		SourceHash:    profile.HashSources(sources),
 	}
 	return s.store(in, identity, assignment.Model, proposal.Aspects, models.ProfileProposed, "")
+}
+
+// constraints runs the second pass and returns only what it validates.
+//
+// Anything the constraints pass gets wrong is discarded rather than repaired:
+// the profile is already valid without it, and a repair loop here would spend
+// the recruiter's time on aspects that are a bonus.
+func (s *ClassifyService) constraints(
+	ctx context.Context, model string, kind profile.SubjectKind, sources []profile.Source,
+) (profile.Proposal, error) {
+	proposal, problems, _, err := s.attempt(ctx, model,
+		profile.ConstraintPrompt(kind, sources), profile.ConstraintSchema(kind), kind, sources)
+	if err != nil {
+		return profile.Proposal{}, err
+	}
+	if len(problems) > 0 {
+		return profile.Proposal{}, fmt.Errorf("the constraints pass did not satisfy the contract")
+	}
+	return proposal, nil
 }
 
 // attempt makes one model call and validates what comes back.
