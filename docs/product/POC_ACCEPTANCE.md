@@ -150,6 +150,16 @@ something beside what changed before it.
 | 16 | 87% | 0 | 12 | 71 | 2 | values checked against their citation |
 | 17 | 88% | 0 | 11 | 32 | 2 | values derived from evidence that states them |
 | 18 | 76% | 0 | 8 | 28 | 2 | a checklist of constraint types — **withdrawn**: it traded four constraints for twelve points of capture |
+| 19 | 96% | 0 | 13 | 20 | 2 | constraints asked for on their own, in a second pass |
+| 20 | 96% | 0 | 13 | 14 | 3 | empty constraints give way; a demonym states a country; **every role rated for every scenario** |
+| 21 | 96% | 0 | 8 | 14 | 3 | common words dropped from ORed queries; numbers matched whole |
+
+Run 20 is the other correction worth naming. Matching had sat at two of five
+for eight runs, and the corpus was the reason: each scenario rated six or seven
+of the twenty roles and the rest counted as not plausible by default, while one
+scenario rated two roles plausible in all — where three of the top five cannot
+be reached however good the ranking is. Rating every role moved it to three of
+five, and none of that movement was the matcher improving.
 
 Run 18 is the reason the prompt is at version 5 and not 6. Asking the model to
 check the source once more for each constraint type worked, and cost more than
@@ -163,42 +173,49 @@ preceded it.
 
 ### Frozen benchmark run, development machine
 
-`just bench`, roughly forty minutes per run, against the synthetic corpus in
-this repository. Best configuration: run 17, record
-`docs/product/benchmarks/benchmark-2026-08-19T02-34-58Z.json`.
+`just bench`, about an hour per run since the classifier became two passes.
+Best configuration: run 21, record
+`docs/product/benchmarks/benchmark-2026-08-19T06-52-39Z.json`.
 
 Models: classify `qwen2.5:7b-instruct`, embed `nomic-embed-text`. Generation
 takes no part in either benchmark.
 
-**Outcome: FAIL**, on two of the six conditions.
+**Outcome: FAIL**, on three of six conditions.
 
 | Condition | Bar | Measured | |
 | --- | --- | --- | --- |
 | Every extracted aspect cited | all | 0 uncited across 20 listings | PASS |
-| Material-aspect capture | ≥ 80% | 88% | PASS |
+| Material-aspect capture | ≥ 80% | 96% | PASS |
 | Eligible roles in scope | ≥ 10 | 20 | a result, not source-coverage inconclusive |
-| No unsupported value introduced | none | 11 | **FAIL** |
-| Structured constraints reproduced | all | 68 of 100 | **FAIL** |
-| Matching: three plausible in the top five | ≥ 4 of 5 | 2 of 5 | **FAIL** |
+| No unsupported value introduced | none | 8 | **FAIL** |
+| Structured constraints reproduced | all | 86 of 100 | **FAIL** |
+| Matching: three plausible in the top five | ≥ 4 of 5 | 3 of 5 | **FAIL** |
 
-What the remaining failures are, precisely, because "the model isn't good
-enough" was the wrong conclusion eleven times before it was the right one:
+Where the remaining failures come from, precisely:
 
-- **The 32 wrong constraints are mostly aspects never emitted.** Eleven
-  locations and nine employment types simply do not appear in the answer for
-  listings that state them. Six work-rights values carry the sponsorship but
-  drop the country. Asking the model to check for each type recovered four of
-  them and cost twelve points of capture, so it was withdrawn.
-- **The 11 introduced values are inference the model will not stop making**: a
-  country read off a city, a period read off a salary, a `days_onsite` of zero.
-  Each one is now dropped from what is stored — the product records nothing
-  unsupported — but the benchmark counts what the model produced, which is the
-  honest thing for it to count.
-- **The matching half reaches 2 of 5.** Every scenario ranks and every one puts
-  plausible roles on the list; three of them put two rather than three. With
-  five scenarios, one scenario is twenty points, and the bar is four of five.
+- **Eleven of the fourteen wrong constraints are locations**: the model either
+  emits no location aspect for a listing that names a city, or records the city
+  under `region`. Telling a city from a region needs a gazetteer, and inventing
+  one would be the same inference this phase spent four commits removing from
+  the product. Three are an employment type left empty.
+- **The eight introduced values are inference the model will not stop making**:
+  a period read off a salary, a country read off a city, a maximum nobody
+  quoted. None of them reaches storage — the evidence check drops them — but
+  the benchmark counts what the model produced, which is the honest thing for
+  it to count.
+- **Two scenarios of five reach two plausible rather than three.** Both lose
+  their remaining slots to roles that match many queries weakly. The mechanism
+  is measurable: `perQueryDepth` is thirty against twenty eligible roles, so
+  every role matching a query at all enters every list, and reciprocal rank
+  fusion at K=60 separates rank thirty from rank one by less than a third.
+  Lowering either constant would probably reach four of five, and doing it
+  against this corpus would be tuning on the held-out set. That belongs on
+  separate data, which the PRD says outright.
 
-**Model selection consequence.****Model selection consequence.** Three models were tried on this machine and
+The three scenarios that do pass reach five, four, and four plausible of five —
+so the ranker is not broken, it is diluted.
+
+**Model selection consequence.****Model selection consequence.****Model selection consequence.** Three models were tried on this machine and
 none is a candidate for the pinned classify role:
 
 - `gemma4:12b-mlx` ignores JSON schemas and returns prose, so it cannot serve

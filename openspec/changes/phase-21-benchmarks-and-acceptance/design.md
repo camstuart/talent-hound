@@ -56,6 +56,24 @@ The benchmark needs real models, so it lives where the existing live-model gates
 
 *ponytail: the benchmark reuses the test environment constructors rather than building a second service graph. They already wire everything correctly, and a second wiring is a second thing to keep in step.*
 
+### What the benchmark may not be used to tune
+
+The frozen corpus diagnoses; it does not get to set constants. Measured against
+it, the fusion is flattening: `perQueryDepth` is thirty against twenty eligible
+roles, so every role matching a query at all enters every list, and reciprocal
+rank fusion at K=60 scores rank thirty at 1/90 against rank one at 1/61. Ten
+weak appearances beat three strong ones, which is why an embedded listing
+reached a frontend candidate's top five.
+
+Lowering K or the depth would probably move the matching benchmark from three
+scenarios to four. Doing it here would be fitting a retrieval constant to the
+held-out set — the one thing freezing the corpus exists to prevent — and it
+would make every number measured afterwards meaningless. The PRD says to tune
+only on separate non-held-out data, and that is where this belongs.
+
+A defect is different from a constant. ORing the word "the" into every query
+was a defect, and fixing it was not tuning.
+
 ## Risks / Trade-offs
 
 - **The frozen corpus is invented.** Stated in the corpus and in the record. It exercises the harness; it does not substitute for the recruiter's real placements, and the acceptance record says so.
