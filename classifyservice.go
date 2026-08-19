@@ -143,6 +143,12 @@ func (s *ClassifyService) attempt(
 	// validation, so the profile is refused only for what it actually got
 	// wrong.
 	profile.RepairCitations(&proposal, sources)
+	// A structured value has to be supported by the evidence cited for it. The
+	// contract asked that of the aspect and never of the value beside it, so a
+	// model could cite "we do not sponsor" and record a citizenship status.
+	// Unsupported values are dropped, like nulls: the wording still carries
+	// what the source said.
+	profile.DropUnsupportedStructured(&proposal)
 	return proposal, profile.Validate(kind, proposal, sources), raw, nil
 }
 

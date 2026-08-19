@@ -1,0 +1,194 @@
+Talent Hound 0.1.0-poc on darwin/arm64, 2026-08-19T01:22:07Z
+Corpus: the synthetic corpus in this repository — invented, not real placements
+  hash 0bbb546df73d6d42744ee65246e88ed4b48a5216c5345b5e1ea228fdaa811830
+Schema v3, prompt v5
+  classify: qwen2.5:7b-instruct (FROM /Users/cam/.ollama/models/blobs/sha256-2bada8a7450677000f678be90653b85d364de7db25eb5ea54136ada5f3933730)
+  embed: nomic-embed-text (FROM /Users/cam/.ollama/models/blobs/sha256-970aa74c0a90ef7482477cf803618e776e173c007bf957f635f1015bfcfef0e6)
+  generate: not used by this benchmark (n/a)
+
+Classifier over the corpus: capture 87% (157/180), uncited 0, unsupported 58, misreported 71 — fail
+
+Classifier: 20 listings
+  platform-engineer-melbourne: capture 89% (8/9), cited true, no unsupported false, constraints exact false
+    work_rights: status=citizen, which the source does not state
+    compensation: period=year, which the source does not state
+    location: missing
+    work_rights: map[country:Australia status:citizen], want map[country:Australia sponsorship_required:false]
+    compensation: map[currency:AUD minimum:180000 period:year], want map[basis:base currency:AUD minimum:180000]
+    missed location: Melbourne
+  backend-engineer-sydney: capture 89% (8/9), cited true, no unsupported false, constraints exact false
+    location: region=Sydney, which the source does not state
+    location: remote_ok=false, which the source does not state
+    work_arrangement: days_onsite=5, which the source does not state
+    work_rights: status=citizen, which the source does not state
+    compensation: period=year, which the source does not state
+    location: map[region:Sydney remote_ok:false], want map[city:Sydney]
+    employment_type: missing
+    work_rights: map[country:Australia status:citizen], want map[country:Australia sponsorship_required:false]
+    compensation: map[currency:AUD minimum:150000 period:year], want map[basis:base currency:AUD minimum:150000]
+    missed employment_type: permanent
+  site-reliability-brisbane: capture 89% (8/9), cited true, no unsupported false, constraints exact false
+    work_rights: status=citizen, which the source does not state
+    compensation: period=year, which the source does not state
+    location: missing
+    work_rights: map[country:Australia status:citizen], want map[country:Australia sponsorship_required:false]
+    compensation: map[currency:AUD minimum:165000 period:year], want map[basis:base currency:AUD minimum:165000]
+    missed location: Brisbane
+  data-engineer-melbourne: capture 78% (7/9), cited true, no unsupported false, constraints exact false
+    work_rights: status=citizen, which the source does not state
+    compensation: period=year, which the source does not state
+    location: missing
+    work_arrangement: map[], want map[arrangement:remote]
+    employment_type: missing
+    work_rights: map[country:Australia status:citizen], want map[country:Australia sponsorship_required:false]
+    compensation: map[currency:AUD minimum:155000 period:year], want map[basis:base currency:AUD minimum:155000]
+    missed location: Melbourne
+    missed employment_type: permanent
+  staff-engineer-perth: capture 89% (8/9), cited true, no unsupported false, constraints exact false
+    work_rights: status=citizen, which the source does not state
+    compensation: period=year, which the source does not state
+    employment_type: missing
+    work_rights: map[status:citizen], want map[country:Australia sponsorship_required:false]
+    compensation: map[], want map[basis:base currency:AUD minimum:210000]
+    missed employment_type: permanent
+  frontend-engineer-sydney: capture 100% (9/9), cited true, no unsupported false, constraints exact false
+    work_rights: status=citizen, which the source does not state
+    compensation: period=year, which the source does not state
+    work_rights: map[status:citizen], want map[country:Australia sponsorship_required:false]
+    compensation: map[currency:AUD minimum:140000 period:year], want map[basis:base currency:AUD minimum:140000]
+  security-engineer-canberra: capture 67% (6/9), cited true, no unsupported false, constraints exact false
+    work_rights: status=citizen, which the source does not state
+    work_rights: status=citizen, which the source does not state
+    compensation: period=year, which the source does not state
+    location: missing
+    work_arrangement: missing
+    employment_type: missing
+    work_rights: map[status:citizen], want map[country:Australia sponsorship_required:false]
+    compensation: map[currency:AUD minimum:175000 period:year], want map[basis:base currency:AUD minimum:175000]
+    missed location: Canberra
+    missed work_arrangement: onsite
+    missed employment_type: permanent
+  ml-engineer-melbourne: capture 89% (8/9), cited true, no unsupported false, constraints exact false
+    work_rights: status=citizen, which the source does not state
+    compensation: period=year, which the source does not state
+    compensation: maximum=185000, which the source does not state
+    compensation: period=year, which the source does not state
+    location: map[], want map[city:Melbourne]
+    employment_type: missing
+    work_rights: map[country:Australia status:citizen], want map[country:Australia sponsorship_required:false]
+    compensation: map[], want map[basis:base currency:AUD minimum:185000]
+    missed employment_type: permanent
+  devops-engineer-adelaide: capture 89% (8/9), cited true, no unsupported false, constraints exact false
+    location: country=Australia, which the source does not state
+    location: remote_ok=false, which the source does not state
+    work_rights: status=citizen, which the source does not state
+    compensation: period=unknown, which the source does not state
+    work_arrangement: missing
+    work_rights: map[country:Australia status:citizen], want map[country:Australia sponsorship_required:false]
+    compensation: map[currency:AUD minimum:145000 period:unknown], want map[basis:base currency:AUD minimum:145000]
+    missed work_arrangement: hybrid
+  mobile-engineer-sydney: capture 100% (9/9), cited true, no unsupported false, constraints exact false
+    work_rights: status=citizen, which the source does not state
+    compensation: period=year, which the source does not state
+    work_rights: map[country:Australia status:citizen], want map[country:Australia sponsorship_required:false]
+    compensation: map[currency:AUD minimum:150000 period:year], want map[basis:base currency:AUD minimum:150000]
+  principal-engineer-melbourne: capture 89% (8/9), cited true, no unsupported false, constraints exact false
+    location: country=Australia, which the source does not state
+    location: remote_ok=false, which the source does not state
+    work_rights: status=citizen, which the source does not state
+    compensation: period=year, which the source does not state
+    employment_type: missing
+    work_rights: map[country:Australia status:citizen], want map[country:Australia sponsorship_required:false]
+    compensation: map[currency:AUD minimum:240000 period:year], want map[basis:base currency:AUD minimum:240000]
+    missed employment_type: permanent
+  backend-contract-melbourne: capture 89% (8/9), cited true, no unsupported false, constraints exact false
+    work_rights: status=citizen, which the source does not state
+    compensation: maximum=900, which the source does not state
+    compensation: period=day, which the source does not state
+    location: map[], want map[city:Melbourne]
+    work_arrangement: map[], want map[arrangement:remote]
+    employment_type: missing
+    work_rights: map[country:Australia status:citizen], want map[country:Australia sponsorship_required:false]
+    compensation: map[currency:AUD maximum:900 minimum:900 period:day], want map[basis:rate currency:AUD minimum:900]
+    missed employment_type: contract
+  platform-engineer-remote: capture 89% (8/9), cited true, no unsupported false, constraints exact false
+    location: country=Australia, which the source does not state
+    work_rights: status=citizen, which the source does not state
+    compensation: period=year, which the source does not state
+    location: map[country:Australia], want map[remote_ok:true]
+    employment_type: missing
+    work_rights: map[status:citizen], want map[country:Australia sponsorship_required:false]
+    compensation: map[currency:AUD minimum:170000 period:year], want map[basis:base currency:AUD minimum:170000]
+    missed employment_type: permanent
+  qa-engineer-brisbane: capture 100% (9/9), cited true, no unsupported false, constraints exact false
+    location: country=Australia, which the source does not state
+    location: remote_ok=false, which the source does not state
+    work_arrangement: days_onsite=0, which the source does not state
+    compensation: period=unknown, which the source does not state
+    work_rights: map[], want map[country:Australia sponsorship_required:false]
+    compensation: map[currency:AUD minimum:130000 period:unknown], want map[basis:base currency:AUD minimum:130000]
+  data-platform-sydney: capture 78% (7/9), cited true, no unsupported false, constraints exact false
+    work_rights: status=citizen, which the source does not state
+    compensation: period=year, which the source does not state
+    location: missing
+    work_arrangement: missing
+    work_rights: map[country:Australia status:citizen], want map[country:Australia sponsorship_required:false]
+    compensation: map[currency:AUD minimum:175000 period:year], want map[basis:base currency:AUD minimum:175000]
+    missed location: Sydney
+    missed work_arrangement: hybrid
+  engineering-manager-melbourne: capture 78% (7/9), cited true, no unsupported false, constraints exact false
+    work_rights: status=citizen, which the source does not state
+    compensation: period=year, which the source does not state
+    location: missing
+    work_arrangement: missing
+    work_rights: map[country:Australia status:citizen], want map[country:Australia sponsorship_required:false]
+    compensation: map[currency:AUD minimum:200000 period:year], want map[basis:base currency:AUD minimum:200000]
+    missed location: Melbourne
+    missed work_arrangement: hybrid
+  integration-engineer-hobart: capture 100% (9/9), cited true, no unsupported false, constraints exact false
+    location: region=Hobart, which the source does not state
+    work_rights: status=citizen, which the source does not state
+    compensation: period=year, which the source does not state
+    location: map[region:Hobart], want map[city:Hobart]
+    work_rights: map[status:citizen], want map[country:Australia sponsorship_required:false]
+    compensation: map[currency:AUD minimum:135000 period:year], want map[basis:base currency:AUD minimum:135000]
+  embedded-engineer-perth: capture 67% (6/9), cited true, no unsupported false, constraints exact false
+    work_rights: status=citizen, which the source does not state
+    work_rights: status=citizen, which the source does not state
+    compensation: period=year, which the source does not state
+    location: missing
+    work_arrangement: missing
+    employment_type: missing
+    work_rights: map[status:citizen], want map[country:Australia sponsorship_required:false]
+    compensation: map[currency:AUD minimum:160000 period:year], want map[basis:base currency:AUD minimum:160000]
+    missed location: Perth
+    missed work_arrangement: onsite
+    missed employment_type: permanent
+  solutions-architect-sydney: capture 89% (8/9), cited true, no unsupported false, constraints exact false
+    location: remote_ok=false, which the source does not state
+    work_rights: status=citizen, which the source does not state
+    compensation: period=unknown, which the source does not state
+    work_arrangement: missing
+    work_rights: map[country:Australia status:citizen], want map[country:Australia sponsorship_required:false]
+    compensation: map[currency:AUD minimum:195000 period:unknown], want map[basis:base currency:AUD minimum:195000]
+    missed work_arrangement: hybrid
+  junior-backend-melbourne: capture 89% (8/9), cited true, no unsupported false, constraints exact false
+    location: country=Australia, which the source does not state
+    work_rights: status=citizen, which the source does not state
+    compensation: period=year, which the source does not state
+    work_arrangement: map[], want map[arrangement:onsite]
+    employment_type: missing
+    work_rights: map[status:citizen], want map[country:Australia sponsorship_required:false]
+    compensation: map[currency:AUD minimum:110000 period:year], want map[basis:base currency:AUD minimum:110000]
+    missed employment_type: permanent
+
+Matching: 2 of 5 scenarios reached three plausible
+  go-platform-melbourne: 3 plausible of 5 distinct
+  data-python-melbourne: 2 plausible of 5 distinct
+  frontend-accessibility-sydney: 2 plausible of 5 distinct
+  sre-kubernetes-brisbane: 3 plausible of 5 distinct
+  embedded-c-perth: 1 plausible of 5 distinct
+
+Eligible roles: 20
+
+Outcome: fail
