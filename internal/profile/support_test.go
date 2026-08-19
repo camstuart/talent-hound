@@ -486,3 +486,47 @@ func TestASentenceDoesNotSupportWhatItDoesNotSay(t *testing.T) {
 		t.Fatalf("a period nobody stated survived: %+v", proposal.Aspects[0].Structured)
 	}
 }
+
+// Wording that appears verbatim in a source is quoting, whether or not the
+// model labelled it a quote — and a paraphrase is not.
+func TestVerbatimWordingCountsAsEvidenceAndAParaphraseDoesNot(t *testing.T) {
+	sources := []Source{{ChunkID: 2, Text: "Kelpie Software is hiring a platform engineer in " +
+		"Remote (Australia). This is a remote role, offered as permanent work."}}
+
+	// The model wrote the document's own words and cited the sentence beside them.
+	quoting := Proposal{Aspects: []Aspect{{
+		Type: Location, Wording: "in Remote (Australia)",
+		Structured: map[string]any{"remote_ok": true},
+		Citations:  []Citation{{ChunkID: 2, Quote: "This is a remote role, offered as permanent work"}},
+	}}}
+	DeriveStructured(&quoting, sources)
+	if quoting.Aspects[0].Structured["country"] != "Australia" {
+		t.Fatalf("verbatim wording was not read: %+v", quoting.Aspects[0].Structured)
+	}
+
+	// A paraphrase appears nowhere and counts for nothing — cited, here, to a
+	// sentence that says nothing about a country either.
+	paraphrasing := Proposal{Aspects: []Aspect{{
+		Type: Location, Wording: "The role is located in Melbourne, Australia.",
+		Structured: map[string]any{"city": "Melbourne"},
+		Citations:  []Citation{{ChunkID: 2, Quote: "This is a remote role, offered as permanent work"}},
+	}}}
+	DeriveStructured(&paraphrasing, sources)
+	if _, ok := paraphrasing.Aspects[0].Structured["country"]; ok {
+		t.Fatalf("a paraphrase was read as evidence: %+v", paraphrasing.Aspects[0].Structured)
+	}
+}
+
+// And it does not let an unsupported value through either.
+func TestVerbatimWordingDoesNotSupportWhatItDoesNotSay(t *testing.T) {
+	sources := []Source{{ChunkID: 1, Text: "Offered at AUD 180,000 base plus superannuation."}}
+	proposal := Proposal{Aspects: []Aspect{{
+		Type: Compensation, Wording: "Offered at AUD 180,000 base plus superannuation.",
+		Structured: map[string]any{"currency": "AUD", "minimum": float64(180000), "period": "year"},
+		Citations:  []Citation{{ChunkID: 1, Quote: "AUD 180,000 base"}},
+	}}}
+	DropUnsupportedStructured(&proposal, sources)
+	if _, ok := proposal.Aspects[0].Structured["period"]; ok {
+		t.Fatalf("a period nobody stated survived: %+v", proposal.Aspects[0].Structured)
+	}
+}

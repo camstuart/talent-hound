@@ -85,16 +85,38 @@ func evidenceFrom(a Aspect, sources []Source) string {
 		byID[s.ChunkID] = s.Text
 	}
 	var b strings.Builder
+	add := func(text string, chunk string) {
+		b.WriteString(" " + strings.ToLower(text))
+		for _, sentence := range sentencesIn(chunk) {
+			if strings.Contains(normalizeSpace(sentence), text) {
+				b.WriteString(" " + strings.ToLower(normalizeSpace(sentence)))
+			}
+		}
+	}
 	for _, c := range a.Citations {
 		quote := trimBoundary(normalizeSpace(c.Quote))
 		b.WriteString(" " + strings.ToLower(quote))
-		text, ok := byID[c.ChunkID]
-		if !ok || quote == "" {
-			continue
+		if text, ok := byID[c.ChunkID]; ok && quote != "" {
+			add(quote, text)
 		}
-		for _, sentence := range sentencesIn(text) {
-			if strings.Contains(normalizeSpace(sentence), quote) {
-				b.WriteString(" " + strings.ToLower(normalizeSpace(sentence)))
+	}
+
+	// Wording that appears verbatim in a source is quoting, whether or not the
+	// model labelled it a quote.
+	//
+	// Measured: a model recorded a location worded "in Remote (Australia)" and
+	// cited the sentence beside it, and a work-rights aspect worded "you must
+	// have existing Australian work rights; we do not sponsor" and cited a
+	// sentence about the salary. The words it wrote were the document's own,
+	// and the same verification a citation gets settles it — a paraphrase like
+	// "the role is located in Melbourne, Australia" appears nowhere and counts
+	// for nothing.
+	wording := trimBoundary(normalizeSpace(a.Wording))
+	if wording != "" {
+		for _, s := range sources {
+			if strings.Contains(normalizeSpace(s.Text), wording) {
+				add(wording, s.Text)
+				break
 			}
 		}
 	}
