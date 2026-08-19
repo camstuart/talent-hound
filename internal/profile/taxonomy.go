@@ -136,3 +136,45 @@ func StructuredEnum(field string) ([]string, bool) {
 	values, ok := structuredEnums[field]
 	return values, ok
 }
+
+// structuredTypes gives each structured field its JSON type, so the schema can
+// declare the fields themselves rather than an object of unknown shape. A
+// field named here and in structuredFields is one the model may emit.
+var structuredJSONTypes = map[string]string{
+	"city": "string", "region": "string", "country": "string", "remote_ok": "boolean",
+	"arrangement": "string", "days_onsite": "integer",
+	"status": "string", "sponsorship_required": "boolean",
+	"employment_type": "string",
+	"currency":        "string", "minimum": "integer", "maximum": "integer",
+	"period": "string", "basis": "string",
+}
+
+// StructuredProperties returns every permitted field across all types, with its
+// JSON type and enumeration where it has one.
+//
+// The schema declares these instead of an open object. An object of unknown
+// shape left the model free to invent one: asked for a location's structured
+// value it answered {"location": {"city": "Melbourne"}}, wrapping the value in
+// a key named after the type. A declared shape cannot be wrapped.
+func StructuredProperties() map[string]any {
+	out := map[string]any{}
+	seen := map[string]bool{}
+	for _, fields := range structuredFields {
+		for _, field := range fields {
+			if seen[field] {
+				continue
+			}
+			seen[field] = true
+			property := map[string]any{"type": structuredJSONTypes[field]}
+			if values, ok := structuredEnums[field]; ok {
+				enum := make([]any, 0, len(values))
+				for _, v := range values {
+					enum = append(enum, v)
+				}
+				property["enum"] = enum
+			}
+			out[field] = property
+		}
+	}
+	return out
+}

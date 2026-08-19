@@ -9,7 +9,8 @@ import (
 // The schema must let a structured value carry fields. Declaring the object
 // with no properties permitted nothing at all under strict decoding, and every
 // model obliged by returning an empty object — which made one of the PoC's
-// acceptance conditions unreachable.
+// acceptance conditions unreachable. The fields are now declared outright,
+// which admits them and forbids inventing others.
 func TestTheSchemaPermitsStructuredFields(t *testing.T) {
 	for _, kind := range []SubjectKind{SubjectRole, SubjectCandidate} {
 		schema := Schema(kind)
@@ -21,7 +22,8 @@ func TestTheSchemaPermitsStructuredFields(t *testing.T) {
 		if !ok {
 			t.Fatalf("%s: the schema has no structured property", kind)
 		}
-		if structured["additionalProperties"] != true {
+		fields, ok := structured["properties"].(map[string]any)
+		if !ok || len(fields) == 0 {
 			t.Fatalf("%s: structured admits no fields: %+v", kind, structured)
 		}
 	}
@@ -105,6 +107,44 @@ func TestTheWorkedExamplesShareNothingWithTheBenchmarkCorpus(t *testing.T) {
 		}
 		if strings.Contains(haystack, strings.ToLower(value)) {
 			t.Fatalf("the example value %q appears in the frozen corpus", value)
+		}
+	}
+}
+
+// An optional structured object came back as null under strict decoding, every
+// time, which is how a hundred constraints in a row went unreported. It is
+// required, and its fields are declared so the model cannot invent a shape.
+func TestTheSchemaRequiresAStructuredObjectWithDeclaredFields(t *testing.T) {
+	for _, kind := range []SubjectKind{SubjectRole, SubjectCandidate} {
+		schema := Schema(kind)
+		props := schema["properties"].(map[string]any)
+		items := props["aspects"].(map[string]any)["items"].(map[string]any)
+
+		required, _ := items["required"].([]any)
+		found := false
+		for _, r := range required {
+			if r == "structured" {
+				found = true
+			}
+		}
+		if !found {
+			t.Fatalf("%s: structured is optional, so the model may answer null: %v", kind, required)
+		}
+
+		structured := items["properties"].(map[string]any)["structured"].(map[string]any)
+		if structured["additionalProperties"] != false {
+			t.Fatalf("%s: the structured object accepts undeclared fields", kind)
+		}
+		fields := structured["properties"].(map[string]any)
+		for _, want := range []string{"city", "arrangement", "employment_type", "currency", "minimum"} {
+			if _, ok := fields[want]; !ok {
+				t.Fatalf("%s: the schema does not declare %q", kind, want)
+			}
+		}
+		// Enumerated fields carry their values in the grammar, not only in prose.
+		arrangement := fields["arrangement"].(map[string]any)
+		if arrangement["enum"] == nil {
+			t.Fatalf("%s: arrangement has no enumeration in the schema", kind)
 		}
 	}
 }

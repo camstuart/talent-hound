@@ -16,10 +16,11 @@ import (
 // surprising the first time someone fixes a typo in the prompt, and the
 // alternative — identity that silently drifts with an edit — is worse.
 const (
-	// SchemaVersion 2 lets a structured value carry fields. Version 1 declared
-	// the object with no properties, which under strict decoding permitted
-	// nothing at all.
-	SchemaVersion = "2"
+	// SchemaVersion 3 declares the structured fields themselves and requires the
+	// object. Version 2 permitted fields but described the object only as "an
+	// object", and strict decoding answered null every time — a hundred
+	// constraints in a row went unreported because of it.
+	SchemaVersion = "3"
 	// PromptVersion 4 shows the mapping from a phrase to a structured field.
 	// Version 3 named the fields and their values, and models still answered
 	// "in Melbourne" with an inferred country instead of the stated city.
@@ -114,15 +115,16 @@ func Schema(kind SubjectKind) map[string]any {
 		"properties": map[string]any{
 			"type":    map[string]any{"type": "string", "enum": types},
 			"wording": map[string]any{"type": "string", "minLength": 1},
-			// additionalProperties must be true here. Under strict JSON-schema
-			// decoding an object with no declared properties admits nothing, so
-			// this said "structured values are an empty object" — and every
-			// model obliged, for as long as it stood. The permitted fields
-			// differ by aspect type, which one flat schema cannot express, and
-			// Validate is where that is enforced anyway.
+			// Every permitted field across all types, declared. An open object
+			// was worse in both directions: left optional the model answered
+			// null, and made required it invented a wrapper —
+			// {"location": {"city": "Melbourne"}} — because nothing said what
+			// the object looked like. Which fields belong to which type is
+			// still Validate's business; this only says what a field is.
 			"structured": map[string]any{
 				"type":                 "object",
-				"additionalProperties": true,
+				"properties":           StructuredProperties(),
+				"additionalProperties": false,
 			},
 			"citations": map[string]any{
 				"type":     "array",
@@ -138,7 +140,10 @@ func Schema(kind SubjectKind) map[string]any {
 				},
 			},
 		},
-		"required":             []any{"type", "wording", "citations"},
+		// structured is required so the answer is an object rather than null:
+		// an optional property under strict decoding came back null every time,
+		// which is how a hundred constraints in a row went unreported.
+		"required":             []any{"type", "wording", "citations", "structured"},
 		"additionalProperties": false,
 	}
 	props := aspect["properties"].(map[string]any)
@@ -150,7 +155,7 @@ func Schema(kind SubjectKind) map[string]any {
 			priorities = append(priorities, string(p))
 		}
 		props["priority"] = map[string]any{"type": "string", "enum": priorities}
-		aspect["required"] = []any{"type", "wording", "citations", "priority"}
+		aspect["required"] = []any{"type", "wording", "citations", "structured", "priority"}
 	}
 	return map[string]any{
 		"type": "object",
@@ -243,6 +248,9 @@ func Prompt(kind SubjectKind, sources []Source) string {
 	b.WriteString(`- "NZD 87,400 base" -> compensation {"currency": "NZD", "minimum": 87400, "basis": "base"}` + "\n")
 	b.WriteString("Take only what the source states. A city is not a country, and a stated ")
 	b.WriteString("salary is not a stated period.\n")
+	b.WriteString("Every aspect carries a structured object. For any type not listed above — ")
+	b.WriteString("skill, responsibility, experience, qualification, seniority, other — it is ")
+	b.WriteString("empty: {}. Leave a field out rather than filling it with a placeholder.\n")
 
 	b.WriteString("\nSources:\n")
 	for _, s := range sources {
