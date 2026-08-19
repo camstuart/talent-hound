@@ -800,3 +800,31 @@ func TestTheTuningCorpusSharesNothingWithTheFrozenOne(t *testing.T) {
 		}
 	}
 }
+
+// A label that omits what a listing states makes a correct extraction look like
+// an invented one. Every structured value a listing quotes in words has to be
+// in its label, and the two that were missed — a day rate's period, a remote
+// role's country — are the shape of that mistake.
+func TestEveryStructuredLabelMatchesWhatItsListingStates(t *testing.T) {
+	corpus, err := Load()
+	if err != nil {
+		t.Fatalf("loading: %v", err)
+	}
+	for _, listing := range corpus.Listings {
+		text := strings.ToLower(listing.Markdown)
+		for _, a := range listing.Structured {
+			switch {
+			case a.Type == profile.Compensation && strings.Contains(text, "per day"):
+				if a.Structured["period"] != "day" {
+					t.Fatalf("%s quotes a day rate and its label omits the period: %+v",
+						listing.ID, a.Structured)
+				}
+			case a.Type == profile.Location && strings.Contains(text, "(australia)"):
+				if a.Structured["country"] != "Australia" {
+					t.Fatalf("%s names a country and its label omits it: %+v",
+						listing.ID, a.Structured)
+				}
+			}
+		}
+	}
+}

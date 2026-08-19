@@ -1649,7 +1649,8 @@
           "structured": {
             "currency": "AUD",
             "minimum": 900,
-            "basis": "rate"
+            "basis": "rate",
+            "period": "day"
           }
         }
       ],
@@ -1689,7 +1690,8 @@
           "structured": {
             "currency": "AUD",
             "minimum": 900,
-            "basis": "rate"
+            "basis": "rate",
+            "period": "day"
           }
         }
       ]
