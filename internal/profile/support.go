@@ -2,6 +2,7 @@ package profile
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -120,16 +121,15 @@ func supportedBy(field string, value any, evidence string) bool {
 		// A place or a currency has to appear in the words that were cited.
 		return strings.Contains(evidence, strings.ToLower(strings.TrimSpace(typed)))
 	case float64:
-		// Numbers are written with separators the value does not carry, and
-		// small ones are often spelled: "three days onsite".
-		digits := strings.Map(func(r rune) rune {
-			if r >= '0' && r <= '9' {
-				return r
+		// Numbers are compared as whole numbers, not as digits inside other
+		// numbers. Stripping the separators from the whole sentence and asking
+		// whether it contained the digits let days_onsite of 0 pass on a
+		// listing quoting AUD 180,000 — there is a zero in there, and it means
+		// nothing.
+		for _, token := range numbersIn(evidence) {
+			if token == int64(typed) {
+				return true
 			}
-			return -1
-		}, evidence)
-		if strings.Contains(digits, fmt.Sprintf("%d", int64(typed))) {
-			return true
 		}
 		if word, ok := spelled[int64(typed)]; ok {
 			return strings.Contains(evidence, word)
@@ -148,6 +148,37 @@ func supportedBy(field string, value any, evidence string) bool {
 var spelled = map[int64]string{
 	0: "zero", 1: "one", 2: "two", 3: "three", 4: "four", 5: "five",
 	6: "six", 7: "seven",
+}
+
+// numbersIn reads every number in a piece of text, with the separators a
+// listing writes them with removed: "AUD 180,000 base" holds one number.
+func numbersIn(text string) []int64 {
+	out := []int64{}
+	current := strings.Builder{}
+	flush := func() {
+		if current.Len() == 0 {
+			return
+		}
+		if n, err := strconv.ParseInt(current.String(), 10, 64); err == nil {
+			out = append(out, n)
+		}
+		current.Reset()
+	}
+	for i, r := range text {
+		switch {
+		case r >= '0' && r <= '9':
+			current.WriteRune(r)
+		case r == ',' && current.Len() > 0 && i+1 < len(text) &&
+			text[i+1] >= '0' && text[i+1] <= '9':
+			// A thousands separator, not the end of the number. A decimal point
+			// is the end of it: the whole number is what a salary or a count of
+			// days is written as.
+		default:
+			flush()
+		}
+	}
+	flush()
+	return out
 }
 
 func containsAny(haystack string, needles []string) bool {

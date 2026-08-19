@@ -241,3 +241,32 @@ func TestNoCountryIsInventedFromSilence(t *testing.T) {
 		t.Fatalf("a country was invented: %+v", proposal.Aspects[0].Structured)
 	}
 }
+
+// Stripping the separators from a whole sentence and asking whether it
+// contained the digits let a days_onsite of zero pass on a listing quoting
+// "AUD 180,000": there is a zero in there, and it means nothing.
+func TestANumberIsMatchedWholeNotAsDigitsInsideAnother(t *testing.T) {
+	proposal := Proposal{Aspects: []Aspect{
+		aspectWith(WorkArrangement, "hybrid", "This is a hybrid role at AUD 180,000 base.",
+			map[string]any{"arrangement": "hybrid", "days_onsite": float64(0)}),
+	}}
+	DropUnsupportedStructured(&proposal)
+	if _, ok := proposal.Aspects[0].Structured["days_onsite"]; ok {
+		t.Fatalf("a zero read out of a salary survived: %+v", proposal.Aspects[0].Structured)
+	}
+	if proposal.Aspects[0].Structured["arrangement"] != "hybrid" {
+		t.Fatal("the stated arrangement was dropped")
+	}
+}
+
+// And the number a source does state, however it is punctuated, is supported.
+func TestASeparatedNumberIsStillTheSameNumber(t *testing.T) {
+	for _, quote := range []string{"AUD 180,000 base", "AUD 180000 base", "AUD 180,000.00 base"} {
+		proposal := Proposal{Aspects: []Aspect{
+			aspectWith(Compensation, "salary", quote, map[string]any{"minimum": float64(180000)}),
+		}}
+		if dropped := DropUnsupportedStructured(&proposal); len(dropped) != 0 {
+			t.Fatalf("%q: the stated number was called unsupported", quote)
+		}
+	}
+}

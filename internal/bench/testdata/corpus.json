@@ -1723,7 +1723,8 @@
           "type": "location",
           "wording": "Remote (Australia)",
           "structured": {
-            "remote_ok": true
+            "remote_ok": true,
+            "country": "Australia"
           }
         },
         {
@@ -1763,7 +1764,8 @@
           "type": "location",
           "wording": "Remote (Australia)",
           "structured": {
-            "remote_ok": true
+            "remote_ok": true,
+            "country": "Australia"
           }
         },
         {

@@ -158,9 +158,46 @@ func location(artifact string, path models.StringList, ordinal int) string {
 	return fmt.Sprintf("%s — %s (section %d)", artifact, strings.Join(path, " › "), ordinal+1)
 }
 
-// ftsAnyQuery is ftsQuery with OR between the terms, for questions.
+// ftsAnyQuery is ftsQuery with OR between the terms, for questions and for the
+// sentences a profile aspect is made of.
+//
+// The common words come out first. ORing every word of "Ran the platform team's
+// shared services in Go" asks for any document containing "the", which is every
+// document — and measured against the frozen corpus one security listing
+// reached the top five of four unrelated candidates that way. What is left is
+// the words that carry the meaning.
 func ftsAnyQuery(query string) string {
-	return strings.Join(strings.Fields(ftsQuery(query)), " OR ")
+	terms := strings.Fields(ftsQuery(query))
+	kept := make([]string, 0, len(terms))
+	for _, t := range terms {
+		if commonWords[strings.ToLower(strings.Trim(t, `"`))] {
+			continue
+		}
+		kept = append(kept, t)
+	}
+	// A query of nothing but common words is still that query: better a weak
+	// match than none at all.
+	if len(kept) == 0 {
+		kept = terms
+	}
+	return strings.Join(kept, " OR ")
+}
+
+// commonWords are the words that carry no retrieval signal in a listing or a
+// resume. Deliberately short and English-only: this is a stop list, not a
+// linguistics project.
+var commonWords = map[string]bool{
+	"a": true, "an": true, "and": true, "are": true, "as": true, "at": true,
+	"be": true, "been": true, "both": true, "but": true, "by": true, "for": true,
+	"from": true, "had": true, "has": true, "have": true, "in": true, "into": true,
+	"is": true, "it": true, "its": true, "of": true, "on": true, "or": true,
+	"our": true, "out": true, "over": true, "that": true, "the": true, "their": true,
+	"them": true, "then": true, "there": true, "these": true, "they": true,
+	"this": true, "to": true, "up": true, "was": true, "were": true, "which": true,
+	"with": true, "within": true, "would": true, "you": true, "your": true,
+	// Words every listing and every resume contains, which is the same problem.
+	"experience": true, "role": true, "work": true, "working": true, "team": true,
+	"teams": true, "years": true, "year": true, "including": true, "across": true,
 }
 
 // ftsQuery turns whatever the recruiter typed into an FTS5 expression that
