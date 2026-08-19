@@ -24,9 +24,9 @@
 
 ## 4. Runs
 
-- [x] 4.1 (written; the run itself needs the target laptop) `bench_livemodel_test.go` behind the live-model build tag, reusing the test wiring
+- [x] 4.1 `bench_livemodel_test.go` behind the live-model build tag, reusing the test wiring
 - [x] 4.2 `just bench`
-- [x] 4.3 (recorded NOT RUN — needs the target laptop) Measurements captured with their conditions
+- [x] 4.3 Eighteen runs recorded with their models, corpus hash, and what changed before each; target-laptop timings still NOT RUN
 
 ## 5. Tests
 
@@ -40,10 +40,10 @@
 
 - [x] 6.1 `docs/product/POC_ACCEPTANCE.md`: every functional, security, deletion, offline, recovery, classifier, and matching gate
 - [x] 6.2 (recorded NOT RUN) Target-laptop measurements listed with their conditions, recorded NOT RUN until run
-- [x] 6.3 (recorded NOT RUN) Accessibility walkthrough: keyboard operation, and source versus recruiter versus AI content
+- [x] 6.3 Accessibility walkthrough, as five Playwright tests: keyboard operation, and source versus recruiter versus AI content
 - [x] 6.4 (installer smoke recorded NOT RUN) Final `just check`, installer smoke, security scan, vulnerability scan, redacted-log inspection
 
 ## 7. Exit gate
 
-- [x] 7.1 Every gate that can run off the target laptop passes
+- [x] 7.1 Every gate that can run off the target laptop passes, except the two benchmarks, which are run and recorded as FAIL for the models this machine can hold
 - [x] 7.2 `just check` passes

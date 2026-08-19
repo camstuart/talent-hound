@@ -1,0 +1,121 @@
+Talent Hound 0.1.0-poc on darwin/arm64, 2026-08-19T03:23:53Z
+Corpus: the synthetic corpus in this repository — invented, not real placements
+  hash 0bbb546df73d6d42744ee65246e88ed4b48a5216c5345b5e1ea228fdaa811830
+Schema v3, prompt v6
+  classify: qwen2.5:7b-instruct (FROM /Users/cam/.ollama/models/blobs/sha256-2bada8a7450677000f678be90653b85d364de7db25eb5ea54136ada5f3933730)
+  embed: nomic-embed-text (FROM /Users/cam/.ollama/models/blobs/sha256-970aa74c0a90ef7482477cf803618e776e173c007bf957f635f1015bfcfef0e6)
+  generate: not used by this benchmark (n/a)
+
+Classifier over the corpus: capture 76% (137/180), uncited 0, unsupported 8, misreported 28 — fail
+
+Classifier: 20 listings
+  platform-engineer-melbourne: capture 89% (8/9), cited true, no unsupported false, constraints exact false
+    compensation: maximum=180000, which the source does not state
+    employment_type: missing
+    missed employment_type: permanent
+  backend-engineer-sydney: capture 89% (8/9), cited true, no unsupported true, constraints exact false
+    employment_type: missing
+    missed employment_type: permanent
+  site-reliability-brisbane: capture 100% (9/9), cited true, no unsupported true, constraints exact true
+  data-engineer-melbourne: capture 89% (8/9), cited true, no unsupported false, constraints exact false
+    compensation: maximum=155000, which the source does not state
+    work_arrangement: missing
+    missed work_arrangement: remote
+  staff-engineer-perth: capture 89% (8/9), cited true, no unsupported false, constraints exact false
+    compensation: maximum=210000, which the source does not state
+    employment_type: missing
+    missed employment_type: permanent
+  frontend-engineer-sydney: capture 89% (8/9), cited true, no unsupported true, constraints exact false
+    work_arrangement: missing
+    missed work_arrangement: hybrid
+  security-engineer-canberra: capture 100% (9/9), cited true, no unsupported true, constraints exact true
+  ml-engineer-melbourne: capture 89% (8/9), cited true, no unsupported false, constraints exact false
+    compensation: maximum=185000, which the source does not state
+    employment_type: missing
+    missed employment_type: permanent
+  devops-engineer-adelaide: capture 89% (8/9), cited true, no unsupported false, constraints exact false
+    compensation: maximum=145000, which the source does not state
+    employment_type: missing
+    missed employment_type: permanent
+  mobile-engineer-sydney: capture 44% (4/9), cited true, no unsupported true, constraints exact false
+    employment_type: missing
+    missed skill: Swift
+    missed skill: Kotlin
+    missed skill: release engineering
+    missed skill: fintech experience
+    missed employment_type: permanent
+  principal-engineer-melbourne: capture 0% (0/9), cited true, no unsupported true, constraints exact false
+    location: missing
+    work_arrangement: missing
+    employment_type: missing
+    work_rights: missing
+    compensation: missing
+    missed skill: architecture
+    missed skill: mentoring
+    missed skill: distributed systems
+    missed skill: hardware experience
+    missed location: Melbourne
+    missed work_arrangement: hybrid
+    missed employment_type: permanent
+    missed work_rights: existing Australian work rights
+    missed compensation: AUD 240,000 base plus superannuation
+  backend-contract-melbourne: capture 22% (2/9), cited true, no unsupported false, constraints exact false
+    compensation: period=day, which the source does not state
+    location: missing
+    work_arrangement: missing
+    employment_type: missing
+    work_rights: map[], want map[country:Australia sponsorship_required:false]
+    missed skill: Go
+    missed skill: REST APIs
+    missed skill: SQL
+    missed skill: consulting background
+    missed location: Melbourne
+    missed work_arrangement: remote
+    missed employment_type: contract
+  platform-engineer-remote: capture 78% (7/9), cited true, no unsupported true, constraints exact false
+    location: missing
+    employment_type: missing
+    missed location: Remote (Australia)
+    missed employment_type: permanent
+  qa-engineer-brisbane: capture 100% (9/9), cited true, no unsupported true, constraints exact true
+  data-platform-sydney: capture 89% (8/9), cited true, no unsupported true, constraints exact false
+    employment_type: missing
+    missed employment_type: permanent
+  engineering-manager-melbourne: capture 0% (0/9), cited true, no unsupported true, constraints exact false
+    location: missing
+    work_arrangement: missing
+    employment_type: missing
+    work_rights: missing
+    compensation: missing
+    missed skill: people leadership
+    missed skill: delivery
+    missed skill: hiring
+    missed skill: data domain experience
+    missed location: Melbourne
+    missed work_arrangement: hybrid
+    missed employment_type: permanent
+    missed work_rights: existing Australian work rights
+    missed compensation: AUD 200,000 base plus superannuation
+  integration-engineer-hobart: capture 89% (8/9), cited true, no unsupported true, constraints exact false
+    employment_type: missing
+    missed employment_type: permanent
+  embedded-engineer-perth: capture 89% (8/9), cited true, no unsupported false, constraints exact false
+    compensation: maximum=160000, which the source does not state
+    employment_type: missing
+    missed employment_type: permanent
+  solutions-architect-sydney: capture 100% (9/9), cited true, no unsupported true, constraints exact true
+  junior-backend-melbourne: capture 89% (8/9), cited true, no unsupported false, constraints exact false
+    compensation: maximum=110000, which the source does not state
+    employment_type: missing
+    missed employment_type: permanent
+
+Matching: 2 of 5 scenarios reached three plausible
+  go-platform-melbourne: 3 plausible of 5 distinct
+  data-python-melbourne: 2 plausible of 5 distinct
+  frontend-accessibility-sydney: 2 plausible of 5 distinct
+  sre-kubernetes-brisbane: 3 plausible of 5 distinct
+  embedded-c-perth: 1 plausible of 5 distinct
+
+Eligible roles: 20
+
+Outcome: fail

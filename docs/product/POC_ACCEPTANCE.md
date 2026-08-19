@@ -149,6 +149,12 @@ something beside what changed before it.
 | 15 | 87% | 0 | 58 | 71 | 2 | mistakes named; introduced values counted everywhere |
 | 16 | 87% | 0 | 12 | 71 | 2 | values checked against their citation |
 | 17 | 88% | 0 | 11 | 32 | 2 | values derived from evidence that states them |
+| 18 | 76% | 0 | 8 | 28 | 2 | a checklist of constraint types — **withdrawn**: it traded four constraints for twelve points of capture |
+
+Run 18 is the reason the prompt is at version 5 and not 6. Asking the model to
+check the source once more for each constraint type worked, and cost more than
+it bought: the model spent its attention on the checklist and stopped recording
+the skills. Measured, then reverted. Run 17 is the product as it stands.
 
 Run 9 is the reason the rest are trustworthy: it scored nineteen points below
 run 8 with no code between them. Everything before it was sampled at
@@ -157,39 +163,42 @@ preceded it.
 
 ### Frozen benchmark run, development machine
 
-`just bench`, 37 minutes, against the synthetic corpus in this repository.
-Record: `docs/product/benchmarks/benchmark-2026-08-18T04-43-17Z.json` and its
-`.txt` summary. Corpus hash `f3280238af1715db…`.
+`just bench`, roughly forty minutes per run, against the synthetic corpus in
+this repository. Best configuration: run 17, record
+`docs/product/benchmarks/benchmark-2026-08-19T02-34-58Z.json`.
 
-Models: classify `qwen2.5:3b-instruct`, embed `nomic-embed-text`. Generation
+Models: classify `qwen2.5:7b-instruct`, embed `nomic-embed-text`. Generation
 takes no part in either benchmark.
 
-**Outcome: FAIL.**
+**Outcome: FAIL**, on two of the six conditions.
 
-| Condition | Bar | Measured |
-| --- | --- | --- |
-| Every extracted aspect cited | all | met — no uncited aspect on any listing that produced one |
-| No unsupported critical constraint | none | met — nothing invented |
-| Material-aspect capture | ≥ 80% | **22–44% on the five listings that produced aspects; 0% on the other fifteen, which produced nothing at all** |
-| Structured constraints reproduced | exact | **not met on any listing — location, work rights, employment type, and compensation come back empty** |
-| Matching: three plausible in the top five | ≥ 4 of 5 scenarios | **0 of 5 — no scenario produced a candidate profile, so no shortlist was ranked** |
-| Eligible roles in scope | ≥ 10 | 20 — the run is a result, not source-coverage inconclusive |
+| Condition | Bar | Measured | |
+| --- | --- | --- | --- |
+| Every extracted aspect cited | all | 0 uncited across 20 listings | PASS |
+| Material-aspect capture | ≥ 80% | 88% | PASS |
+| Eligible roles in scope | ≥ 10 | 20 | a result, not source-coverage inconclusive |
+| No unsupported value introduced | none | 11 | **FAIL** |
+| Structured constraints reproduced | all | 68 of 100 | **FAIL** |
+| Matching: three plausible in the top five | ≥ 4 of 5 | 2 of 5 | **FAIL** |
 
-What this says about the product versus the model: the citation rule held
-everywhere it was tested — the model never produced an aspect the validator
-accepted without evidence — and the twenty roles were all in scope, so
-retrieval had something to rank. What failed is decomposition: fifteen of
-twenty listings produced nothing the contract would accept, and no resume
-produced a candidate profile at all. That is the 3B model, and it is the same
-finding as the contract gate above.
+What the remaining failures are, precisely, because "the model isn't good
+enough" was the wrong conclusion eleven times before it was the right one:
 
-An earlier record from the same day,
-`benchmark-2026-08-18T04-03-54Z`, is kept and **superseded**: its capture rule
-demanded identical wording and so scored correctly decomposed listings at zero.
-It is retained because deleting a wrong measurement is how a corrected one
-stops being checkable.
+- **The 32 wrong constraints are mostly aspects never emitted.** Eleven
+  locations and nine employment types simply do not appear in the answer for
+  listings that state them. Six work-rights values carry the sponsorship but
+  drop the country. Asking the model to check for each type recovered four of
+  them and cost twelve points of capture, so it was withdrawn.
+- **The 11 introduced values are inference the model will not stop making**: a
+  country read off a city, a period read off a salary, a `days_onsite` of zero.
+  Each one is now dropped from what is stored — the product records nothing
+  unsupported — but the benchmark counts what the model produced, which is the
+  honest thing for it to count.
+- **The matching half reaches 2 of 5.** Every scenario ranks and every one puts
+  plausible roles on the list; three of them put two rather than three. With
+  five scenarios, one scenario is twenty points, and the bar is four of five.
 
-**Model selection consequence.** Three models were tried on this machine and
+**Model selection consequence.****Model selection consequence.** Three models were tried on this machine and
 none is a candidate for the pinned classify role:
 
 - `gemma4:12b-mlx` ignores JSON schemas and returns prose, so it cannot serve
@@ -256,7 +265,43 @@ neither is claimed here.
 
 ## Go / no-go
 
-Not yet decided. The decision is made after the outstanding rows are run on the
-target laptop against the recruiter's frozen corpus, and it is recorded here
-with the evidence that supported it — including any provisional performance miss
-accepted deliberately.
+Not yet decided, and the decision is not mine to make. What can be said is what
+was measured.
+
+**The product side of Phase 21 is finished.** Fourteen defects were found and
+fixed, every one of them invisible to the unit suite and every one live for as
+long as the product had existed. Four of them were the single question "can a
+profile carry a structured value at all", and the answer had been no since
+Phase 10. One of them — the shortlist ANDing a sentence — meant the flagship
+loop only ever worked when search criteria happened to be present. Another
+meant the product never checked that a normalized value was supported by the
+evidence cited for it, which is a rule the PRD states outright.
+
+**The benchmarks do not pass**, on this machine, with the models that fit on
+it. Capture and citation discipline clear their bars; structured-constraint
+reproduction and the matching benchmark do not. The remaining failures are the
+model omitting aspects a listing plainly states, and inferring values no source
+gives — after schema, prompt, examples, vocabulary, evidence checking, and
+deterministic normalization have each been corrected.
+
+**What that supports, and what it does not.** It supports the conclusion that
+`qwen2.5:7b-instruct` is not Validated for the classify role, which is the
+label the PRD reserves for a model that has passed these benchmarks. It does
+not support any conclusion about the target laptop, a larger model, or the
+recruiter's real corpus, none of which have been run.
+
+Three things would move it, in the order I would try them:
+
+1. **A larger local model.** Everything measured here says the ceiling is the
+   model's recall and its willingness to infer, not the product's handling.
+   A 14B or 32B on hardware that can hold it is the obvious next measurement,
+   and it needs no code change — `just bench` takes the model as an argument.
+2. **The target laptop, with the recruiter's frozen corpus.** That is the
+   environment the PRD names, and every row above marked NOT RUN belongs to it.
+3. **A second, focused normalization call.** If a larger model still omits
+   constraint aspects, asking one short question per constraint type would
+   almost certainly recover them. It costs latency on a CPU-only machine, which
+   is why it was not done speculatively.
+
+A provisional performance miss is recorded as measured, never reclassified.
+This is that record.
