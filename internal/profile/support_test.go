@@ -125,3 +125,93 @@ func TestAnInventedNumberIsDropped(t *testing.T) {
 		t.Fatalf("dropped %v", dropped)
 	}
 }
+
+// A capable model states "we do not sponsor" and "AUD 180,000 base" in its
+// wording and then leaves sponsorship_required and basis out of the value
+// beside it, on forty of a hundred constraints. Reading a word that is there is
+// not a judgement about the role.
+func TestAValueTheEvidenceStatesOutrightIsFilledIn(t *testing.T) {
+	proposal := Proposal{Aspects: []Aspect{
+		aspectWith(WorkRights, "existing Australian work rights",
+			"You must have existing Australian work rights; we do not sponsor.",
+			map[string]any{"country": "Australia"}),
+		aspectWith(Compensation, "AUD 180,000 base plus superannuation",
+			"AUD 180,000 base plus superannuation.",
+			map[string]any{"currency": "AUD", "minimum": float64(180000)}),
+		aspectWith(WorkArrangement, "hybrid", "This is a hybrid role.", map[string]any{}),
+		aspectWith(EmploymentType, "permanent", "offered as permanent work", map[string]any{}),
+	}}
+
+	DeriveStructured(&proposal)
+
+	if got := proposal.Aspects[0].Structured["sponsorship_required"]; got != false {
+		t.Fatalf("sponsorship_required = %v, want false", got)
+	}
+	if got := proposal.Aspects[1].Structured["basis"]; got != "base" {
+		t.Fatalf("basis = %v, want base", got)
+	}
+	if got := proposal.Aspects[2].Structured["arrangement"]; got != "hybrid" {
+		t.Fatalf("arrangement = %v, want hybrid", got)
+	}
+	if got := proposal.Aspects[3].Structured["employment_type"]; got != "permanent" {
+		t.Fatalf("employment_type = %v, want permanent", got)
+	}
+}
+
+// A negation is handled, not guessed at: "we will sponsor" and "we do not
+// sponsor" are opposite facts sharing a word.
+func TestANegationIsReadCorrectly(t *testing.T) {
+	for _, tc := range []struct {
+		quote string
+		want  any
+	}{
+		{"We do not sponsor visas.", false},
+		{"We cannot sponsor.", false},
+		{"Sponsorship available for the right candidate.", true},
+		{"We will sponsor.", true},
+	} {
+		proposal := Proposal{Aspects: []Aspect{
+			aspectWith(WorkRights, "work rights", tc.quote, map[string]any{}),
+		}}
+		DeriveStructured(&proposal)
+		if got := proposal.Aspects[0].Structured["sponsorship_required"]; got != tc.want {
+			t.Fatalf("%q gave %v, want %v", tc.quote, got, tc.want)
+		}
+	}
+}
+
+// A value the model did state is never overwritten, and silence stays silent.
+func TestDerivationNeitherOverwritesNorInvents(t *testing.T) {
+	proposal := Proposal{Aspects: []Aspect{
+		aspectWith(Compensation, "AUD 900 per day", "AUD 900 per day",
+			map[string]any{"basis": "rate", "period": "day"}),
+		aspectWith(Compensation, "AUD 150,000", "AUD 150,000", map[string]any{}),
+		aspectWith(WorkRights, "work rights", "Australian work rights required.", map[string]any{}),
+	}}
+
+	DeriveStructured(&proposal)
+
+	if proposal.Aspects[0].Structured["basis"] != "rate" {
+		t.Fatal("a stated basis was overwritten")
+	}
+	// Nothing in "AUD 150,000" says base, package, or a period.
+	if len(proposal.Aspects[1].Structured) != 0 {
+		t.Fatalf("a value was invented from silence: %+v", proposal.Aspects[1].Structured)
+	}
+	// The source is silent on sponsorship.
+	if _, ok := proposal.Aspects[2].Structured["sponsorship_required"]; ok {
+		t.Fatalf("sponsorship was inferred from silence: %+v", proposal.Aspects[2].Structured)
+	}
+}
+
+// Derivation runs after the evidence check, so what it fills survives it.
+func TestWhatIsDerivedIsAlsoSupported(t *testing.T) {
+	proposal := Proposal{Aspects: []Aspect{
+		aspectWith(WorkRights, "work rights", "we do not sponsor", map[string]any{}),
+		aspectWith(Compensation, "AUD 180,000 base", "AUD 180,000 base", map[string]any{}),
+	}}
+	DeriveStructured(&proposal)
+	if dropped := DropUnsupportedStructured(&proposal); len(dropped) != 0 {
+		t.Fatalf("the evidence check removed what was derived from evidence: %v", dropped)
+	}
+}

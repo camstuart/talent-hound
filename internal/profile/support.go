@@ -158,3 +158,94 @@ func containsAny(haystack string, needles []string) bool {
 	}
 	return false
 }
+
+// derivable maps a field to the phrasings that state each of its values
+// outright. Only phrasings with one reading are here: "base salary" states a
+// base, "day rate" states a rate, and anything needing a judgement call is
+// absent on purpose.
+var derivable = []struct {
+	types []AspectType
+	field string
+	value any
+	words []string
+	// blockedBy suppresses the derivation when the evidence also says this,
+	// which is how a negation is handled rather than guessed at.
+	blockedBy []string
+}{
+	{[]AspectType{WorkRights}, "sponsorship_required", false,
+		[]string{"do not sponsor", "don't sponsor", "cannot sponsor", "no sponsorship",
+			"without sponsorship", "not offer sponsorship", "unable to sponsor"}, nil},
+	{[]AspectType{WorkRights}, "sponsorship_required", true,
+		[]string{"sponsorship available", "will sponsor", "can sponsor", "offer sponsorship",
+			"sponsorship provided"}, []string{"not", "no ", "cannot", "don't"}},
+	{[]AspectType{Compensation}, "basis", "base",
+		[]string{"base salary", "base plus", "base package", " base "}, nil},
+	{[]AspectType{Compensation}, "basis", "rate",
+		[]string{"day rate", "hourly rate", "per day", "per hour"}, nil},
+	{[]AspectType{Compensation}, "basis", "total_package",
+		[]string{"total package", "package of", "total remuneration"}, nil},
+	{[]AspectType{Compensation}, "period", "day", []string{"per day", "day rate", "daily"}, nil},
+	{[]AspectType{Compensation}, "period", "hour", []string{"per hour", "hourly", "per hr"}, nil},
+	{[]AspectType{Compensation}, "period", "year",
+		[]string{"per year", "per annum", "annually", "a year"}, nil},
+	{[]AspectType{WorkArrangement}, "arrangement", "hybrid", []string{"hybrid"}, nil},
+	{[]AspectType{WorkArrangement}, "arrangement", "remote", []string{"fully remote", "remote role"}, nil},
+	{[]AspectType{WorkArrangement}, "arrangement", "onsite",
+		[]string{"onsite", "on site", "on-site"}, []string{"hybrid"}},
+	{[]AspectType{EmploymentType}, "employment_type", "permanent",
+		[]string{"permanent", "ongoing"}, nil},
+	{[]AspectType{EmploymentType}, "employment_type", "contract",
+		[]string{"contract", "fixed term", "fixed-term"}, nil},
+}
+
+// DeriveStructured fills a structured field the evidence states outright and
+// the model left out, and reports what it filled.
+//
+// Normalizing "AUD 180,000 base plus superannuation" into a basis of base is
+// not a judgement about the role; it is reading a word that is there. Measured
+// against the frozen corpus, a capable model states these in its wording and
+// then omits them from the value beside it, on forty of a hundred constraints.
+// Doing it in code is both more reliable and auditable — and it fills only what
+// is absent, so a value the model did state is never overwritten.
+func DeriveStructured(p *Proposal) []string {
+	filled := []string{}
+	for i := range p.Aspects {
+		aspect := &p.Aspects[i]
+		if _, carries := StructuredFields(aspect.Type); !carries {
+			continue
+		}
+		evidence := strings.ToLower(normalizeSpace(aspect.Wording))
+		for _, c := range aspect.Citations {
+			evidence += " " + strings.ToLower(normalizeSpace(c.Quote))
+		}
+
+		for _, rule := range derivable {
+			if !appliesTo(rule.types, aspect.Type) {
+				continue
+			}
+			if aspect.Structured != nil {
+				if _, already := aspect.Structured[rule.field]; already {
+					continue
+				}
+			}
+			if !containsAny(evidence, rule.words) || containsAny(evidence, rule.blockedBy) {
+				continue
+			}
+			if aspect.Structured == nil {
+				aspect.Structured = map[string]any{}
+			}
+			aspect.Structured[rule.field] = rule.value
+			filled = append(filled, fmt.Sprintf("%s.%s", aspect.Type, rule.field))
+		}
+	}
+	return filled
+}
+
+func appliesTo(types []AspectType, t AspectType) bool {
+	for _, candidate := range types {
+		if candidate == t {
+			return true
+		}
+	}
+	return false
+}
