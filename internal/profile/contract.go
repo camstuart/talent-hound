@@ -21,10 +21,10 @@ const (
 	// object", and strict decoding answered null every time — a hundred
 	// constraints in a row went unreported because of it.
 	SchemaVersion = "3"
-	// PromptVersion 5 names the three normalization mistakes measured against
-	// the frozen corpus — inferring a country, a status, and a period that no
-	// source stated — because showing the right mapping did not stop them.
-	PromptVersion = "5"
+	// PromptVersion 6 asks a role decomposition to check the source once more
+	// for each constraint type. Version 5 fixed what the values said; this is
+	// about the aspects that were never emitted at all.
+	PromptVersion = "6"
 )
 
 // Citation is one piece of evidence for one aspect.
@@ -260,6 +260,17 @@ func Prompt(kind SubjectKind, sources []Source) string {
 	b.WriteString(`- "we do not sponsor" states sponsorship_required false; it does not state a status` + "\n")
 	b.WriteString(`- a salary quoted as "base" states basis base; it does not state a period` + "\n")
 	b.WriteString(`- a rate quoted "per day" states period day and basis rate` + "\n")
+
+	if kind == SubjectRole {
+		// Recall, not accuracy: measured against the frozen corpus the model
+		// omits the aspect entirely on about a fifth of the constraints a
+		// listing states — no location aspect at all, no employment type — and
+		// a constraint nobody records cannot be compared against later.
+		b.WriteString("\nBefore answering, check the source once more for each of these and ")
+		b.WriteString("include an aspect for every one it states: where the work is, the work ")
+		b.WriteString("arrangement, the employment type, the work rights required, and the pay. ")
+		b.WriteString("If the source does not state one, do not invent it.\n")
+	}
 
 	b.WriteString("\nSources:\n")
 	for _, s := range sources {

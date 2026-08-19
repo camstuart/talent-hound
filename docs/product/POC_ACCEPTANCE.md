@@ -103,22 +103,57 @@ Machine: macOS on Apple silicon, Ollama at `http://localhost:11434`.
 
 ### What benchmarking found
 
-Every one of these was live for as long as the product has existed, and none of
-them could be reached by the unit suite — they only appear when a real model
-meets labels written independently of it.
+Every one of these was live for as long as the product has existed, and none
+could be reached by the unit suite — they only appear when a real model meets
+labels written independently of it.
 
 | Defect | Effect | Fix |
 | --- | --- | --- |
-| The classifier schema declared `structured` as an object with no properties | Under strict decoding that admits nothing, so **no profile could ever carry a structured value**. Confirmed against the endpoint: `additionalProperties:false` returns `{}`, `true` returns the fields | SchemaVersion 2 |
-| The prompt called structured values optional | A model that follows instructions omits them, making "explicit structured constraints are reproduced correctly" unreachable for any model | PromptVersion 2 |
-| A `null` structured field failed validation | The model writing `"basis": null` for a salary quoted without one **invalidated the entire profile**, over a field it was right to leave empty | Nulls dropped at parse |
-| The shortlist ANDed every word of every query | A profile aspect is a sentence, so **every profile-driven shortlist returned empty** unless search criteria were also present. The flagship loop only worked by accident | Aspect queries use SearchAny |
-| Embedding evicts the classify model | On a laptop this size the next classify call pays a full reload inside its own timeout | Known; the benchmark profiles the candidate first |
+| `structured` declared as an object with no properties | Under strict decoding that admits nothing: **no profile could carry a structured value**, ever | SchemaVersion 2 |
+| `structured` optional | Strict decoding takes an optional object as nullable, and the model answered `null` every time | Required, SchemaVersion 3 |
+| `structured` described only as "an object" | Made required, the model invented a shape: `{"location": {"city": "Melbourne"}}` | Fields declared with types and enumerations |
+| The prompt called structured values optional | A model that follows instructions omits them | PromptVersion 2 |
+| The prompt never named the permitted values | Beside a rule saying never guess, a careful model omits the field. Worth 29 capture points when fixed | PromptVersion 3 |
+| A `null` structured field failed validation | `"basis": null` for a salary quoted without one **invalidated the whole profile** | Nulls dropped at parse |
+| A field outside the taxonomy failed validation | `"state": "VIC"` discarded nine good aspects to punish a tenth for its vocabulary | Undefined fields dropped |
+| A quote tidied at its edge failed validation | The model cuts mid-sentence and adds a full stop; that cost whole listings their extraction | Boundary punctuation trimmed |
+| A citation naming the wrong chunk failed validation | Nine citations in one resume pointed at the wrong supplied chunk. The evidence was there | Pointer repaired, never the quote |
+| **A structured value was never checked against its own citation** | The contract required an aspect to cite its evidence and never asked the same of the value beside it: cite "we do not sponsor", record `status: citizen`. **42 of 58 introduced values** | Unsupported values dropped |
+| The shortlist ANDed every word of every query | A profile aspect is a sentence, so **every profile-driven shortlist returned empty** unless criteria happened to be present | Aspect queries use SearchAny |
+| No temperature was ever set | Every constrained call sampled at 0.8, so the same resume produced different profiles — and profile identity claims a profile is a function of its sources | Temperature 0, fixed seed |
+| Three minutes for a decomposition | Generous against a fixture, tight against a real resume: two of five scenarios were lost to the clock | Six minutes |
+| Embedding evicts the classify model | The next classify call pays a full reload inside its own timeout | Known; the benchmark profiles the candidate first |
 
 Two of my own benchmark errors are recorded with them, because a benchmark that
 is wrong in the product's favour is worse than no benchmark: capture demanded
-identical wording, and the corpus labels used field names the product does not
-have and asserted facts the listings never state.
+identical wording and identical aspect types, and the corpus labels used field
+names the product does not have while asserting facts the listings never state.
+
+### What the runs measured, in order
+
+Each row is one full run of both benchmarks against the synthetic corpus on the
+development machine. The point of keeping them all is that a number only means
+something beside what changed before it.
+
+| Run | Capture | Uncited | Introduced | Constraints wrong | Scenarios at 3+ | What changed before it |
+| --- | --- | --- | --- | --- | --- | --- |
+| 3 | 38% | 0 | 0 | 100 | 0 | first run against the 7B |
+| 6 | 36% | 0 | 0 | 100 | 0 | null fields dropped, real resumes |
+| 7 | 36% | 0 | 0 | 100 | 0 | undefined fields dropped |
+| 8 | 83% | 3 | 4 | 99 | 1 | quote edges trimmed, descriptive types grouped |
+| 9 | 64% | 3 | 1 | 100 | 0 | nothing — sampling variance |
+| 10 | 68% | 0 | 0 | 100 | 0 | temperature 0 |
+| 12 | 97% | 0 | 13 | 89 | 0 | permitted values named in the prompt |
+| 13 | 98% | 0 | 0 | 100 | 0 | worked examples, six-minute timeout |
+| 14 | 84% | 0 | 3 | 78 | 2 | structured fields declared and required |
+| 15 | 87% | 0 | 58 | 71 | 2 | mistakes named; introduced values counted everywhere |
+| 16 | 87% | 0 | 12 | 71 | 2 | values checked against their citation |
+| 17 | 88% | 0 | 11 | 32 | 2 | values derived from evidence that states them |
+
+Run 9 is the reason the rest are trustworthy: it scored nineteen points below
+run 8 with no code between them. Everything before it was sampled at
+temperature 0.8, so no earlier number could be attributed to the change that
+preceded it.
 
 ### Frozen benchmark run, development machine
 
