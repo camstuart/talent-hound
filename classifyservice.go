@@ -34,9 +34,15 @@ type ClassifyService struct {
 	model    Classifier
 }
 
-// classifyTimeout bounds one model call. A decomposition is a page of output
-// from a local model, so this is generous rather than tight.
-const classifyTimeout = 3 * time.Minute
+// classifyTimeout bounds one model call.
+//
+// Three minutes was generous against a fixture and tight against a real
+// resume: measured on a CPU-only machine with a 7B model, a full resume takes
+// two to four minutes to decompose, and two of five benchmark scenarios were
+// lost to the clock rather than to anything the model got wrong. Six minutes
+// is still a bound — a model that has not answered by then is wedged, not
+// thinking — and the recruiter sees a job, not a frozen screen.
+const classifyTimeout = 6 * time.Minute
 
 // NewClassifyService returns a classifier bound to the registry.
 func NewClassifyService(db *gorm.DB, registry *ModelService, model Classifier) *ClassifyService {

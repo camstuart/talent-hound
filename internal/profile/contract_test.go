@@ -1,6 +1,7 @@
 package profile
 
 import (
+	"os"
 	"strings"
 	"testing"
 )
@@ -81,5 +82,29 @@ func TestThePromptNamesThePermittedValues(t *testing.T) {
 	}
 	if !strings.Contains(prompt, "arrangement (one of: onsite, hybrid, remote, unknown)") {
 		t.Fatalf("the values are not listed beside their field:\n%s", prompt)
+	}
+}
+
+// The worked examples teach the vocabulary, not the answers. Every value in
+// them must be absent from the benchmark corpus, or the prompt is tuning
+// against the held-out set — which is the one thing freezing it is meant to
+// prevent.
+func TestTheWorkedExamplesShareNothingWithTheBenchmarkCorpus(t *testing.T) {
+	corpus, err := os.ReadFile("../bench/testdata/corpus.json")
+	if err != nil {
+		t.Skipf("no corpus to compare against: %v", err)
+	}
+	haystack := strings.ToLower(string(corpus))
+	prompt := Prompt(SubjectRole, []Source{{ChunkID: 1, Text: "..."}})
+	if !strings.Contains(prompt, "Worked examples") {
+		t.Fatal("the prompt shows no worked examples")
+	}
+	for _, value := range []string{"Wellington", "New Zealand", "NZD", "87,400", "87400"} {
+		if !strings.Contains(prompt, value) {
+			t.Fatalf("the prompt lost the example value %q", value)
+		}
+		if strings.Contains(haystack, strings.ToLower(value)) {
+			t.Fatalf("the example value %q appears in the frozen corpus", value)
+		}
 	}
 }

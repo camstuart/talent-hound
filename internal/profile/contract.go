@@ -20,10 +20,10 @@ const (
 	// the object with no properties, which under strict decoding permitted
 	// nothing at all.
 	SchemaVersion = "2"
-	// PromptVersion 3 names the permitted values for every enumerated
-	// structured field. Version 2 required the values and listed only the field
-	// names, so a model told never to guess left them out.
-	PromptVersion = "3"
+	// PromptVersion 4 shows the mapping from a phrase to a structured field.
+	// Version 3 named the fields and their values, and models still answered
+	// "in Melbourne" with an inferred country instead of the stated city.
+	PromptVersion = "4"
 )
 
 // Citation is one piece of evidence for one aspect.
@@ -227,6 +227,23 @@ func Prompt(kind SubjectKind, sources []Source) string {
 		}
 		b.WriteString("\n")
 	}
+	// One worked line per type. The fields were named and their values
+	// enumerated, and the model still answered "in Melbourne" with a country it
+	// inferred rather than the city it was told — the mapping from a phrase to a
+	// field was the part never shown. Every value here is chosen to appear
+	// nowhere in any benchmark corpus: this teaches the vocabulary, not the
+	// answers.
+	b.WriteString("\nWorked examples of the mapping, on sources this document does not contain:\n")
+	b.WriteString(`- "based in Wellington" -> location {"city": "Wellington"}` + "\n")
+	b.WriteString(`- "fully remote within New Zealand" -> location {"country": "New Zealand", "remote_ok": true}` + "\n")
+	b.WriteString(`- "four days onsite" -> work_arrangement {"arrangement": "onsite", "days_onsite": 4}` + "\n")
+	b.WriteString(`- "a twelve month fixed term" -> employment_type {"employment_type": "contract"}` + "\n")
+	b.WriteString(`- "you must already hold the right to work in New Zealand; no sponsorship" -> ` +
+		`work_rights {"country": "New Zealand", "sponsorship_required": false}` + "\n")
+	b.WriteString(`- "NZD 87,400 base" -> compensation {"currency": "NZD", "minimum": 87400, "basis": "base"}` + "\n")
+	b.WriteString("Take only what the source states. A city is not a country, and a stated ")
+	b.WriteString("salary is not a stated period.\n")
+
 	b.WriteString("\nSources:\n")
 	for _, s := range sources {
 		fmt.Fprintf(&b, "\n[chunk %d]\n%s\n", s.ChunkID, s.Text)
