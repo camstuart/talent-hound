@@ -79,13 +79,15 @@ func DropUnsupportedStructured(p *Proposal) []string {
 		if len(aspect.Structured) == 0 {
 			continue
 		}
+		// The citations, and only the citations. The wording is the model's own
+		// restatement and nothing checks that it appears in any source, so
+		// counting it as evidence let a model write "Annual base salary of AUD
+		// 180,000" and then support a period of a year with its own sentence.
+		// Ten of twenty-three introduced values were exactly that.
 		quoted := ""
 		for _, c := range aspect.Citations {
 			quoted += " " + strings.ToLower(normalizeSpace(c.Quote))
 		}
-		// The wording is the model's own restatement of the source, and it had
-		// to be citable to get here, so it counts as evidence too.
-		quoted += " " + strings.ToLower(normalizeSpace(aspect.Wording))
 
 		for field, value := range aspect.Structured {
 			if supportedBy(field, value, quoted) {
@@ -213,9 +215,12 @@ var derivable = []struct {
 	// PoC's market and the two countries its listings name, not a gazetteer.
 	// "Australian work rights" states Australia, and the model records the
 	// sponsorship and drops the country on six of twenty listings.
-	{[]AspectType{WorkRights, Location}, "country", "Australia",
+	// Work rights only. Deriving a location's country from the word
+	// "Australian" in a sentence about work rights is the same inference this
+	// check exists to remove — eleven of twenty-three introduced values.
+	{[]AspectType{WorkRights}, "country", "Australia",
 		[]string{"australia", "australian"}, nil},
-	{[]AspectType{WorkRights, Location}, "country", "New Zealand",
+	{[]AspectType{WorkRights}, "country", "New Zealand",
 		[]string{"new zealand", "nz "}, nil},
 	{[]AspectType{Compensation}, "basis", "base",
 		[]string{"base salary", "base plus", "base package", " base "}, nil},
@@ -253,7 +258,10 @@ func DeriveStructured(p *Proposal) []string {
 		if _, carries := StructuredFields(aspect.Type); !carries {
 			continue
 		}
-		evidence := strings.ToLower(normalizeSpace(aspect.Wording))
+		// Derived from the citations for the same reason: the wording is not
+		// checked against any source, so deriving from it would be deriving
+		// from the model.
+		evidence := ""
 		for _, c := range aspect.Citations {
 			evidence += " " + strings.ToLower(normalizeSpace(c.Quote))
 		}

@@ -270,3 +270,45 @@ func TestASeparatedNumberIsStillTheSameNumber(t *testing.T) {
 		}
 	}
 }
+
+// The wording is the model's own restatement and nothing checks that it appears
+// in any source. Counting it as evidence let a model write "Annual base salary
+// of AUD 180,000" and then support a period of a year with its own sentence.
+func TestAModelCannotSupportAValueWithItsOwnWording(t *testing.T) {
+	proposal := Proposal{Aspects: []Aspect{
+		aspectWith(Compensation, "Annual base salary of AUD 180,000",
+			"AUD 180,000 base plus superannuation.",
+			map[string]any{"currency": "AUD", "minimum": float64(180000),
+				"basis": "base", "period": "year"}),
+	}}
+	DropUnsupportedStructured(&proposal)
+	got := proposal.Aspects[0].Structured
+	if _, ok := got["period"]; ok {
+		t.Fatalf("a period supported only by the model's own wording survived: %+v", got)
+	}
+	if got["basis"] != "base" || got["minimum"] != float64(180000) {
+		t.Fatalf("a cited value was dropped: %+v", got)
+	}
+}
+
+// And a location's country is not read off a sentence about work rights.
+func TestALocationCountryIsNotDerivedFromWorkRightsWording(t *testing.T) {
+	proposal := Proposal{Aspects: []Aspect{
+		aspectWith(Location, "Melbourne",
+			"hiring a senior platform engineer in Melbourne. You must have existing Australian work rights.",
+			map[string]any{"city": "Melbourne"}),
+	}}
+	DeriveStructured(&proposal)
+	if _, ok := proposal.Aspects[0].Structured["country"]; ok {
+		t.Fatalf("a country was read off the work-rights sentence: %+v", proposal.Aspects[0].Structured)
+	}
+	// The same words still state the country of the work rights.
+	rights := Proposal{Aspects: []Aspect{
+		aspectWith(WorkRights, "Australian work rights",
+			"You must have existing Australian work rights.", map[string]any{}),
+	}}
+	DeriveStructured(&rights)
+	if rights.Aspects[0].Structured["country"] != "Australia" {
+		t.Fatalf("the work rights lost their country: %+v", rights.Aspects[0].Structured)
+	}
+}

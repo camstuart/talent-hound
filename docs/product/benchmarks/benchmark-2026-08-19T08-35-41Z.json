@@ -1,0 +1,463 @@
+{
+  "taken": "2026-08-19T08:35:41Z",
+  "version": "0.1.0-poc",
+  "platform": "darwin/arm64",
+  "schemaVersion": "3",
+  "promptVersion": "5",
+  "corpusHash": "6a2f3efa53cf4e73a9582cb7112c479fc6aa2b896a9b4f1ff9b5995baaf569a8",
+  "corpusIs": "the synthetic corpus in this repository — invented, not real placements",
+  "cloudAssisted": false,
+  "assignments": [
+    {
+      "role": "classify",
+      "model": "qwen2.5:14b-instruct",
+      "digest": "FROM /Users/cam/.ollama/models/blobs/sha256-2049f5674b1e92b4464e5729975c9689fcfbf0b0e4443ccf10b5339f370f9a54"
+    },
+    {
+      "role": "embed",
+      "model": "nomic-embed-text",
+      "digest": "FROM /Users/cam/.ollama/models/blobs/sha256-970aa74c0a90ef7482477cf803618e776e173c007bf957f635f1015bfcfef0e6"
+    },
+    {
+      "role": "generate",
+      "model": "not used by this benchmark",
+      "digest": "n/a"
+    }
+  ],
+  "classifier": [
+    {
+      "listing": "platform-engineer-melbourne",
+      "extracted": 9,
+      "material": 9,
+      "captured": 9,
+      "captureRate": 1,
+      "missed": [],
+      "uncited": [],
+      "unsupported": [
+        "location: country=Australia, which the source does not state",
+        "compensation: period=year, which the source does not state"
+      ],
+      "misreported": [],
+      "allCited": true,
+      "noUnsupported": false,
+      "captureMet": true,
+      "constraintsExact": true,
+      "pass": false
+    },
+    {
+      "listing": "backend-engineer-sydney",
+      "extracted": 9,
+      "material": 9,
+      "captured": 9,
+      "captureRate": 1,
+      "missed": [],
+      "uncited": [],
+      "unsupported": [
+        "location: country=Australia, which the source does not state",
+        "compensation: period=year, which the source does not state"
+      ],
+      "misreported": [],
+      "allCited": true,
+      "noUnsupported": false,
+      "captureMet": true,
+      "constraintsExact": true,
+      "pass": false
+    },
+    {
+      "listing": "site-reliability-brisbane",
+      "extracted": 9,
+      "material": 9,
+      "captured": 9,
+      "captureRate": 1,
+      "missed": [],
+      "uncited": [],
+      "unsupported": [
+        "location: country=Australia, which the source does not state"
+      ],
+      "misreported": [],
+      "allCited": true,
+      "noUnsupported": false,
+      "captureMet": true,
+      "constraintsExact": true,
+      "pass": false
+    },
+    {
+      "listing": "data-engineer-melbourne",
+      "extracted": 9,
+      "material": 9,
+      "captured": 8,
+      "captureRate": 0.8888888888888888,
+      "missed": [
+        "skill: Snowflake experience"
+      ],
+      "uncited": [],
+      "unsupported": [
+        "location: country=Australia, which the source does not state",
+        "compensation: period=year, which the source does not state"
+      ],
+      "misreported": [],
+      "allCited": true,
+      "noUnsupported": false,
+      "captureMet": true,
+      "constraintsExact": true,
+      "pass": false
+    },
+    {
+      "listing": "staff-engineer-perth",
+      "extracted": 9,
+      "material": 9,
+      "captured": 9,
+      "captureRate": 1,
+      "missed": [],
+      "uncited": [],
+      "unsupported": [],
+      "misreported": [],
+      "allCited": true,
+      "noUnsupported": true,
+      "captureMet": true,
+      "constraintsExact": true,
+      "pass": true
+    },
+    {
+      "listing": "frontend-engineer-sydney",
+      "extracted": 9,
+      "material": 9,
+      "captured": 9,
+      "captureRate": 1,
+      "missed": [],
+      "uncited": [],
+      "unsupported": [],
+      "misreported": [],
+      "allCited": true,
+      "noUnsupported": true,
+      "captureMet": true,
+      "constraintsExact": true,
+      "pass": true
+    },
+    {
+      "listing": "security-engineer-canberra",
+      "extracted": 9,
+      "material": 9,
+      "captured": 9,
+      "captureRate": 1,
+      "missed": [],
+      "uncited": [],
+      "unsupported": [],
+      "misreported": [],
+      "allCited": true,
+      "noUnsupported": true,
+      "captureMet": true,
+      "constraintsExact": true,
+      "pass": true
+    },
+    {
+      "listing": "ml-engineer-melbourne",
+      "extracted": 9,
+      "material": 9,
+      "captured": 9,
+      "captureRate": 1,
+      "missed": [],
+      "uncited": [],
+      "unsupported": [
+        "location: country=Australia, which the source does not state",
+        "compensation: period=year, which the source does not state"
+      ],
+      "misreported": [],
+      "allCited": true,
+      "noUnsupported": false,
+      "captureMet": true,
+      "constraintsExact": true,
+      "pass": false
+    },
+    {
+      "listing": "devops-engineer-adelaide",
+      "extracted": 9,
+      "material": 9,
+      "captured": 9,
+      "captureRate": 1,
+      "missed": [],
+      "uncited": [],
+      "unsupported": [
+        "location: country=Australia, which the source does not state",
+        "compensation: period=year, which the source does not state"
+      ],
+      "misreported": [],
+      "allCited": true,
+      "noUnsupported": false,
+      "captureMet": true,
+      "constraintsExact": true,
+      "pass": false
+    },
+    {
+      "listing": "mobile-engineer-sydney",
+      "extracted": 9,
+      "material": 9,
+      "captured": 9,
+      "captureRate": 1,
+      "missed": [],
+      "uncited": [],
+      "unsupported": [
+        "location: country=Australia, which the source does not state",
+        "compensation: period=year, which the source does not state"
+      ],
+      "misreported": [],
+      "allCited": true,
+      "noUnsupported": false,
+      "captureMet": true,
+      "constraintsExact": true,
+      "pass": false
+    },
+    {
+      "listing": "principal-engineer-melbourne",
+      "extracted": 9,
+      "material": 9,
+      "captured": 9,
+      "captureRate": 1,
+      "missed": [],
+      "uncited": [],
+      "unsupported": [
+        "location: country=Australia, which the source does not state",
+        "compensation: period=year, which the source does not state"
+      ],
+      "misreported": [],
+      "allCited": true,
+      "noUnsupported": false,
+      "captureMet": true,
+      "constraintsExact": true,
+      "pass": false
+    },
+    {
+      "listing": "backend-contract-melbourne",
+      "extracted": 9,
+      "material": 9,
+      "captured": 9,
+      "captureRate": 1,
+      "missed": [],
+      "uncited": [],
+      "unsupported": [
+        "location: remote_ok=true, which the source does not state",
+        "compensation: maximum=900, which the source does not state"
+      ],
+      "misreported": [
+        "compensation: map[basis:rate currency:AUD maximum:900 period:day], want map[basis:rate currency:AUD minimum:900 period:day]"
+      ],
+      "allCited": true,
+      "noUnsupported": false,
+      "captureMet": true,
+      "constraintsExact": false,
+      "pass": false
+    },
+    {
+      "listing": "platform-engineer-remote",
+      "extracted": 9,
+      "material": 9,
+      "captured": 9,
+      "captureRate": 1,
+      "missed": [],
+      "uncited": [],
+      "unsupported": [],
+      "misreported": [
+        "location: map[country:Australia], want map[country:Australia remote_ok:true]"
+      ],
+      "allCited": true,
+      "noUnsupported": true,
+      "captureMet": true,
+      "constraintsExact": false,
+      "pass": false
+    },
+    {
+      "listing": "qa-engineer-brisbane",
+      "extracted": 9,
+      "material": 9,
+      "captured": 9,
+      "captureRate": 1,
+      "missed": [],
+      "uncited": [],
+      "unsupported": [],
+      "misreported": [],
+      "allCited": true,
+      "noUnsupported": true,
+      "captureMet": true,
+      "constraintsExact": true,
+      "pass": true
+    },
+    {
+      "listing": "data-platform-sydney",
+      "extracted": 9,
+      "material": 9,
+      "captured": 9,
+      "captureRate": 1,
+      "missed": [],
+      "uncited": [],
+      "unsupported": [
+        "location: country=Australia, which the source does not state",
+        "compensation: period=year, which the source does not state"
+      ],
+      "misreported": [],
+      "allCited": true,
+      "noUnsupported": false,
+      "captureMet": true,
+      "constraintsExact": true,
+      "pass": false
+    },
+    {
+      "listing": "engineering-manager-melbourne",
+      "extracted": 9,
+      "material": 9,
+      "captured": 8,
+      "captureRate": 0.8888888888888888,
+      "missed": [
+        "skill: data domain experience"
+      ],
+      "uncited": [],
+      "unsupported": [
+        "location: country=Australia, which the source does not state",
+        "compensation: period=year, which the source does not state"
+      ],
+      "misreported": [
+        "work_rights: map[country:Australia], want map[country:Australia sponsorship_required:false]"
+      ],
+      "allCited": true,
+      "noUnsupported": false,
+      "captureMet": true,
+      "constraintsExact": false,
+      "pass": false
+    },
+    {
+      "listing": "integration-engineer-hobart",
+      "extracted": 9,
+      "material": 9,
+      "captured": 9,
+      "captureRate": 1,
+      "missed": [],
+      "uncited": [],
+      "unsupported": [],
+      "misreported": [],
+      "allCited": true,
+      "noUnsupported": true,
+      "captureMet": true,
+      "constraintsExact": true,
+      "pass": true
+    },
+    {
+      "listing": "embedded-engineer-perth",
+      "extracted": 9,
+      "material": 9,
+      "captured": 9,
+      "captureRate": 1,
+      "missed": [],
+      "uncited": [],
+      "unsupported": [],
+      "misreported": [],
+      "allCited": true,
+      "noUnsupported": true,
+      "captureMet": true,
+      "constraintsExact": true,
+      "pass": true
+    },
+    {
+      "listing": "solutions-architect-sydney",
+      "extracted": 9,
+      "material": 9,
+      "captured": 9,
+      "captureRate": 1,
+      "missed": [],
+      "uncited": [],
+      "unsupported": [],
+      "misreported": [],
+      "allCited": true,
+      "noUnsupported": true,
+      "captureMet": true,
+      "constraintsExact": true,
+      "pass": true
+    },
+    {
+      "listing": "junior-backend-melbourne",
+      "extracted": 9,
+      "material": 9,
+      "captured": 9,
+      "captureRate": 1,
+      "missed": [],
+      "uncited": [],
+      "unsupported": [
+        "location: country=Australia, which the source does not state",
+        "compensation: period=year, which the source does not state"
+      ],
+      "misreported": [],
+      "allCited": true,
+      "noUnsupported": false,
+      "captureMet": true,
+      "constraintsExact": true,
+      "pass": false
+    }
+  ],
+  "matching": {
+    "scenarios": [
+      {
+        "scenarioId": "go-platform-melbourne",
+        "distinct": [
+          "platform-engineer-melbourne",
+          "platform-engineer-remote",
+          "backend-engineer-sydney",
+          "backend-contract-melbourne",
+          "staff-engineer-perth"
+        ],
+        "plausible": 5,
+        "met": true
+      },
+      {
+        "scenarioId": "data-python-melbourne",
+        "distinct": [
+          "data-engineer-melbourne",
+          "data-platform-sydney",
+          "security-engineer-canberra",
+          "engineering-manager-melbourne",
+          "junior-backend-melbourne"
+        ],
+        "plausible": 4,
+        "met": true
+      },
+      {
+        "scenarioId": "frontend-accessibility-sydney",
+        "distinct": [
+          "frontend-engineer-sydney",
+          "engineering-manager-melbourne",
+          "solutions-architect-sydney",
+          "mobile-engineer-sydney",
+          "embedded-engineer-perth"
+        ],
+        "plausible": 3,
+        "met": true
+      },
+      {
+        "scenarioId": "sre-kubernetes-brisbane",
+        "distinct": [
+          "site-reliability-brisbane",
+          "security-engineer-canberra",
+          "engineering-manager-melbourne",
+          "devops-engineer-adelaide",
+          "mobile-engineer-sydney"
+        ],
+        "plausible": 2,
+        "met": false
+      },
+      {
+        "scenarioId": "embedded-c-perth",
+        "distinct": [
+          "embedded-engineer-perth",
+          "principal-engineer-melbourne",
+          "qa-engineer-brisbane",
+          "platform-engineer-melbourne",
+          "security-engineer-canberra"
+        ],
+        "plausible": 2,
+        "met": false
+      }
+    ],
+    "metCount": 3,
+    "pass": false
+  },
+  "eligibleRoles": 20,
+  "measurements": [],
+  "outcome": "fail"
+}
