@@ -53,7 +53,11 @@ export default function SearchPanel(props: { initiativeId: number }) {
 
   const embed = () =>
     act(async () => {
+      // Chunks for reading and citing, aspects for matching: the shortlist
+      // compares a candidate's statements against a role's, not against the
+      // blurb around them.
       await EmbedService.EmbedAll(props.initiativeId);
+      await EmbedService.EmbedAspects(props.initiativeId);
       setTimeout(() => void count(), 500);
     });
 

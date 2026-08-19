@@ -12,6 +12,7 @@ import (
 	"gorm.io/gorm/clause"
 
 	"camstuart/talent-hound/internal/models"
+	"camstuart/talent-hound/internal/profile"
 	"camstuart/talent-hound/internal/vector"
 )
 
@@ -88,6 +89,152 @@ func (s *EmbedService) EmbedAll(initiativeID uint) (*models.Job, error) {
 		Params:       string(params),
 		TotalItems:   len(ids),
 	})
+}
+
+// EmbedAspects embeds the Profile Aspects of every role in an initiative's
+// scope, which is what the shortlist's similarity half retrieves over.
+//
+// Roles reach an initiative through their source artifacts, the same way their
+// chunks do, so scope is the same question asked of a different table.
+func (s *EmbedService) EmbedAspects(initiativeID uint) (*models.Job, error) {
+	space, err := s.CurrentSpace()
+	if err != nil {
+		return nil, err
+	}
+
+	ids := []uint{}
+	q := s.db.Model(&models.ProfileAspect{}).
+		Where(`profile_id IN (
+			SELECT id FROM profiles WHERE subject_kind = ? AND subject_id IN (
+				SELECT target_id FROM artifact_links WHERE target_type = ?
+				AND artifact_id IN (
+					SELECT artifact_id FROM artifact_links WHERE target_type = ? AND target_id = ?
+				)
+			)
+		)`, profile.SubjectRole, models.LinkRole, models.LinkInitiative, initiativeID)
+	if space != nil {
+		q = q.Where("id NOT IN (SELECT owner_id FROM embeddings WHERE space_id = ? AND owner_kind = ?)",
+			space.ID, models.OwnerAspect)
+	}
+	if err := q.Order("id asc").Pluck("id", &ids).Error; err != nil {
+		return nil, fmt.Errorf("listing aspects to embed for initiative %d: %w", initiativeID, err)
+	}
+
+	params, err := json.Marshal(embedParams{OwnerKind: models.OwnerAspect, OwnerIDs: ids})
+	if err != nil {
+		return nil, fmt.Errorf("encoding embedding params: %w", err)
+	}
+	return s.jobs.Enqueue(JobInput{
+		Kind:         "embed",
+		InitiativeID: initiativeID,
+		Params:       string(params),
+		TotalItems:   len(ids),
+	})
+}
+
+// AspectHit is one Profile Aspect retrieved by similarity, with the role whose
+// profile holds it.
+type AspectHit struct {
+	AspectID uint    `json:"aspectId"`
+	RoleID   uint    `json:"roleId"`
+	Wording  string  `json:"wording"`
+	Score    float64 `json:"score"`
+}
+
+// SearchAspects is exact-cosine KNN over role Profile Aspects.
+func (s *EmbedService) SearchAspects(initiativeID uint, query string, limit int) ([]AspectHit, error) {
+	if limit <= 0 || limit > 100 {
+		limit = 20
+	}
+	q, space, err := s.queryVector(query)
+	if err != nil {
+		return nil, err
+	}
+
+	type candidate struct {
+		AspectID uint
+		RoleID   uint
+		Wording  string
+		Vector   []byte
+	}
+	rows := []candidate{}
+	err = s.db.Raw(`
+		SELECT pa.id AS aspect_id, p.subject_id AS role_id, pa.wording AS wording, e.vector AS vector
+		FROM embeddings e
+		JOIN profile_aspects pa ON pa.id = e.owner_id
+		JOIN profiles p ON p.id = pa.profile_id
+		WHERE e.space_id = ? AND e.owner_kind = ? AND p.subject_kind = ?
+		AND p.subject_id IN (
+			SELECT target_id FROM artifact_links WHERE target_type = ?
+			AND artifact_id IN (
+				SELECT artifact_id FROM artifact_links WHERE target_type = ? AND target_id = ?
+			)
+		)`,
+		space.ID, models.OwnerAspect, profile.SubjectRole,
+		models.LinkRole, models.LinkInitiative, initiativeID).Scan(&rows).Error
+	if err != nil {
+		return nil, fmt.Errorf("scanning aspect vectors: %w", err)
+	}
+
+	hits := make([]AspectHit, 0, len(rows))
+	for _, row := range rows {
+		v, err := vector.Decode(row.Vector, space.Dimensions)
+		if err != nil {
+			continue
+		}
+		score, err := vector.Cosine(q, v)
+		if err != nil {
+			continue
+		}
+		hits = append(hits, AspectHit{
+			AspectID: row.AspectID, RoleID: row.RoleID,
+			Wording: row.Wording, Score: score,
+		})
+	}
+	// Highest first, and the lowest identifier first on a tie, so repeated runs
+	// return the same order.
+	sort.SliceStable(hits, func(a, b int) bool {
+		if hits[a].Score != hits[b].Score {
+			return hits[a].Score > hits[b].Score
+		}
+		return hits[a].AspectID < hits[b].AspectID
+	})
+	if len(hits) > limit {
+		hits = hits[:limit]
+	}
+	return hits, nil
+}
+
+// queryVector embeds a query and returns it with the space it belongs to.
+func (s *EmbedService) queryVector(query string) ([]float32, *models.EmbeddingSpace, error) {
+	space, err := s.CurrentSpace()
+	if err != nil {
+		return nil, nil, err
+	}
+	if space == nil {
+		return nil, nil, fmt.Errorf("nothing is embedded yet for the current model — index this initiative first")
+	}
+	res, err := s.registry.Resolve(models.RoleEmbed)
+	if err != nil {
+		return nil, nil, err
+	}
+	if res.Assignment == nil {
+		return nil, nil, fmt.Errorf("no embedding model is assigned")
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), embedTimeout)
+	defer cancel()
+	q, err := s.endpoint.Embed(ctx, res.Assignment.Model, query)
+	if err != nil {
+		return nil, nil, fmt.Errorf("embedding the query: %w", err)
+	}
+	if err := vector.Check(q); err != nil {
+		return nil, nil, fmt.Errorf("the endpoint returned an unusable vector for this query: %w", err)
+	}
+	if len(q) != space.Dimensions {
+		return nil, nil, fmt.Errorf("the query embedding has %d dimensions but the space has %d",
+			len(q), space.Dimensions)
+	}
+	return q, space, nil
 }
 
 // Coverage reports how much of an initiative's evidence the current space has.
@@ -213,9 +360,7 @@ func (s *EmbedService) work(ctx context.Context, job models.Job, item int) (JobC
 	if item < 0 || item >= len(p.OwnerIDs) {
 		return nil, FailReason(models.ReasonEmbedFailed)
 	}
-	if p.OwnerKind != models.OwnerChunk {
-		// Aspects arrive in Phase 10 and share this storage; nothing produces
-		// one yet, so a job naming one is a bug rather than a state.
+	if !p.OwnerKind.Valid() {
 		return nil, FailReason(models.ReasonEmbedFailed)
 	}
 	ownerID := p.OwnerIDs[item]
@@ -226,14 +371,30 @@ func (s *EmbedService) work(ctx context.Context, job models.Job, item int) (JobC
 	}
 	assignment := *res.Assignment
 
-	var row models.Chunk
-	if err := s.db.Select("id", "text").First(&row, ownerID).Error; err != nil {
-		return nil, FailReason(models.ReasonMissingOwner)
+	// What a vector is made from: a chunk's text, or an aspect's wording.
+	//
+	// The PRD asks for aspect KNN — "structured scope filters, FTS, and
+	// exact-cosine aspect KNN produce a 20-role assessment shortlist" — and a
+	// chunk carries the listing's blurb along with its requirements, so a
+	// query matches the parts every listing shares. An aspect is one statement.
+	text := ""
+	if p.OwnerKind == models.OwnerAspect {
+		var row models.ProfileAspect
+		if err := s.db.Select("id", "wording").First(&row, ownerID).Error; err != nil {
+			return nil, FailReason(models.ReasonMissingOwner)
+		}
+		text = row.Wording
+	} else {
+		var row models.Chunk
+		if err := s.db.Select("id", "text").First(&row, ownerID).Error; err != nil {
+			return nil, FailReason(models.ReasonMissingOwner)
+		}
+		text = row.Text
 	}
 
 	callCtx, cancel := context.WithTimeout(ctx, embedTimeout)
 	defer cancel()
-	v, err := s.endpoint.Embed(callCtx, assignment.Model, row.Text)
+	v, err := s.endpoint.Embed(callCtx, assignment.Model, text)
 	if err != nil {
 		if ctx.Err() != nil {
 			return nil, ctx.Err()
@@ -261,7 +422,7 @@ func (s *EmbedService) work(ctx context.Context, job models.Job, item int) (JobC
 			DoUpdates: clause.AssignmentColumns([]string{"vector", "dimensions", "updated_at"}),
 		}).Create(&models.Embedding{
 			SpaceID:    space.ID,
-			OwnerKind:  models.OwnerChunk,
+			OwnerKind:  p.OwnerKind,
 			OwnerID:    ownerID,
 			Dimensions: dims,
 			Vector:     blob,

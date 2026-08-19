@@ -289,23 +289,33 @@ func (s *ShortlistService) lexical(
 
 // semantic retrieves role chunks by meaning, grouped to roles in rank order.
 func (s *ShortlistService) semantic(initiativeID uint, text string, allowed map[uint]bool) ([]uint, error) {
-	hits, err := s.embed.SemanticSearch(initiativeID, text, s.depth())
+	// Aspects, not chunks. The PRD asks for exact-cosine aspect KNN, and a
+	// chunk carries a listing's blurb along with its requirements — so a
+	// similarity query matched the sentences every listing shares. An aspect is
+	// one statement, which is what a candidate's aspect should be compared
+	// against.
+	hits, err := s.embed.SearchAspects(initiativeID, text, s.depth())
 	if err != nil {
 		// Deliberately swallowed: no embedding space yet is the ordinary state
 		// before anything is embedded, and it is not a failure of the
-		// shortlist. The lexical half still works, and a list built from one
-		// method beats refusing to build one.
+		// shortlist.
 		//
 		//nolint:nilerr // an unembedded corpus is a state, not an error
 		return nil, nil
 	}
+	seen := map[uint]bool{}
 	ids := make([]uint, 0, len(hits))
 	for _, h := range hits {
-		ids = append(ids, h.ArtifactID)
+		if !allowed[h.RoleID] || seen[h.RoleID] {
+			continue
+		}
+		seen[h.RoleID] = true
+		ids = append(ids, h.RoleID)
 	}
-	return s.rolesOf(ids, allowed)
+	return ids, nil
 }
 
+// artifactIDs is the artifacts a lexical result names, in rank order.
 func artifactIDs(hits []Hit) []uint {
 	ids := make([]uint, 0, len(hits))
 	for _, h := range hits {

@@ -144,6 +144,13 @@ func runMatching(t *testing.T, corpus *bench.Corpus, classifyModel, embedModel s
 			roleID := e.roleWithListing(t, listing.Title, listing.Markdown)
 			byRole[roleID] = listing.ID
 		}
+		// The similarity half retrieves over aspects, so they have to be
+		// embedded — the same step the interface runs when indexing.
+		if job, err := e.embed.EmbedAspects(e.initiative); err != nil {
+			t.Fatalf("%s: embedding aspects: %v", scenario.ID, err)
+		} else if done := waitForJob(t, e.jobs, job.ID); done.State != models.JobCompleted {
+			t.Logf("%s: aspect embedding is %s (%q)", scenario.ID, done.State, done.FailureReason)
+		}
 
 		shortlist, err := e.shortlist.Build(e.initiative, candidateID)
 		if err != nil {

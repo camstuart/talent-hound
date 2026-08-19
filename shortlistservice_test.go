@@ -579,3 +579,92 @@ func (e *shortlistEnv) candidateWithAspect(t *testing.T, wording string) uint {
 	}
 	return c.ID
 }
+
+// Similarity retrieval runs over Profile Aspects, which is what the PRD asks
+// for: "structured scope filters, FTS, and exact-cosine aspect KNN produce a
+// 20-role assessment shortlist". It had been running over source chunks, so a
+// query met the blurb every listing shares rather than the statement it should
+// be compared against.
+//
+// The wording here shares no word with the role's listing, so the lexical half
+// cannot find it and only the aspect vectors can.
+func TestSimilarityRetrievesOverAspects(t *testing.T) {
+	e := newShortlistEnv(t)
+	wanted := e.roleWithListing(t, "Platform engineer",
+		"Must have Go and production SQLite experience.",
+		profile.Aspect{Type: profile.Skill, Wording: "distributed storage engineering",
+			Citations: []profile.Citation{{Record: "recruiter"}}})
+	e.roleWithListing(t, "Pastry chef", "Must have patisserie experience.",
+		profile.Aspect{Type: profile.Skill, Wording: "laminated dough",
+			Citations: []profile.Citation{{Record: "recruiter"}}})
+
+	if _, err := e.registry.Assign(AssignInput{Role: models.RoleEmbed, Model: "nomic-embed-text"}); err != nil {
+		t.Fatalf("assigning the embed role: %v", err)
+	}
+	// The embedder is deterministic per text, so the aspect closest to the
+	// query is the one that shares its wording.
+	job, err := e.embed.EmbedAspects(e.initiative)
+	if err != nil {
+		t.Fatalf("embedding aspects: %v", err)
+	}
+	if done := waitForJob(t, e.jobs, job.ID); done.State != models.JobCompleted {
+		t.Fatalf("aspect embedding is %s (%q)", done.State, done.FailureReason)
+	}
+
+	hits, err := e.embed.SearchAspects(e.initiative, "distributed storage engineering", 10)
+	if err != nil {
+		t.Fatalf("searching aspects: %v", err)
+	}
+	if len(hits) == 0 {
+		t.Fatal("no aspect was retrieved")
+	}
+	if hits[0].RoleID != wanted {
+		t.Fatalf("the closest aspect belongs to role %d, want %d", hits[0].RoleID, wanted)
+	}
+	if hits[0].Wording != "distributed storage engineering" {
+		t.Fatalf("retrieved %q", hits[0].Wording)
+	}
+}
+
+// Aspects of a role outside the initiative are never retrieved, the same way
+// its chunks are not.
+func TestAspectRetrievalRespectsScope(t *testing.T) {
+	e := newShortlistEnv(t)
+	e.roleWithListing(t, "Platform engineer", "Must have Go.",
+		profile.Aspect{Type: profile.Skill, Wording: "distributed storage engineering",
+			Citations: []profile.Citation{{Record: "recruiter"}}})
+
+	outside, err := e.records.CreateRole(models.Role{
+		Title: "Outside role", Origin: models.RoleOriginRecruiterEntered,
+		LifecycleState: models.RoleOpen,
+	})
+	if err != nil {
+		t.Fatalf("creating the outside role: %v", err)
+	}
+	version, err := e.roles.AddAspect(outside.ID, profile.Aspect{
+		Type: profile.Skill, Wording: "distributed storage engineering",
+		Citations: []profile.Citation{{Record: "recruiter"}},
+	})
+	if err != nil || version == nil {
+		t.Fatalf("adding an aspect to the outside role: %v", err)
+	}
+
+	if _, err := e.registry.Assign(AssignInput{Role: models.RoleEmbed, Model: "nomic-embed-text"}); err != nil {
+		t.Fatalf("assigning the embed role: %v", err)
+	}
+	job, err := e.embed.EmbedAspects(e.initiative)
+	if err != nil {
+		t.Fatalf("embedding: %v", err)
+	}
+	waitForJob(t, e.jobs, job.ID)
+
+	hits, err := e.embed.SearchAspects(e.initiative, "distributed storage engineering", 10)
+	if err != nil {
+		t.Fatalf("searching: %v", err)
+	}
+	for _, h := range hits {
+		if h.RoleID == outside.ID {
+			t.Fatal("an aspect from outside the initiative was retrieved")
+		}
+	}
+}
