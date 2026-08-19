@@ -465,3 +465,73 @@ func writeWorkedExamples(b *strings.Builder) {
 	b.WriteString(`- a rate quoted "per day" states period day and basis rate` + "\n")
 
 }
+
+// NormalizePrompt asks for one aspect's structured value and nothing else.
+//
+// The decomposition prompt asks for eleven types, citations, priorities, and a
+// vocabulary; a constraint's normalized value is the thing it drops when it is
+// busy. Measured against the frozen corpus, a model recorded a location worded
+// "remote role in Melbourne", cited the sentence naming Melbourne, and left the
+// city out of the value — on a listing where it filled the same field correctly
+// elsewhere in the same run. Asked about that one phrase, with nothing else in
+// the prompt, it has one thing to get right.
+func NormalizePrompt(t AspectType, wording, evidence string) string {
+	var b strings.Builder
+	b.WriteString("You record the normalized value of one statement from a job listing.\n\n")
+	b.WriteString("Rules:\n")
+	b.WriteString("- Use only the fields listed below, and only what the source states in words.\n")
+	b.WriteString("- Leave out any field the source does not state. Never guess one.\n")
+	b.WriteString("- A place name is the city, not the region. A city does not state a country.\n\n")
+
+	fields, _ := StructuredFields(t)
+	b.WriteString("Fields for " + string(t) + ":\n")
+	for _, field := range fields {
+		b.WriteString("- " + field)
+		if values, ok := structuredEnums[field]; ok {
+			b.WriteString(" (one of: " + strings.Join(values, ", ") + ")")
+		}
+		b.WriteString("\n")
+	}
+	writeWorkedExamples(&b)
+	fmt.Fprintf(&b, "\nStatement:\n%s\n\nSource:\n%s\n", strings.TrimSpace(wording), strings.TrimSpace(evidence))
+	return b.String()
+}
+
+// NormalizeSchema is the structured object for one aspect type.
+func NormalizeSchema(t AspectType) map[string]any {
+	fields, _ := StructuredFields(t)
+	permitted := map[string]bool{}
+	for _, f := range fields {
+		permitted[f] = true
+	}
+	properties := map[string]any{}
+	for field, property := range StructuredProperties() {
+		if permitted[field] {
+			properties[field] = property
+		}
+	}
+	return map[string]any{
+		"type":                 "object",
+		"properties":           properties,
+		"additionalProperties": false,
+	}
+}
+
+// Incomplete reports whether a constraint aspect is missing a field its type
+// defines, which is when asking again is worth a call.
+func Incomplete(a Aspect) bool {
+	fields, carries := StructuredFields(a.Type)
+	if !carries {
+		return false
+	}
+	for _, field := range fields {
+		if _, ok := a.Structured[field]; !ok {
+			return true
+		}
+	}
+	return false
+}
+
+// EvidenceFor is the text a structured value may be read from, exported so the
+// normalization pass can show the model the same evidence the check will use.
+func EvidenceFor(a Aspect, sources []Source) string { return evidenceFrom(a, sources) }
