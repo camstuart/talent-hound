@@ -1,0 +1,21 @@
+Retrieval tuning on the tuning corpus, 2 scenarios, 10 roles
+classify qwen2.5:7b-instruct, embed nomic-embed-text
+
+  depth 30  k 60  plausible  4  met 1
+  depth 20  k 60  plausible  4  met 1
+  depth 10  k 60  plausible  4  met 1
+  depth 30  k 20  plausible  4  met 1
+  depth 10  k 20  plausible  4  met 1
+  depth 20  k 20  plausible  4  met 1
+  depth 20  k 10  plausible  4  met 1
+  depth 30  k 10  plausible  4  met 1
+  depth 10  k 10  plausible  4  met 1
+  depth 20  k  5  plausible  4  met 1
+  depth 10  k  5  plausible  4  met 1
+  depth 30  k  5  plausible  4  met 1
+  depth  5  k 60  plausible  3  met 0
+  depth  5  k 20  plausible  3  met 0
+  depth  5  k 10  plausible  3  met 0
+  depth  5  k  5  plausible  3  met 0
+
+best: depth 30, k 60

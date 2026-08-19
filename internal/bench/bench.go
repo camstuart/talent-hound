@@ -22,6 +22,24 @@ import (
 //go:embed testdata
 var corpusFS embed.FS
 
+//go:embed tuningdata
+var tuningFS embed.FS
+
+// LoadTuning reads the tuning corpus: a separate set, never scored, used to
+// choose the constants that the frozen corpus then measures. The PRD's rule is
+// to tune only on non-held-out data, and this is that data.
+func LoadTuning() (*Corpus, error) {
+	raw, err := tuningFS.ReadFile("tuningdata/corpus.json")
+	if err != nil {
+		return nil, fmt.Errorf("reading the tuning corpus: %w", err)
+	}
+	var c Corpus
+	if err := json.Unmarshal(raw, &c); err != nil {
+		return nil, fmt.Errorf("reading the tuning corpus: %w", err)
+	}
+	return &c, nil
+}
+
 // CaptureThreshold is the PRD's bar: at least 80% of the material aspects a
 // recruiter labelled must be captured.
 const CaptureThreshold = 0.80

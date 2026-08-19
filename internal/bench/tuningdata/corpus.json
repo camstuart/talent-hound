@@ -1,0 +1,1196 @@
+{
+  "synthetic": true,
+  "note": "A tuning corpus, entirely separate from the frozen one in testdata/. Retrieval constants are chosen against these scenarios and then measured, once, against the frozen corpus — which is what the PRD means by tuning only on non-held-out data. Every company, city, and candidate here is invented, and none appears in the frozen corpus.",
+  "scenarios": [
+    {
+      "id": "clinical-data-hamilton",
+      "resume": "# Candidate profile — invented\n\n## Summary\n\nClinical data manager, six years. Hamilton, onsite, permanent.\n\n## Experience\n\n**Clinical data manager, Kowhai Health (2021–present)**\nRan trial data collection to CDISC standards across four studies. Built the\nvalidation rules that gate database lock. Trained site coordinators.\n\n## Skills\n\nClinical trial data, CDISC standards, data validation, SQL, regulatory\nsubmissions, stakeholder training.\n",
+      "ratings": [
+        {
+          "roleId": "clinical-data-manager-hamilton",
+          "plausible": true
+        },
+        {
+          "roleId": "veterinary-software-dunedin",
+          "plausible": false
+        },
+        {
+          "roleId": "marine-telemetry-nelson",
+          "plausible": false
+        },
+        {
+          "roleId": "payments-integration-tauranga",
+          "plausible": false
+        },
+        {
+          "roleId": "geospatial-analyst-napier",
+          "plausible": false
+        },
+        {
+          "roleId": "winery-erp-blenheim",
+          "plausible": true
+        },
+        {
+          "roleId": "broadcast-streaming-hastings",
+          "plausible": false
+        },
+        {
+          "roleId": "agritech-firmware-ashburton",
+          "plausible": false
+        },
+        {
+          "roleId": "insurance-actuarial-newplymouth",
+          "plausible": true
+        },
+        {
+          "roleId": "library-discovery-invercargill",
+          "plausible": false
+        }
+      ]
+    },
+    {
+      "id": "embedded-agritech-ashburton",
+      "resume": "# Candidate profile — invented\n\n## Summary\n\nEmbedded engineer, eight years in agricultural equipment. Ashburton, onsite.\n\n## Experience\n\n**Firmware engineer, Fernleaf Agritech (2019–present)**\nEmbedded C for irrigation controllers. Built the field diagnostics tooling and\nthe LoRaWAN telemetry link used across the fleet.\n\n## Skills\n\nEmbedded C, irrigation controllers, field diagnostics, LoRaWAN, sensor\nnetworks, hardware bring-up.\n",
+      "ratings": [
+        {
+          "roleId": "clinical-data-manager-hamilton",
+          "plausible": false
+        },
+        {
+          "roleId": "veterinary-software-dunedin",
+          "plausible": true
+        },
+        {
+          "roleId": "marine-telemetry-nelson",
+          "plausible": true
+        },
+        {
+          "roleId": "payments-integration-tauranga",
+          "plausible": false
+        },
+        {
+          "roleId": "geospatial-analyst-napier",
+          "plausible": false
+        },
+        {
+          "roleId": "winery-erp-blenheim",
+          "plausible": false
+        },
+        {
+          "roleId": "broadcast-streaming-hastings",
+          "plausible": false
+        },
+        {
+          "roleId": "agritech-firmware-ashburton",
+          "plausible": true
+        },
+        {
+          "roleId": "insurance-actuarial-newplymouth",
+          "plausible": false
+        },
+        {
+          "roleId": "library-discovery-invercargill",
+          "plausible": false
+        }
+      ]
+    },
+    {
+      "id": "search-relevance-invercargill",
+      "resume": "# Candidate profile — invented\n\n## Summary\n\nPlatform developer, seven years, search and metadata. Invercargill.\n\n## Experience\n\n**Discovery developer, Southland Libraries (2020–present)**\nOwned search relevance for the catalogue. Implemented metadata standards\nmapping and took the interface to accessibility conformance.\n\n## Skills\n\nSearch relevance, metadata standards, accessibility, PostgreSQL, cataloguing,\ninformation retrieval.\n",
+      "ratings": [
+        {
+          "roleId": "clinical-data-manager-hamilton",
+          "plausible": false
+        },
+        {
+          "roleId": "veterinary-software-dunedin",
+          "plausible": false
+        },
+        {
+          "roleId": "marine-telemetry-nelson",
+          "plausible": false
+        },
+        {
+          "roleId": "payments-integration-tauranga",
+          "plausible": false
+        },
+        {
+          "roleId": "geospatial-analyst-napier",
+          "plausible": true
+        },
+        {
+          "roleId": "winery-erp-blenheim",
+          "plausible": false
+        },
+        {
+          "roleId": "broadcast-streaming-hastings",
+          "plausible": true
+        },
+        {
+          "roleId": "agritech-firmware-ashburton",
+          "plausible": false
+        },
+        {
+          "roleId": "insurance-actuarial-newplymouth",
+          "plausible": false
+        },
+        {
+          "roleId": "library-discovery-invercargill",
+          "plausible": true
+        }
+      ]
+    }
+  ],
+  "listings": [
+    {
+      "id": "clinical-data-manager-hamilton",
+      "title": "Clinical data manager",
+      "markdown": "# Clinical data manager — Kowhai Health\n\n## About the role\n\nKowhai Health is hiring a clinical data manager in Hamilton. This is an onsite role,\noffered as permanent work at NZD 128,000 base plus KiwiSaver.\n\n## Requirements\n\n- Must have clinical trial data.\n- Must have experience with CDISC standards.\n- Experience with data validation is essential.\n- Biostatistics background is nice to have.\n- You must have existing New Zealand work rights; we do not sponsor.\n",
+      "material": [
+        {
+          "type": "skill",
+          "wording": "clinical trial data",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "CDISC standards",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "data validation",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "biostatistics background",
+          "priority": "nice_to_have"
+        },
+        {
+          "type": "location",
+          "wording": "Hamilton",
+          "structured": {
+            "city": "Hamilton"
+          }
+        },
+        {
+          "type": "work_arrangement",
+          "wording": "onsite",
+          "structured": {
+            "arrangement": "onsite"
+          }
+        },
+        {
+          "type": "employment_type",
+          "wording": "permanent",
+          "structured": {
+            "employment_type": "permanent"
+          }
+        },
+        {
+          "type": "work_rights",
+          "wording": "existing New Zealand work rights",
+          "structured": {
+            "country": "New Zealand",
+            "sponsorship_required": false
+          }
+        },
+        {
+          "type": "compensation",
+          "wording": "NZD 128,000 base plus KiwiSaver",
+          "structured": {
+            "currency": "NZD",
+            "minimum": 128000,
+            "basis": "base"
+          }
+        }
+      ],
+      "structured": [
+        {
+          "type": "location",
+          "wording": "Hamilton",
+          "structured": {
+            "city": "Hamilton"
+          }
+        },
+        {
+          "type": "work_arrangement",
+          "wording": "onsite",
+          "structured": {
+            "arrangement": "onsite"
+          }
+        },
+        {
+          "type": "employment_type",
+          "wording": "permanent",
+          "structured": {
+            "employment_type": "permanent"
+          }
+        },
+        {
+          "type": "work_rights",
+          "wording": "existing New Zealand work rights",
+          "structured": {
+            "country": "New Zealand",
+            "sponsorship_required": false
+          }
+        },
+        {
+          "type": "compensation",
+          "wording": "NZD 128,000 base plus KiwiSaver",
+          "structured": {
+            "currency": "NZD",
+            "minimum": 128000,
+            "basis": "base"
+          }
+        }
+      ]
+    },
+    {
+      "id": "veterinary-software-dunedin",
+      "title": "Veterinary software engineer",
+      "markdown": "# Veterinary software engineer — Totara Vet Systems\n\n## About the role\n\nTotara Vet Systems is hiring a veterinary software engineer in Dunedin. This is an onsite role,\noffered as permanent work at NZD 128,000 base plus KiwiSaver.\n\n## Requirements\n\n- Must have C#.\n- Must have experience with practice management systems.\n- Experience with clinical workflows is essential.\n- Veterinary domain knowledge is nice to have.\n- You must have existing New Zealand work rights; we do not sponsor.\n",
+      "material": [
+        {
+          "type": "skill",
+          "wording": "C#",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "practice management systems",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "clinical workflows",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "veterinary domain knowledge",
+          "priority": "nice_to_have"
+        },
+        {
+          "type": "location",
+          "wording": "Dunedin",
+          "structured": {
+            "city": "Dunedin"
+          }
+        },
+        {
+          "type": "work_arrangement",
+          "wording": "onsite",
+          "structured": {
+            "arrangement": "onsite"
+          }
+        },
+        {
+          "type": "employment_type",
+          "wording": "permanent",
+          "structured": {
+            "employment_type": "permanent"
+          }
+        },
+        {
+          "type": "work_rights",
+          "wording": "existing New Zealand work rights",
+          "structured": {
+            "country": "New Zealand",
+            "sponsorship_required": false
+          }
+        },
+        {
+          "type": "compensation",
+          "wording": "NZD 128,000 base plus KiwiSaver",
+          "structured": {
+            "currency": "NZD",
+            "minimum": 128000,
+            "basis": "base"
+          }
+        }
+      ],
+      "structured": [
+        {
+          "type": "location",
+          "wording": "Dunedin",
+          "structured": {
+            "city": "Dunedin"
+          }
+        },
+        {
+          "type": "work_arrangement",
+          "wording": "onsite",
+          "structured": {
+            "arrangement": "onsite"
+          }
+        },
+        {
+          "type": "employment_type",
+          "wording": "permanent",
+          "structured": {
+            "employment_type": "permanent"
+          }
+        },
+        {
+          "type": "work_rights",
+          "wording": "existing New Zealand work rights",
+          "structured": {
+            "country": "New Zealand",
+            "sponsorship_required": false
+          }
+        },
+        {
+          "type": "compensation",
+          "wording": "NZD 128,000 base plus KiwiSaver",
+          "structured": {
+            "currency": "NZD",
+            "minimum": 128000,
+            "basis": "base"
+          }
+        }
+      ]
+    },
+    {
+      "id": "marine-telemetry-nelson",
+      "title": "Marine telemetry engineer",
+      "markdown": "# Marine telemetry engineer — Rimu Marine\n\n## About the role\n\nRimu Marine is hiring a marine telemetry engineer in Nelson. This is an onsite role,\noffered as permanent work at NZD 128,000 base plus KiwiSaver.\n\n## Requirements\n\n- Must have LoRaWAN.\n- Must have experience with sensor networks.\n- Experience with maritime regulation is essential.\n- Sailing experience is nice to have.\n- You must have existing New Zealand work rights; we do not sponsor.\n",
+      "material": [
+        {
+          "type": "skill",
+          "wording": "LoRaWAN",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "sensor networks",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "maritime regulation",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "sailing experience",
+          "priority": "nice_to_have"
+        },
+        {
+          "type": "location",
+          "wording": "Nelson",
+          "structured": {
+            "city": "Nelson"
+          }
+        },
+        {
+          "type": "work_arrangement",
+          "wording": "onsite",
+          "structured": {
+            "arrangement": "onsite"
+          }
+        },
+        {
+          "type": "employment_type",
+          "wording": "permanent",
+          "structured": {
+            "employment_type": "permanent"
+          }
+        },
+        {
+          "type": "work_rights",
+          "wording": "existing New Zealand work rights",
+          "structured": {
+            "country": "New Zealand",
+            "sponsorship_required": false
+          }
+        },
+        {
+          "type": "compensation",
+          "wording": "NZD 128,000 base plus KiwiSaver",
+          "structured": {
+            "currency": "NZD",
+            "minimum": 128000,
+            "basis": "base"
+          }
+        }
+      ],
+      "structured": [
+        {
+          "type": "location",
+          "wording": "Nelson",
+          "structured": {
+            "city": "Nelson"
+          }
+        },
+        {
+          "type": "work_arrangement",
+          "wording": "onsite",
+          "structured": {
+            "arrangement": "onsite"
+          }
+        },
+        {
+          "type": "employment_type",
+          "wording": "permanent",
+          "structured": {
+            "employment_type": "permanent"
+          }
+        },
+        {
+          "type": "work_rights",
+          "wording": "existing New Zealand work rights",
+          "structured": {
+            "country": "New Zealand",
+            "sponsorship_required": false
+          }
+        },
+        {
+          "type": "compensation",
+          "wording": "NZD 128,000 base plus KiwiSaver",
+          "structured": {
+            "currency": "NZD",
+            "minimum": 128000,
+            "basis": "base"
+          }
+        }
+      ]
+    },
+    {
+      "id": "payments-integration-tauranga",
+      "title": "Payments integration engineer",
+      "markdown": "# Payments integration engineer — Manuka Pay\n\n## About the role\n\nManuka Pay is hiring a payments integration engineer in Tauranga. This is an onsite role,\noffered as permanent work at NZD 128,000 base plus KiwiSaver.\n\n## Requirements\n\n- Must have ISO 20022.\n- Must have experience with payment rails.\n- Experience with reconciliation is essential.\n- Banking background is nice to have.\n- You must have existing New Zealand work rights; we do not sponsor.\n",
+      "material": [
+        {
+          "type": "skill",
+          "wording": "ISO 20022",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "payment rails",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "reconciliation",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "banking background",
+          "priority": "nice_to_have"
+        },
+        {
+          "type": "location",
+          "wording": "Tauranga",
+          "structured": {
+            "city": "Tauranga"
+          }
+        },
+        {
+          "type": "work_arrangement",
+          "wording": "onsite",
+          "structured": {
+            "arrangement": "onsite"
+          }
+        },
+        {
+          "type": "employment_type",
+          "wording": "permanent",
+          "structured": {
+            "employment_type": "permanent"
+          }
+        },
+        {
+          "type": "work_rights",
+          "wording": "existing New Zealand work rights",
+          "structured": {
+            "country": "New Zealand",
+            "sponsorship_required": false
+          }
+        },
+        {
+          "type": "compensation",
+          "wording": "NZD 128,000 base plus KiwiSaver",
+          "structured": {
+            "currency": "NZD",
+            "minimum": 128000,
+            "basis": "base"
+          }
+        }
+      ],
+      "structured": [
+        {
+          "type": "location",
+          "wording": "Tauranga",
+          "structured": {
+            "city": "Tauranga"
+          }
+        },
+        {
+          "type": "work_arrangement",
+          "wording": "onsite",
+          "structured": {
+            "arrangement": "onsite"
+          }
+        },
+        {
+          "type": "employment_type",
+          "wording": "permanent",
+          "structured": {
+            "employment_type": "permanent"
+          }
+        },
+        {
+          "type": "work_rights",
+          "wording": "existing New Zealand work rights",
+          "structured": {
+            "country": "New Zealand",
+            "sponsorship_required": false
+          }
+        },
+        {
+          "type": "compensation",
+          "wording": "NZD 128,000 base plus KiwiSaver",
+          "structured": {
+            "currency": "NZD",
+            "minimum": 128000,
+            "basis": "base"
+          }
+        }
+      ]
+    },
+    {
+      "id": "geospatial-analyst-napier",
+      "title": "Geospatial analyst",
+      "markdown": "# Geospatial analyst — Kauri Land Group\n\n## About the role\n\nKauri Land Group is hiring a geospatial analyst in Napier. This is an onsite role,\noffered as permanent work at NZD 128,000 base plus KiwiSaver.\n\n## Requirements\n\n- Must have PostGIS.\n- Must have experience with cartography.\n- Experience with remote sensing is essential.\n- Surveying qualification is nice to have.\n- You must have existing New Zealand work rights; we do not sponsor.\n",
+      "material": [
+        {
+          "type": "skill",
+          "wording": "PostGIS",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "cartography",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "remote sensing",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "surveying qualification",
+          "priority": "nice_to_have"
+        },
+        {
+          "type": "location",
+          "wording": "Napier",
+          "structured": {
+            "city": "Napier"
+          }
+        },
+        {
+          "type": "work_arrangement",
+          "wording": "onsite",
+          "structured": {
+            "arrangement": "onsite"
+          }
+        },
+        {
+          "type": "employment_type",
+          "wording": "permanent",
+          "structured": {
+            "employment_type": "permanent"
+          }
+        },
+        {
+          "type": "work_rights",
+          "wording": "existing New Zealand work rights",
+          "structured": {
+            "country": "New Zealand",
+            "sponsorship_required": false
+          }
+        },
+        {
+          "type": "compensation",
+          "wording": "NZD 128,000 base plus KiwiSaver",
+          "structured": {
+            "currency": "NZD",
+            "minimum": 128000,
+            "basis": "base"
+          }
+        }
+      ],
+      "structured": [
+        {
+          "type": "location",
+          "wording": "Napier",
+          "structured": {
+            "city": "Napier"
+          }
+        },
+        {
+          "type": "work_arrangement",
+          "wording": "onsite",
+          "structured": {
+            "arrangement": "onsite"
+          }
+        },
+        {
+          "type": "employment_type",
+          "wording": "permanent",
+          "structured": {
+            "employment_type": "permanent"
+          }
+        },
+        {
+          "type": "work_rights",
+          "wording": "existing New Zealand work rights",
+          "structured": {
+            "country": "New Zealand",
+            "sponsorship_required": false
+          }
+        },
+        {
+          "type": "compensation",
+          "wording": "NZD 128,000 base plus KiwiSaver",
+          "structured": {
+            "currency": "NZD",
+            "minimum": 128000,
+            "basis": "base"
+          }
+        }
+      ]
+    },
+    {
+      "id": "winery-erp-blenheim",
+      "title": "ERP consultant",
+      "markdown": "# ERP consultant — Pinot Systems\n\n## About the role\n\nPinot Systems is hiring a erp consultant in Blenheim. This is an onsite role,\noffered as permanent work at NZD 128,000 base plus KiwiSaver.\n\n## Requirements\n\n- Must have ERP configuration.\n- Must have experience with inventory modelling.\n- Experience with stakeholder training is essential.\n- Viticulture experience is nice to have.\n- You must have existing New Zealand work rights; we do not sponsor.\n",
+      "material": [
+        {
+          "type": "skill",
+          "wording": "ERP configuration",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "inventory modelling",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "stakeholder training",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "viticulture experience",
+          "priority": "nice_to_have"
+        },
+        {
+          "type": "location",
+          "wording": "Blenheim",
+          "structured": {
+            "city": "Blenheim"
+          }
+        },
+        {
+          "type": "work_arrangement",
+          "wording": "onsite",
+          "structured": {
+            "arrangement": "onsite"
+          }
+        },
+        {
+          "type": "employment_type",
+          "wording": "permanent",
+          "structured": {
+            "employment_type": "permanent"
+          }
+        },
+        {
+          "type": "work_rights",
+          "wording": "existing New Zealand work rights",
+          "structured": {
+            "country": "New Zealand",
+            "sponsorship_required": false
+          }
+        },
+        {
+          "type": "compensation",
+          "wording": "NZD 128,000 base plus KiwiSaver",
+          "structured": {
+            "currency": "NZD",
+            "minimum": 128000,
+            "basis": "base"
+          }
+        }
+      ],
+      "structured": [
+        {
+          "type": "location",
+          "wording": "Blenheim",
+          "structured": {
+            "city": "Blenheim"
+          }
+        },
+        {
+          "type": "work_arrangement",
+          "wording": "onsite",
+          "structured": {
+            "arrangement": "onsite"
+          }
+        },
+        {
+          "type": "employment_type",
+          "wording": "permanent",
+          "structured": {
+            "employment_type": "permanent"
+          }
+        },
+        {
+          "type": "work_rights",
+          "wording": "existing New Zealand work rights",
+          "structured": {
+            "country": "New Zealand",
+            "sponsorship_required": false
+          }
+        },
+        {
+          "type": "compensation",
+          "wording": "NZD 128,000 base plus KiwiSaver",
+          "structured": {
+            "currency": "NZD",
+            "minimum": 128000,
+            "basis": "base"
+          }
+        }
+      ]
+    },
+    {
+      "id": "broadcast-streaming-hastings",
+      "title": "Streaming engineer",
+      "markdown": "# Streaming engineer — Harbourlight Media\n\n## About the role\n\nHarbourlight Media is hiring a streaming engineer in Hastings. This is an onsite role,\noffered as permanent work at NZD 128,000 base plus KiwiSaver.\n\n## Requirements\n\n- Must have video transcoding.\n- Must have experience with CDN operations.\n- Experience with low latency streaming is essential.\n- Live events experience is nice to have.\n- You must have existing New Zealand work rights; we do not sponsor.\n",
+      "material": [
+        {
+          "type": "skill",
+          "wording": "video transcoding",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "CDN operations",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "low latency streaming",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "live events experience",
+          "priority": "nice_to_have"
+        },
+        {
+          "type": "location",
+          "wording": "Hastings",
+          "structured": {
+            "city": "Hastings"
+          }
+        },
+        {
+          "type": "work_arrangement",
+          "wording": "onsite",
+          "structured": {
+            "arrangement": "onsite"
+          }
+        },
+        {
+          "type": "employment_type",
+          "wording": "permanent",
+          "structured": {
+            "employment_type": "permanent"
+          }
+        },
+        {
+          "type": "work_rights",
+          "wording": "existing New Zealand work rights",
+          "structured": {
+            "country": "New Zealand",
+            "sponsorship_required": false
+          }
+        },
+        {
+          "type": "compensation",
+          "wording": "NZD 128,000 base plus KiwiSaver",
+          "structured": {
+            "currency": "NZD",
+            "minimum": 128000,
+            "basis": "base"
+          }
+        }
+      ],
+      "structured": [
+        {
+          "type": "location",
+          "wording": "Hastings",
+          "structured": {
+            "city": "Hastings"
+          }
+        },
+        {
+          "type": "work_arrangement",
+          "wording": "onsite",
+          "structured": {
+            "arrangement": "onsite"
+          }
+        },
+        {
+          "type": "employment_type",
+          "wording": "permanent",
+          "structured": {
+            "employment_type": "permanent"
+          }
+        },
+        {
+          "type": "work_rights",
+          "wording": "existing New Zealand work rights",
+          "structured": {
+            "country": "New Zealand",
+            "sponsorship_required": false
+          }
+        },
+        {
+          "type": "compensation",
+          "wording": "NZD 128,000 base plus KiwiSaver",
+          "structured": {
+            "currency": "NZD",
+            "minimum": 128000,
+            "basis": "base"
+          }
+        }
+      ]
+    },
+    {
+      "id": "agritech-firmware-ashburton",
+      "title": "Agritech firmware engineer",
+      "markdown": "# Agritech firmware engineer — Fernleaf Agritech\n\n## About the role\n\nFernleaf Agritech is hiring a agritech firmware engineer in Ashburton. This is an onsite role,\noffered as permanent work at NZD 128,000 base plus KiwiSaver.\n\n## Requirements\n\n- Must have embedded C.\n- Must have experience with irrigation controllers.\n- Experience with field diagnostics is essential.\n- Agricultural background is nice to have.\n- You must have existing New Zealand work rights; we do not sponsor.\n",
+      "material": [
+        {
+          "type": "skill",
+          "wording": "embedded C",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "irrigation controllers",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "field diagnostics",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "agricultural background",
+          "priority": "nice_to_have"
+        },
+        {
+          "type": "location",
+          "wording": "Ashburton",
+          "structured": {
+            "city": "Ashburton"
+          }
+        },
+        {
+          "type": "work_arrangement",
+          "wording": "onsite",
+          "structured": {
+            "arrangement": "onsite"
+          }
+        },
+        {
+          "type": "employment_type",
+          "wording": "permanent",
+          "structured": {
+            "employment_type": "permanent"
+          }
+        },
+        {
+          "type": "work_rights",
+          "wording": "existing New Zealand work rights",
+          "structured": {
+            "country": "New Zealand",
+            "sponsorship_required": false
+          }
+        },
+        {
+          "type": "compensation",
+          "wording": "NZD 128,000 base plus KiwiSaver",
+          "structured": {
+            "currency": "NZD",
+            "minimum": 128000,
+            "basis": "base"
+          }
+        }
+      ],
+      "structured": [
+        {
+          "type": "location",
+          "wording": "Ashburton",
+          "structured": {
+            "city": "Ashburton"
+          }
+        },
+        {
+          "type": "work_arrangement",
+          "wording": "onsite",
+          "structured": {
+            "arrangement": "onsite"
+          }
+        },
+        {
+          "type": "employment_type",
+          "wording": "permanent",
+          "structured": {
+            "employment_type": "permanent"
+          }
+        },
+        {
+          "type": "work_rights",
+          "wording": "existing New Zealand work rights",
+          "structured": {
+            "country": "New Zealand",
+            "sponsorship_required": false
+          }
+        },
+        {
+          "type": "compensation",
+          "wording": "NZD 128,000 base plus KiwiSaver",
+          "structured": {
+            "currency": "NZD",
+            "minimum": 128000,
+            "basis": "base"
+          }
+        }
+      ]
+    },
+    {
+      "id": "insurance-actuarial-newplymouth",
+      "title": "Actuarial systems developer",
+      "markdown": "# Actuarial systems developer — Southerly Insurance\n\n## About the role\n\nSoutherly Insurance is hiring a actuarial systems developer in New Plymouth. This is an onsite role,\noffered as permanent work at NZD 128,000 base plus KiwiSaver.\n\n## Requirements\n\n- Must have actuarial modelling.\n- Must have experience with Python.\n- Experience with regulatory reporting is essential.\n- Actuarial exams is nice to have.\n- You must have existing New Zealand work rights; we do not sponsor.\n",
+      "material": [
+        {
+          "type": "skill",
+          "wording": "actuarial modelling",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "Python",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "regulatory reporting",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "actuarial exams",
+          "priority": "nice_to_have"
+        },
+        {
+          "type": "location",
+          "wording": "New Plymouth",
+          "structured": {
+            "city": "New Plymouth"
+          }
+        },
+        {
+          "type": "work_arrangement",
+          "wording": "onsite",
+          "structured": {
+            "arrangement": "onsite"
+          }
+        },
+        {
+          "type": "employment_type",
+          "wording": "permanent",
+          "structured": {
+            "employment_type": "permanent"
+          }
+        },
+        {
+          "type": "work_rights",
+          "wording": "existing New Zealand work rights",
+          "structured": {
+            "country": "New Zealand",
+            "sponsorship_required": false
+          }
+        },
+        {
+          "type": "compensation",
+          "wording": "NZD 128,000 base plus KiwiSaver",
+          "structured": {
+            "currency": "NZD",
+            "minimum": 128000,
+            "basis": "base"
+          }
+        }
+      ],
+      "structured": [
+        {
+          "type": "location",
+          "wording": "New Plymouth",
+          "structured": {
+            "city": "New Plymouth"
+          }
+        },
+        {
+          "type": "work_arrangement",
+          "wording": "onsite",
+          "structured": {
+            "arrangement": "onsite"
+          }
+        },
+        {
+          "type": "employment_type",
+          "wording": "permanent",
+          "structured": {
+            "employment_type": "permanent"
+          }
+        },
+        {
+          "type": "work_rights",
+          "wording": "existing New Zealand work rights",
+          "structured": {
+            "country": "New Zealand",
+            "sponsorship_required": false
+          }
+        },
+        {
+          "type": "compensation",
+          "wording": "NZD 128,000 base plus KiwiSaver",
+          "structured": {
+            "currency": "NZD",
+            "minimum": 128000,
+            "basis": "base"
+          }
+        }
+      ]
+    },
+    {
+      "id": "library-discovery-invercargill",
+      "title": "Discovery platform developer",
+      "markdown": "# Discovery platform developer — Southland Libraries\n\n## About the role\n\nSouthland Libraries is hiring a discovery platform developer in Invercargill. This is an onsite role,\noffered as permanent work at NZD 128,000 base plus KiwiSaver.\n\n## Requirements\n\n- Must have search relevance.\n- Must have experience with metadata standards.\n- Experience with accessibility is essential.\n- Library science degree is nice to have.\n- You must have existing New Zealand work rights; we do not sponsor.\n",
+      "material": [
+        {
+          "type": "skill",
+          "wording": "search relevance",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "metadata standards",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "accessibility",
+          "priority": "must_have"
+        },
+        {
+          "type": "skill",
+          "wording": "library science degree",
+          "priority": "nice_to_have"
+        },
+        {
+          "type": "location",
+          "wording": "Invercargill",
+          "structured": {
+            "city": "Invercargill"
+          }
+        },
+        {
+          "type": "work_arrangement",
+          "wording": "onsite",
+          "structured": {
+            "arrangement": "onsite"
+          }
+        },
+        {
+          "type": "employment_type",
+          "wording": "permanent",
+          "structured": {
+            "employment_type": "permanent"
+          }
+        },
+        {
+          "type": "work_rights",
+          "wording": "existing New Zealand work rights",
+          "structured": {
+            "country": "New Zealand",
+            "sponsorship_required": false
+          }
+        },
+        {
+          "type": "compensation",
+          "wording": "NZD 128,000 base plus KiwiSaver",
+          "structured": {
+            "currency": "NZD",
+            "minimum": 128000,
+            "basis": "base"
+          }
+        }
+      ],
+      "structured": [
+        {
+          "type": "location",
+          "wording": "Invercargill",
+          "structured": {
+            "city": "Invercargill"
+          }
+        },
+        {
+          "type": "work_arrangement",
+          "wording": "onsite",
+          "structured": {
+            "arrangement": "onsite"
+          }
+        },
+        {
+          "type": "employment_type",
+          "wording": "permanent",
+          "structured": {
+            "employment_type": "permanent"
+          }
+        },
+        {
+          "type": "work_rights",
+          "wording": "existing New Zealand work rights",
+          "structured": {
+            "country": "New Zealand",
+            "sponsorship_required": false
+          }
+        },
+        {
+          "type": "compensation",
+          "wording": "NZD 128,000 base plus KiwiSaver",
+          "structured": {
+            "currency": "NZD",
+            "minimum": 128000,
+            "basis": "base"
+          }
+        }
+      ]
+    }
+  ]
+}

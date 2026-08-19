@@ -752,3 +752,51 @@ func TestEveryScenarioCanReachTheBar(t *testing.T) {
 		}
 	}
 }
+
+// The tuning corpus exists so constants are never chosen against the frozen
+// one. That only holds if the two share nothing: a role, a company, or a city
+// in both would make tuning on one tuning on the other.
+func TestTheTuningCorpusSharesNothingWithTheFrozenOne(t *testing.T) {
+	frozen, err := Load()
+	if err != nil {
+		t.Fatalf("loading the frozen corpus: %v", err)
+	}
+	tuning, err := LoadTuning()
+	if err != nil {
+		t.Fatalf("loading the tuning corpus: %v", err)
+	}
+	if len(tuning.Listings) == 0 || len(tuning.Scenarios) == 0 {
+		t.Fatal("the tuning corpus is empty")
+	}
+
+	frozenIDs := map[string]bool{}
+	frozenText := strings.ToLower(func() string {
+		var b strings.Builder
+		for _, l := range frozen.Listings {
+			frozenIDs[l.ID] = true
+			b.WriteString(l.Markdown)
+		}
+		for _, s := range frozen.Scenarios {
+			b.WriteString(s.Resume)
+		}
+		return b.String()
+	}())
+
+	for _, l := range tuning.Listings {
+		if frozenIDs[l.ID] {
+			t.Fatalf("role %q is in both corpora", l.ID)
+		}
+		// The company name is the second thing on the first line of a listing.
+		company := strings.TrimSpace(strings.SplitN(strings.SplitN(l.Markdown, "\n", 2)[0], "—", 2)[1])
+		if strings.Contains(frozenText, strings.ToLower(company)) {
+			t.Fatalf("company %q appears in the frozen corpus", company)
+		}
+	}
+	for _, s := range tuning.Scenarios {
+		for _, other := range frozen.Scenarios {
+			if s.ID == other.ID {
+				t.Fatalf("scenario %q is in both corpora", s.ID)
+			}
+		}
+	}
+}

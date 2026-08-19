@@ -61,7 +61,15 @@ type Fused struct {
 // the lists it appears in. A key appearing twice in one list contributes its
 // best rank once — repetition within a list is a retrieval artifact, not
 // evidence.
-func Fuse(lists []Ranked) []Fused {
+func Fuse(lists []Ranked) []Fused { return FuseWith(K, lists) }
+
+// FuseWith is Fuse with the constant given, so it can be swept on the tuning
+// corpus. Production calls Fuse: a constant that varies at run time is a
+// constant nobody can reason about.
+func FuseWith(k int, lists []Ranked) []Fused {
+	if k <= 0 {
+		k = K
+	}
 	scores := map[uint]float64{}
 	why := map[uint][]Contribution{}
 
@@ -74,7 +82,7 @@ func Fuse(lists []Ranked) []Fused {
 			}
 		}
 		for key, rank := range best {
-			scores[key] += 1 / float64(K+rank)
+			scores[key] += 1 / float64(k+rank)
 		}
 		// Recorded in list order rather than map order, so provenance is stable.
 		for _, key := range list.Keys {

@@ -21,6 +21,11 @@ import (
 // explainable — three properties easy to have separately and easy to lose
 // together.
 type ShortlistService struct {
+	// Depth and FusionK are the retrieval constants, settable only so the
+	// tuning corpus can sweep them. Zero means the value the product ships.
+	Depth   int
+	FusionK int
+
 	db       *gorm.DB
 	search   *SearchService
 	embed    *EmbedService
@@ -152,7 +157,7 @@ func (s *ShortlistService) Build(initiativeID, candidateID uint) (*Shortlist, er
 		return nil, err
 	}
 
-	for i, f := range fusion.Top(fusion.Fuse(lists), ShortlistSize) {
+	for i, f := range fusion.Top(fusion.FuseWith(s.FusionK, lists), ShortlistSize) {
 		role := byID[f.Key]
 		out.Entries = append(out.Entries, Entry{
 			RoleID:    f.Key,
@@ -259,6 +264,14 @@ func (s *ShortlistService) queries(initiativeID, candidateID uint) ([]query, err
 	return out, nil
 }
 
+// depth is how deep each retrieval goes, defaulting to what the product ships.
+func (s *ShortlistService) depth() int {
+	if s.Depth > 0 {
+		return s.Depth
+	}
+	return perQueryDepth
+}
+
 // lexical retrieves role chunks by word, grouped to roles in rank order.
 func (s *ShortlistService) lexical(
 	initiativeID uint, text string, anyTerms bool, allowed map[uint]bool,
@@ -267,7 +280,7 @@ func (s *ShortlistService) lexical(
 	if anyTerms {
 		find = s.search.SearchAny
 	}
-	hits, err := find(initiativeID, text, perQueryDepth)
+	hits, err := find(initiativeID, text, s.depth())
 	if err != nil {
 		return nil, err
 	}
@@ -276,7 +289,7 @@ func (s *ShortlistService) lexical(
 
 // semantic retrieves role chunks by meaning, grouped to roles in rank order.
 func (s *ShortlistService) semantic(initiativeID uint, text string, allowed map[uint]bool) ([]uint, error) {
-	hits, err := s.embed.SemanticSearch(initiativeID, text, perQueryDepth)
+	hits, err := s.embed.SemanticSearch(initiativeID, text, s.depth())
 	if err != nil {
 		// Deliberately swallowed: no embedding space yet is the ordinary state
 		// before anything is embedded, and it is not a failure of the

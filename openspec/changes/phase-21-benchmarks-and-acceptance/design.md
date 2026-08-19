@@ -59,17 +59,21 @@ The benchmark needs real models, so it lives where the existing live-model gates
 ### What the benchmark may not be used to tune
 
 The frozen corpus diagnoses; it does not get to set constants. Measured against
-it, the fusion is flattening: `perQueryDepth` is thirty against twenty eligible
-roles, so every role matching a query at all enters every list, and reciprocal
-rank fusion at K=60 scores rank thirty at 1/90 against rank one at 1/61. Ten
-weak appearances beat three strong ones, which is why an embedded listing
-reached a frontend candidate's top five.
+it, the fusion looked like it was flattening: `perQueryDepth` is thirty against
+twenty eligible roles, so every role matching a query at all enters every list,
+and reciprocal rank fusion at K=60 separates rank thirty from rank one by less
+than a third.
 
-Lowering K or the depth would probably move the matching benchmark from three
-scenarios to four. Doing it here would be fitting a retrieval constant to the
-held-out set — the one thing freezing the corpus exists to prevent — and it
-would make every number measured afterwards meaningless. The PRD says to tune
-only on separate non-held-out data, and that is where this belongs.
+Rather than change a constant against the held-out set, a separate tuning
+corpus was built — different companies, cities, and domains, with a test
+refusing any overlap — and the constants swept on it. The result was flat: K at
+5, 10, 20 and 60 scored identically, and depth mattered only below ten. **The
+shipped constants are already the best available, and the hypothesis was
+wrong.**
+
+That is the argument for tuning where you are allowed to: on the frozen corpus
+the change would have looked like an improvement, been indistinguishable from
+one, and been a coincidence.
 
 A defect is different from a constant. ORing the word "the" into every query
 was a defect, and fixing it was not tuning.
