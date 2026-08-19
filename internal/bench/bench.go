@@ -244,17 +244,19 @@ func ScoreClassifier(listing Listing, extracted []profile.Aspect, sources map[ui
 		}
 		matched := false
 		for _, got := range candidates {
+			// A field the source never states is a value introduced, which is
+			// the other half of the PRD's rule: "no unsupported must-have,
+			// location, work-rights, employment-type, or compensation value is
+			// introduced". Counted whether or not the rest was reproduced —
+			// only counting it on the constraints that were otherwise right
+			// hid the invented values on the ones that were not.
+			for _, extra := range extraFields(want.Structured, got.Structured) {
+				score.Unsupported = append(score.Unsupported,
+					fmt.Sprintf("%s: %s=%v, which the source does not state",
+						want.Type, extra, got.Structured[extra]))
+			}
 			if reproduces(want.Structured, got.Structured) {
 				matched = true
-				// A field the source never states is a value introduced, which
-				// is the other half of the PRD's rule: "no unsupported
-				// must-have, location, work-rights, employment-type, or
-				// compensation value is introduced".
-				for _, extra := range extraFields(want.Structured, got.Structured) {
-					score.Unsupported = append(score.Unsupported,
-						fmt.Sprintf("%s: %s=%v, which the source does not state",
-							want.Type, extra, got.Structured[extra]))
-				}
 				break
 			}
 		}

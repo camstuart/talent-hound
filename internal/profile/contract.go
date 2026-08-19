@@ -21,10 +21,10 @@ const (
 	// object", and strict decoding answered null every time — a hundred
 	// constraints in a row went unreported because of it.
 	SchemaVersion = "3"
-	// PromptVersion 4 shows the mapping from a phrase to a structured field.
-	// Version 3 named the fields and their values, and models still answered
-	// "in Melbourne" with an inferred country instead of the stated city.
-	PromptVersion = "4"
+	// PromptVersion 5 names the three normalization mistakes measured against
+	// the frozen corpus — inferring a country, a status, and a period that no
+	// source stated — because showing the right mapping did not stop them.
+	PromptVersion = "5"
 )
 
 // Citation is one piece of evidence for one aspect.
@@ -251,6 +251,15 @@ func Prompt(kind SubjectKind, sources []Source) string {
 	b.WriteString("Every aspect carries a structured object. For any type not listed above — ")
 	b.WriteString("skill, responsibility, experience, qualification, seniority, other — it is ")
 	b.WriteString("empty: {}. Leave a field out rather than filling it with a placeholder.\n")
+	// The three mistakes measured against the frozen corpus, named. Each is the
+	// same mistake in different clothes: answering with what is probably true
+	// instead of what the source says.
+	b.WriteString("Include a field only if the source states it in words. In particular:\n")
+	b.WriteString(`- a place name is the city, not the region: "in Sydney" is {"city": "Sydney"}` + "\n")
+	b.WriteString(`- a city does not state a country, and an onsite or hybrid role does not state remote_ok` + "\n")
+	b.WriteString(`- "we do not sponsor" states sponsorship_required false; it does not state a status` + "\n")
+	b.WriteString(`- a salary quoted as "base" states basis base; it does not state a period` + "\n")
+	b.WriteString(`- a rate quoted "per day" states period day and basis rate` + "\n")
 
 	b.WriteString("\nSources:\n")
 	for _, s := range sources {
