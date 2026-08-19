@@ -70,24 +70,73 @@ var booleanEvidence = map[string][]string{
 	"sponsorship_required": {"sponsor", "visa", "work rights", "right to work"},
 }
 
+// evidenceFrom is the text a structured value may be read from: the sentence
+// each citation quotes, taken from the source it cites.
+//
+// The quote alone is too narrow — a model citing "Remote" for a listing reading
+// "in Remote (Australia)" has quoted the place and dropped the country, and a
+// model citing "Australian work rights" from a sentence that continues "; we do
+// not sponsor" has quoted half of what it read. The whole chunk is too wide: a
+// chunk holds the entire listing, which is how a location once took its country
+// from a sentence about work rights. A sentence is what the citation is part of.
+func evidenceFrom(a Aspect, sources []Source) string {
+	byID := make(map[uint]string, len(sources))
+	for _, s := range sources {
+		byID[s.ChunkID] = s.Text
+	}
+	var b strings.Builder
+	for _, c := range a.Citations {
+		quote := trimBoundary(normalizeSpace(c.Quote))
+		b.WriteString(" " + strings.ToLower(quote))
+		text, ok := byID[c.ChunkID]
+		if !ok || quote == "" {
+			continue
+		}
+		for _, sentence := range sentencesIn(text) {
+			if strings.Contains(normalizeSpace(sentence), quote) {
+				b.WriteString(" " + strings.ToLower(normalizeSpace(sentence)))
+			}
+		}
+	}
+	return b.String()
+}
+
+// sentencesIn splits source text into sentences, which is where a citation
+// lives. A heading is its own sentence, so a quote from one cannot borrow the
+// paragraph beneath it.
+func sentencesIn(text string) []string {
+	out := []string{}
+	current := strings.Builder{}
+	flush := func() {
+		if s := strings.TrimSpace(current.String()); s != "" {
+			out = append(out, s)
+		}
+		current.Reset()
+	}
+	for _, r := range text {
+		current.WriteRune(r)
+		if r == '.' || r == '!' || r == '?' || r == '\n' {
+			flush()
+		}
+	}
+	flush()
+	return out
+}
+
 // DropUnsupportedStructured removes structured fields the aspect's own
 // citations do not support, and reports what it removed.
-func DropUnsupportedStructured(p *Proposal) []string {
+func DropUnsupportedStructured(p *Proposal, sources []Source) []string {
 	dropped := []string{}
 	for i := range p.Aspects {
 		aspect := &p.Aspects[i]
 		if len(aspect.Structured) == 0 {
 			continue
 		}
-		// The citations, and only the citations. The wording is the model's own
-		// restatement and nothing checks that it appears in any source, so
-		// counting it as evidence let a model write "Annual base salary of AUD
-		// 180,000" and then support a period of a year with its own sentence.
-		// Ten of twenty-three introduced values were exactly that.
-		quoted := ""
-		for _, c := range aspect.Citations {
-			quoted += " " + strings.ToLower(normalizeSpace(c.Quote))
-		}
+		// The cited sentences, never the model's own wording: nothing checks
+		// that the wording appears in any source, so counting it let a model
+		// write "Annual base salary of AUD 180,000" and support a period of a
+		// year with its own sentence.
+		quoted := evidenceFrom(*aspect, sources)
 
 		for field, value := range aspect.Structured {
 			if supportedBy(field, value, quoted) {
@@ -223,10 +272,12 @@ var derivable = []struct {
 		[]string{"australia", "australian"}, nil},
 	{[]AspectType{WorkRights}, "country", "New Zealand",
 		[]string{"new zealand", "nz "}, nil},
+	// Written without the closing bracket: a citation's trailing punctuation is
+	// trimmed before it is read, so "(Australia)" arrives as "(australia".
 	{[]AspectType{Location}, "country", "Australia",
-		[]string{"(australia)", "in australia", "australia)", ", australia"}, nil},
+		[]string{"(australia", "in australia", ", australia"}, nil},
 	{[]AspectType{Location}, "country", "New Zealand",
-		[]string{"(new zealand)", "in new zealand", "new zealand)", ", new zealand"}, nil},
+		[]string{"(new zealand", "in new zealand", ", new zealand"}, nil},
 	{[]AspectType{Compensation}, "basis", "base",
 		[]string{"base salary", "base plus", "base package", " base "}, nil},
 	{[]AspectType{Compensation}, "basis", "rate",
@@ -307,10 +358,7 @@ func NormalizeStructured(p *Proposal) []string {
 		if _, hasMin := aspect.Structured["minimum"]; hasMin || !hasMax {
 			continue
 		}
-		evidence := ""
-		for _, c := range aspect.Citations {
-			evidence += " " + normalizeSpace(c.Quote)
-		}
+		evidence := evidenceFrom(*aspect, nil)
 		// Only when the source quotes exactly one figure. Two figures are a
 		// range, and which is which is the model's to say.
 		if len(numbersIn(evidence)) != 1 {
@@ -332,20 +380,17 @@ func NormalizeStructured(p *Proposal) []string {
 // then omits them from the value beside it, on forty of a hundred constraints.
 // Doing it in code is both more reliable and auditable — and it fills only what
 // is absent, so a value the model did state is never overwritten.
-func DeriveStructured(p *Proposal) []string {
+func DeriveStructured(p *Proposal, sources []Source) []string {
 	filled := []string{}
 	for i := range p.Aspects {
 		aspect := &p.Aspects[i]
 		if _, carries := StructuredFields(aspect.Type); !carries {
 			continue
 		}
-		// Derived from the citations for the same reason: the wording is not
+		// From the cited sentences, for the same reason: the wording is not
 		// checked against any source, so deriving from it would be deriving
 		// from the model.
-		evidence := ""
-		for _, c := range aspect.Citations {
-			evidence += " " + strings.ToLower(normalizeSpace(c.Quote))
-		}
+		evidence := evidenceFrom(*aspect, sources)
 
 		for _, rule := range derivable {
 			if !appliesTo(rule.types, aspect.Type) {

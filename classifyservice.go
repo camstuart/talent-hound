@@ -180,12 +180,12 @@ func (s *ClassifyService) attempt(
 	// model could cite "we do not sponsor" and record a citizenship status.
 	// Unsupported values are dropped, like nulls: the wording still carries
 	// what the source said.
-	profile.DropUnsupportedStructured(&proposal)
+	profile.DropUnsupportedStructured(&proposal, sources)
 	// And fill what the evidence states outright and the model left out.
 	// Normalizing "AUD 180,000 base" into a basis of base is reading a word
 	// that is there, and doing it in code is more reliable than asking a model
 	// to remember on every listing.
-	profile.DeriveStructured(&proposal)
+	profile.DeriveStructured(&proposal, sources)
 	profile.NormalizeStructured(&proposal)
 	profile.AlignAcrossAspects(&proposal)
 	return proposal, profile.Validate(kind, proposal, sources), raw, nil

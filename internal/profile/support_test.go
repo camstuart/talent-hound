@@ -27,7 +27,7 @@ func TestAValueTheCitationDoesNotSupportIsDropped(t *testing.T) {
 			map[string]any{"currency": "AUD", "minimum": float64(180000), "period": "year", "basis": "base"}),
 	}}
 
-	dropped := DropUnsupportedStructured(&proposal)
+	dropped := DropUnsupportedStructured(&proposal, nil)
 
 	rights := proposal.Aspects[0].Structured
 	if _, ok := rights["status"]; ok {
@@ -61,7 +61,7 @@ func TestAStatedValueSurvives(t *testing.T) {
 			map[string]any{"employment_type": "permanent"}),
 	}}
 
-	if dropped := DropUnsupportedStructured(&proposal); len(dropped) != 0 {
+	if dropped := DropUnsupportedStructured(&proposal, nil); len(dropped) != 0 {
 		t.Fatalf("dropped values the source states: %v", dropped)
 	}
 }
@@ -72,7 +72,7 @@ func TestAnInferredPlaceIsDropped(t *testing.T) {
 		aspectWith(Location, "Melbourne", "hiring a platform engineer in Melbourne",
 			map[string]any{"city": "Melbourne", "country": "Australia", "remote_ok": false}),
 	}}
-	dropped := DropUnsupportedStructured(&proposal)
+	dropped := DropUnsupportedStructured(&proposal, nil)
 	got := proposal.Aspects[0].Structured
 	if got["city"] != "Melbourne" {
 		t.Fatalf("the stated city was dropped: %+v", got)
@@ -95,7 +95,7 @@ func TestEvidenceIsReadFromTheWordsNotTheFieldName(t *testing.T) {
 		aspectWith(Compensation, "AUD 900 per day", "AUD 900 per day",
 			map[string]any{"currency": "AUD", "minimum": float64(900), "period": "day", "basis": "rate"}),
 	}}
-	if dropped := DropUnsupportedStructured(&proposal); len(dropped) != 0 {
+	if dropped := DropUnsupportedStructured(&proposal, nil); len(dropped) != 0 {
 		t.Fatalf("dropped values the source states: %v", dropped)
 	}
 }
@@ -106,7 +106,7 @@ func TestASeparatedNumberIsSupported(t *testing.T) {
 		aspectWith(Compensation, "AUD 180,000 base", "AUD 180,000 base",
 			map[string]any{"minimum": float64(180000)}),
 	}}
-	if dropped := DropUnsupportedStructured(&proposal); len(dropped) != 0 {
+	if dropped := DropUnsupportedStructured(&proposal, nil); len(dropped) != 0 {
 		t.Fatalf("a separated number was called unsupported: %v", dropped)
 	}
 }
@@ -117,7 +117,7 @@ func TestAnInventedNumberIsDropped(t *testing.T) {
 		aspectWith(Compensation, "AUD 180,000 base", "AUD 180,000 base",
 			map[string]any{"minimum": float64(180000), "maximum": float64(220000)}),
 	}}
-	dropped := DropUnsupportedStructured(&proposal)
+	dropped := DropUnsupportedStructured(&proposal, nil)
 	if _, ok := proposal.Aspects[0].Structured["maximum"]; ok {
 		t.Fatal("an invented maximum survived")
 	}
@@ -142,7 +142,7 @@ func TestAValueTheEvidenceStatesOutrightIsFilledIn(t *testing.T) {
 		aspectWith(EmploymentType, "permanent", "offered as permanent work", map[string]any{}),
 	}}
 
-	DeriveStructured(&proposal)
+	DeriveStructured(&proposal, nil)
 
 	if got := proposal.Aspects[0].Structured["sponsorship_required"]; got != false {
 		t.Fatalf("sponsorship_required = %v, want false", got)
@@ -173,7 +173,7 @@ func TestANegationIsReadCorrectly(t *testing.T) {
 		proposal := Proposal{Aspects: []Aspect{
 			aspectWith(WorkRights, "work rights", tc.quote, map[string]any{}),
 		}}
-		DeriveStructured(&proposal)
+		DeriveStructured(&proposal, nil)
 		if got := proposal.Aspects[0].Structured["sponsorship_required"]; got != tc.want {
 			t.Fatalf("%q gave %v, want %v", tc.quote, got, tc.want)
 		}
@@ -189,7 +189,7 @@ func TestDerivationNeitherOverwritesNorInvents(t *testing.T) {
 		aspectWith(WorkRights, "work rights", "Australian work rights required.", map[string]any{}),
 	}}
 
-	DeriveStructured(&proposal)
+	DeriveStructured(&proposal, nil)
 
 	if proposal.Aspects[0].Structured["basis"] != "rate" {
 		t.Fatal("a stated basis was overwritten")
@@ -210,8 +210,8 @@ func TestWhatIsDerivedIsAlsoSupported(t *testing.T) {
 		aspectWith(WorkRights, "work rights", "we do not sponsor", map[string]any{}),
 		aspectWith(Compensation, "AUD 180,000 base", "AUD 180,000 base", map[string]any{}),
 	}}
-	DeriveStructured(&proposal)
-	if dropped := DropUnsupportedStructured(&proposal); len(dropped) != 0 {
+	DeriveStructured(&proposal, nil)
+	if dropped := DropUnsupportedStructured(&proposal, nil); len(dropped) != 0 {
 		t.Fatalf("the evidence check removed what was derived from evidence: %v", dropped)
 	}
 }
@@ -224,7 +224,7 @@ func TestACountryStatedByDemonymIsFilledIn(t *testing.T) {
 			"You must have existing Australian work rights; we do not sponsor.",
 			map[string]any{"sponsorship_required": false}),
 	}}
-	DeriveStructured(&proposal)
+	DeriveStructured(&proposal, nil)
 	if got := proposal.Aspects[0].Structured["country"]; got != "Australia" {
 		t.Fatalf("country = %v, want Australia", got)
 	}
@@ -236,7 +236,7 @@ func TestNoCountryIsInventedFromSilence(t *testing.T) {
 		aspectWith(WorkRights, "work rights required", "You must have the right to work here.",
 			map[string]any{}),
 	}}
-	DeriveStructured(&proposal)
+	DeriveStructured(&proposal, nil)
 	if _, ok := proposal.Aspects[0].Structured["country"]; ok {
 		t.Fatalf("a country was invented: %+v", proposal.Aspects[0].Structured)
 	}
@@ -250,7 +250,7 @@ func TestANumberIsMatchedWholeNotAsDigitsInsideAnother(t *testing.T) {
 		aspectWith(WorkArrangement, "hybrid", "This is a hybrid role at AUD 180,000 base.",
 			map[string]any{"arrangement": "hybrid", "days_onsite": float64(0)}),
 	}}
-	DropUnsupportedStructured(&proposal)
+	DropUnsupportedStructured(&proposal, nil)
 	if _, ok := proposal.Aspects[0].Structured["days_onsite"]; ok {
 		t.Fatalf("a zero read out of a salary survived: %+v", proposal.Aspects[0].Structured)
 	}
@@ -265,7 +265,7 @@ func TestASeparatedNumberIsStillTheSameNumber(t *testing.T) {
 		proposal := Proposal{Aspects: []Aspect{
 			aspectWith(Compensation, "salary", quote, map[string]any{"minimum": float64(180000)}),
 		}}
-		if dropped := DropUnsupportedStructured(&proposal); len(dropped) != 0 {
+		if dropped := DropUnsupportedStructured(&proposal, nil); len(dropped) != 0 {
 			t.Fatalf("%q: the stated number was called unsupported", quote)
 		}
 	}
@@ -281,7 +281,7 @@ func TestAModelCannotSupportAValueWithItsOwnWording(t *testing.T) {
 			map[string]any{"currency": "AUD", "minimum": float64(180000),
 				"basis": "base", "period": "year"}),
 	}}
-	DropUnsupportedStructured(&proposal)
+	DropUnsupportedStructured(&proposal, nil)
 	got := proposal.Aspects[0].Structured
 	if _, ok := got["period"]; ok {
 		t.Fatalf("a period supported only by the model's own wording survived: %+v", got)
@@ -298,7 +298,7 @@ func TestALocationCountryIsNotDerivedFromWorkRightsWording(t *testing.T) {
 			"hiring a senior platform engineer in Melbourne. You must have existing Australian work rights.",
 			map[string]any{"city": "Melbourne"}),
 	}}
-	DeriveStructured(&proposal)
+	DeriveStructured(&proposal, nil)
 	if _, ok := proposal.Aspects[0].Structured["country"]; ok {
 		t.Fatalf("a country was read off the work-rights sentence: %+v", proposal.Aspects[0].Structured)
 	}
@@ -307,7 +307,7 @@ func TestALocationCountryIsNotDerivedFromWorkRightsWording(t *testing.T) {
 		aspectWith(WorkRights, "Australian work rights",
 			"You must have existing Australian work rights.", map[string]any{}),
 	}}
-	DeriveStructured(&rights)
+	DeriveStructured(&rights, nil)
 	if rights.Aspects[0].Structured["country"] != "Australia" {
 		t.Fatalf("the work rights lost their country: %+v", rights.Aspects[0].Structured)
 	}
@@ -363,7 +363,7 @@ func TestARemoteRoleStatesItsLocationIsRemote(t *testing.T) {
 		aspectWith(Location, "Sydney", "hiring an engineer in Sydney. This is a hybrid role.",
 			map[string]any{"city": "Sydney"}),
 	}}
-	DeriveStructured(&proposal)
+	DeriveStructured(&proposal, nil)
 	if proposal.Aspects[0].Structured["remote_ok"] != true {
 		t.Fatalf("a remote role did not state remote_ok: %+v", proposal.Aspects[0].Structured)
 	}
@@ -379,7 +379,7 @@ func TestALocationCountryComesFromPlacePhrasing(t *testing.T) {
 		aspectWith(Location, "Remote (Australia)", "hiring a platform engineer in Remote (Australia)",
 			map[string]any{"remote_ok": true}),
 	}}
-	DeriveStructured(&stated)
+	DeriveStructured(&stated, nil)
 	if stated.Aspects[0].Structured["country"] != "Australia" {
 		t.Fatalf("a stated country was not read: %+v", stated.Aspects[0].Structured)
 	}
@@ -388,7 +388,7 @@ func TestALocationCountryComesFromPlacePhrasing(t *testing.T) {
 		aspectWith(Location, "Melbourne", "in Melbourne. You must have Australian work rights.",
 			map[string]any{"city": "Melbourne"}),
 	}}
-	DeriveStructured(&adjective)
+	DeriveStructured(&adjective, nil)
 	if _, ok := adjective.Aspects[0].Structured["country"]; ok {
 		t.Fatalf("a country was read off the work-rights adjective: %+v", adjective.Aspects[0].Structured)
 	}
@@ -437,5 +437,52 @@ func TestAnOnsiteArrangementFillsNothing(t *testing.T) {
 	AlignAcrossAspects(&proposal)
 	if _, ok := proposal.Aspects[0].Structured["remote_ok"]; ok {
 		t.Fatalf("an onsite role set remote_ok: %+v", proposal.Aspects[0].Structured)
+	}
+}
+
+// A citation is part of a sentence, and the sentence is what it was read from.
+//
+// The quote alone is too narrow: a model citing "Australian work rights" from a
+// sentence continuing "; we do not sponsor" has quoted half of what it read.
+func TestEvidenceIsTheCitedSentence(t *testing.T) {
+	sources := []Source{{ChunkID: 1, Text: "## Requirements\n\n" +
+		"You must have existing Australian work rights; we do not sponsor.\n" +
+		"The role is based in Melbourne.\n"}}
+	proposal := Proposal{Aspects: []Aspect{
+		aspectWith(WorkRights, "Australian work rights", "existing Australian work rights",
+			map[string]any{}),
+	}}
+	DeriveStructured(&proposal, sources)
+	got := proposal.Aspects[0].Structured
+	if got["country"] != "Australia" || got["sponsorship_required"] != false {
+		t.Fatalf("the cited sentence was not read: %+v", got)
+	}
+}
+
+// The chunk is not the sentence. A location citing its own sentence does not
+// take a country from the work-rights sentence beside it — which is how eleven
+// wrong countries got in.
+func TestEvidenceStopsAtTheSentence(t *testing.T) {
+	sources := []Source{{ChunkID: 1, Text: "Hiring a platform engineer in Melbourne. " +
+		"You must have existing Australian work rights."}}
+	proposal := Proposal{Aspects: []Aspect{
+		aspectWith(Location, "Melbourne", "in Melbourne", map[string]any{"city": "Melbourne"}),
+	}}
+	DeriveStructured(&proposal, sources)
+	if _, ok := proposal.Aspects[0].Structured["country"]; ok {
+		t.Fatalf("a country crossed a sentence boundary: %+v", proposal.Aspects[0].Structured)
+	}
+}
+
+// And a value stated nowhere in the cited sentence is still dropped.
+func TestASentenceDoesNotSupportWhatItDoesNotSay(t *testing.T) {
+	sources := []Source{{ChunkID: 1, Text: "Offered at AUD 180,000 base. The team works from Sydney."}}
+	proposal := Proposal{Aspects: []Aspect{
+		aspectWith(Compensation, "AUD 180,000 base", "AUD 180,000 base",
+			map[string]any{"currency": "AUD", "minimum": float64(180000), "period": "year"}),
+	}}
+	DropUnsupportedStructured(&proposal, sources)
+	if _, ok := proposal.Aspects[0].Structured["period"]; ok {
+		t.Fatalf("a period nobody stated survived: %+v", proposal.Aspects[0].Structured)
 	}
 }
