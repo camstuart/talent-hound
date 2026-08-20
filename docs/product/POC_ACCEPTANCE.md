@@ -150,6 +150,16 @@ it.
 | 23 | 14B | 99% | 0 | 2 | 4 | **4** | **aspect-level retrieval**, evidence from citations only |
 | 26 | 14B | 99% | 0 | 0 | 3 | 4 | place phrasing, remote arrangement, sentence scope |
 | 28 | 14B | 99% | 0 | 0 | **1** | 4 | wording verbatim in a source counts as evidence |
+| 29 | 14B | 99% | 0 | 8 | 1 | 4 | a dedicated normalization call — **withdrawn**: it recovered nothing and answered requires_sponsorship on eight listings that refuse it |
+| 30 | 14B | 99% | 0 | **0** | **1** | **4** | that value refused when its only evidence is its own negation |
+
+Run 29 is the third measured change withdrawn after measuring, with the
+constraint checklist of run 18 and the fusion constants that were never
+touched. It earned its cost anyway: the evidence check had been accepting
+requires_sponsorship because the word "sponsor" appears in "we do not sponsor",
+and no model had happened to emit that value before. Left alone, the product
+would have recorded that a candidate requires sponsorship from a listing
+stating the opposite, and the assessment step would have compared against it.
 
 Run 9 is why the rest are trustworthy: nineteen points below run 8 with no code
 between them. Everything before temperature 0 was sampled, so no earlier number
@@ -164,8 +174,8 @@ good the ranking is.
 ### Frozen benchmark run, development machine
 
 `just bench`, about ninety minutes per run with the 14B and the two-pass
-classifier. Best configuration: run 28, record
-`docs/product/benchmarks/benchmark-2026-08-19T20-03-44Z.json`.
+classifier. Best configuration: run 30, record
+`docs/product/benchmarks/benchmark-2026-08-20T00-15-23Z.json`.
 
 Models: classify `qwen2.5:14b-instruct`, embed `nomic-embed-text`.
 
@@ -191,6 +201,13 @@ Deriving it would mean knowing that "Melbourne" is a city while "Remote" and
 "New Zealand" in the same grammatical position are not, which needs a
 gazetteer. That is the inference this phase spent nine commits removing from
 the product, and it is not being added back to move a number.
+
+Three approaches were tried against this one error. Scoping evidence to the
+cited sentence worked and is kept. Counting wording that appears verbatim in a
+source worked and is kept — together they took the count from three to one.
+Asking the model again about the single phrase, with nothing else in the
+prompt, recovered nothing and was withdrawn. What is left needs either a
+gazetteer or a looser evidence rule, and neither was added.
 
 **Model selection consequence.****Model selection consequence.****Model selection consequence.****Model selection consequence.** Three models were tried on this machine and
 none is a candidate for the pinned classify role:
