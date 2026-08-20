@@ -32,8 +32,6 @@ type fakeClassifier struct {
 	// each time, so a fixed script would have to know the plan's order — and a
 	// test that encodes the plan's order tests the plan, not the contract.
 	respond func(prompt string) string
-	// normalized answers the per-aspect normalization call, when a test cares.
-	normalized string
 }
 
 func (f *fakeClassifier) Chat(_ context.Context, _ string, prompt string, _ map[string]any) (string, error) {
@@ -46,17 +44,6 @@ func (f *fakeClassifier) Chat(_ context.Context, _ string, prompt string, _ map[
 	}
 	if f.respond != nil {
 		return f.respond(prompt), nil
-	}
-	// A normalization call asks about one aspect and takes no scripted turn:
-	// it is a follow-up the service makes on its own, and counting it would
-	// make every script depend on how many constraints happened to be
-	// incomplete.
-	if strings.HasPrefix(prompt, "You record the normalized value") {
-		f.calls--
-		if f.normalized != "" {
-			return f.normalized, nil
-		}
-		return "{}", nil
 	}
 	if len(f.responses) == 0 {
 		return "", errors.New("no scripted response")
@@ -746,113 +733,4 @@ Hiring a data engineer in Melbourne. This is a remote role.
 		return
 	}
 	t.Fatal("no location survived the merge")
-}
-
-// A model asked about one phrase, with nothing else in the prompt, has one
-// thing to get right — and what it returns is checked exactly as the first
-// answer was.
-func TestAnIncompleteConstraintIsAskedAboutAgain(t *testing.T) {
-	e := newClassifyEnv(t)
-	const listing = `# Backend engineer
-
-## About
-
-Hiring a backend engineer (contract) in Melbourne. This is a remote role.
-`
-	ids := e.withSource(t, "role", listing)
-	e.assignClassify(t, "synthetic-classify")
-
-	chunk := ids[0]
-	for _, c := range e.chunks2 {
-		if strings.Contains(c.Text, "Melbourne") {
-			chunk = c.ID
-		}
-	}
-	raw, err := json.Marshal(profile.Proposal{Aspects: []profile.Aspect{{
-		Type: profile.Location, Wording: "remote role in Melbourne",
-		// The city is in the evidence and missing from the value.
-		Structured: map[string]any{"remote_ok": true},
-		// Cited across both facts, so both are supported: the check drops a
-		// value whose sentence does not state it, which is its job.
-		Citations: []profile.Citation{{ChunkID: chunk,
-			Quote: "Hiring a backend engineer (contract) in Melbourne. This is a remote role."}},
-	}}})
-	if err != nil {
-		t.Fatalf("building: %v", err)
-	}
-	e.model.responses = []string{string(raw)}
-	e.model.normalized = `{"city":"Melbourne","remote_ok":true}`
-
-	p, err := e.classify.Classify(ClassifyInput{
-		SubjectKind: profile.SubjectRole, SubjectID: 1, ChunkIDs: ids})
-	if err != nil {
-		t.Fatalf("classifying: %v", err)
-	}
-	aspects, err := e.classify.Aspects(p.ID)
-	if err != nil {
-		t.Fatalf("reading aspects: %v", err)
-	}
-	for _, a := range aspects {
-		if a.Type != profile.Location {
-			continue
-		}
-		if a.Structured["city"] != "Melbourne" {
-			t.Fatalf("the recovered city is missing: %+v", a.Structured)
-		}
-		if a.Structured["remote_ok"] != true {
-			t.Fatalf("the original value was lost: %+v", a.Structured)
-		}
-		return
-	}
-	t.Fatal("no location survived")
-}
-
-// It can recover a value and never introduce one: what comes back goes through
-// the same evidence check as everything else.
-func TestTheNormalizationPassCannotIntroduceAValue(t *testing.T) {
-	e := newClassifyEnv(t)
-	const listing = `# Backend engineer
-
-## About
-
-Hiring a backend engineer in Melbourne.
-`
-	ids := e.withSource(t, "role", listing)
-	e.assignClassify(t, "synthetic-classify")
-	chunk := ids[0]
-	for _, c := range e.chunks2 {
-		if strings.Contains(c.Text, "Melbourne") {
-			chunk = c.ID
-		}
-	}
-	raw, _ := json.Marshal(profile.Proposal{Aspects: []profile.Aspect{{
-		Type: profile.Location, Wording: "Melbourne",
-		Structured: map[string]any{"city": "Melbourne"},
-		Citations:  []profile.Citation{{ChunkID: chunk, Quote: "in Melbourne"}},
-	}}})
-	e.model.responses = []string{string(raw)}
-	// Nothing in the source says either of these.
-	e.model.normalized = `{"country":"Australia","remote_ok":true}`
-
-	p, err := e.classify.Classify(ClassifyInput{
-		SubjectKind: profile.SubjectRole, SubjectID: 1, ChunkIDs: ids})
-	if err != nil {
-		t.Fatalf("classifying: %v", err)
-	}
-	aspects, _ := e.classify.Aspects(p.ID)
-	for _, a := range aspects {
-		if a.Type != profile.Location {
-			continue
-		}
-		for _, invented := range []string{"country", "remote_ok"} {
-			if _, ok := a.Structured[invented]; ok {
-				t.Fatalf("the normalization pass introduced %q: %+v", invented, a.Structured)
-			}
-		}
-		if a.Structured["city"] != "Melbourne" {
-			t.Fatalf("the stated city was lost: %+v", a.Structured)
-		}
-		return
-	}
-	t.Fatal("no location survived")
 }

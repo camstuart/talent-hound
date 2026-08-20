@@ -530,3 +530,27 @@ func TestVerbatimWordingDoesNotSupportWhatItDoesNotSay(t *testing.T) {
 		t.Fatalf("a period nobody stated survived: %+v", proposal.Aspects[0].Structured)
 	}
 }
+
+// "We do not sponsor" contains the word sponsor and states the opposite of
+// needing sponsorship. A value whose only evidence is a word inside its own
+// negation is not evidenced.
+func TestSponsorshipIsNotEvidencedByItsOwnNegation(t *testing.T) {
+	refusing := Proposal{Aspects: []Aspect{
+		aspectWith(WorkRights, "work rights", "You must have existing work rights; we do not sponsor.",
+			map[string]any{"status": "requires_sponsorship"}),
+	}}
+	DropUnsupportedStructured(&refusing, nil)
+	if _, ok := refusing.Aspects[0].Structured["status"]; ok {
+		t.Fatalf("a status read out of its own negation survived: %+v", refusing.Aspects[0].Structured)
+	}
+
+	// A source that does state it keeps it.
+	offering := Proposal{Aspects: []Aspect{
+		aspectWith(WorkRights, "work rights", "Sponsorship is required for this role.",
+			map[string]any{"status": "requires_sponsorship"}),
+	}}
+	DropUnsupportedStructured(&offering, nil)
+	if offering.Aspects[0].Structured["status"] != "requires_sponsorship" {
+		t.Fatalf("a stated status was dropped: %+v", offering.Aspects[0].Structured)
+	}
+}

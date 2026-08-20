@@ -130,8 +130,6 @@ func (s *ClassifyService) Classify(in ClassifyInput) (*models.Profile, error) {
 		// a location from the decomposition and an arrangement from the
 		// constraints pass have nothing to say to each other until then.
 		normalize(&proposal, sources)
-		s.fillConstraints(ctx, assignment.Model, &proposal, sources)
-		normalize(&proposal, sources)
 		if problems := profile.Validate(in.SubjectKind, proposal, sources); len(problems) > 0 {
 			return nil, s.fail(in, models.ReasonInvalidProposal, assignment.Revision, assignment.Model,
 				fmt.Errorf("the merged profile did not satisfy the contract:\n- %s",
@@ -165,59 +163,6 @@ func (s *ClassifyService) constraints(
 		return profile.Proposal{}, fmt.Errorf("the constraints pass did not satisfy the contract")
 	}
 	return proposal, nil
-}
-
-// fillConstraints asks about one incomplete constraint at a time.
-//
-// A decomposition prompt carries eleven types, citations, priorities, and a
-// vocabulary, and the normalized value is what a model drops when it is busy:
-// measured against the frozen corpus it recorded a location worded "remote role
-// in Melbourne", cited the sentence naming Melbourne, and left the city out —
-// having filled the same field correctly on another listing in the same run.
-// Asked about that one phrase, with nothing else in the prompt, it has one
-// thing to get right.
-//
-// Whatever comes back is merged and then normalized again, so a field the
-// evidence does not support is dropped exactly as it would have been the first
-// time. Nothing here can introduce a value; it can only recover one.
-//
-// ponytail: one short call per incomplete constraint, up to five per document.
-// On a CPU-only laptop that is a minute or two, paid only where a value is
-// actually missing — and a constraint nobody recorded cannot be compared
-// against later, which is the whole point of recording it.
-func (s *ClassifyService) fillConstraints(
-	ctx context.Context, model string, proposal *profile.Proposal, sources []profile.Source,
-) {
-	for i := range proposal.Aspects {
-		aspect := &proposal.Aspects[i]
-		if !profile.Incomplete(*aspect) {
-			continue
-		}
-		evidence := profile.EvidenceFor(*aspect, sources)
-		if strings.TrimSpace(evidence) == "" {
-			continue
-		}
-		raw, err := s.model.Chat(ctx, model,
-			profile.NormalizePrompt(aspect.Type, aspect.Wording, evidence),
-			profile.NormalizeSchema(aspect.Type))
-		if err != nil {
-			continue
-		}
-		var filled map[string]any
-		if err := json.Unmarshal([]byte(strings.TrimSpace(raw)), &filled); err != nil {
-			continue
-		}
-		if aspect.Structured == nil {
-			aspect.Structured = map[string]any{}
-		}
-		for field, value := range filled {
-			// Never overwrites: the first answer saw the whole document.
-			if _, already := aspect.Structured[field]; already || value == nil {
-				continue
-			}
-			aspect.Structured[field] = value
-		}
-	}
 }
 
 // normalize is everything done to a proposal between reading it and judging it.

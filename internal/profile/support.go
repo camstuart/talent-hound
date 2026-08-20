@@ -40,11 +40,16 @@ var evidenceFor = map[string]map[string][]string{
 		"unknown":    {},
 	},
 	"status": {
-		"citizen":              {"citizen"},
-		"permanent_resident":   {"permanent resident", "residency"},
-		"visa_holder":          {"visa"},
-		"requires_sponsorship": {"sponsor"},
-		"unknown":              {},
+		"citizen":            {"citizen"},
+		"permanent_resident": {"permanent resident", "residency"},
+		"visa_holder":        {"visa"},
+		// "sponsor" alone is not evidence of needing sponsorship: the sentence
+		// that contains it most often is "we do not sponsor", which states the
+		// opposite. Measured, when a model asked about one phrase answered
+		// requires_sponsorship on eight listings that refuse it.
+		"requires_sponsorship": {"sponsorship required", "will require sponsorship",
+			"sponsorship is required", "requires sponsorship"},
+		"unknown": {},
 	},
 	"period": {
 		"hour":    {"hour", "hourly", "/hr", "per hr"},
