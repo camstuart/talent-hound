@@ -30,6 +30,8 @@ silently between now and the day the laptop is available.
 | The desktop binary cross-compiles for Windows | PASS — 26 MB |
 | The server binary cross-compiles for Windows | PASS — 26 MB |
 | Windows-only sources compile: credential store, BitLocker check, job objects | PASS — they are skipped by filename on this host, which is why the cross-build is in the routine run |
+| The installer's identity is the product's own | PASS — it shipped as "My Product" by "My Company" at version 0.0.1 until this was checked |
+| The installer's version matches what the application reports | PASS — a diagnostic report that disagrees with Add/Remove Programs is one nobody can act on |
 
 What this does not check is anything about running: linking is not launching,
 and every row below still needs the machine.

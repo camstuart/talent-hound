@@ -5,11 +5,11 @@
 	"info": {
 		"0000": {
 			"ProductVersion": "0.1.0",
-			"CompanyName": "My Company",
-			"FileDescription": "Local-first AI desktop app",
-			"LegalCopyright": "© 2026, My Company",
+			"CompanyName": "Cam Stuart",
+			"FileDescription": "A local-first recruiting workspace",
+			"LegalCopyright": "© 2026, Cam Stuart",
 			"ProductName": "Talent Hound",
-			"Comments": "This is a comment"
+			"Comments": "Everything stays on this machine."
 		}
 	}
 }
