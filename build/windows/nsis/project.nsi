@@ -33,6 +33,7 @@ Unicode true
 ####
 ## Include the wails tools
 ####
+!include "LogicLib.nsh"
 !include "wails_tools.nsh"
 
 # The version information for this two must consist of 4 parts
@@ -105,6 +106,11 @@ SectionEnd
 Section "uninstall" 
     !insertmacro wails.setShellContext
 
+    # The WebView2 data path, which is a directory named after the executable —
+    # "talent-hound.exe" — and is four characters from the recruiter's data
+    # folder, "talent-hound", in the same parent. Removing the wrong one would
+    # destroy every record, document, and profile they hold, silently, during an
+    # uninstall. It is left spelled out rather than shortened.
     RMDir /r "$AppData\${PRODUCT_EXECUTABLE}" # Remove the WebView2 DataPath
 
     RMDir /r $INSTDIR
@@ -116,4 +122,18 @@ Section "uninstall"
     !insertmacro wails.unassociateCustomProtocols
 
     !insertmacro wails.deleteUninstaller
+
+    # The data folder is deliberately kept: it holds every record, document,
+    # profile, and index, and an uninstall is not a decision to destroy them.
+    # Saying where it is turns "my data is gone" into a folder they can open.
+    DetailPrint "Your data folder has been left in place: $AppData\${INFO_PROJECTNAME}"
+    ${IfNot} ${Silent}
+        MessageBox MB_OK|MB_ICONINFORMATION \
+            "${INFO_PRODUCTNAME} has been removed.$\r$\n$\r$\n\
+            Your data folder has not been touched. It is still here:$\r$\n\
+            $AppData\${INFO_PROJECTNAME}$\r$\n$\r$\n\
+            It holds your records, documents, and profiles. Delete it yourself \
+            if you no longer need them. Your saved provider keys are in the \
+            Windows Credential Manager and are also left in place."
+    ${EndIf}
 SectionEnd

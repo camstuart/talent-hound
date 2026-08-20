@@ -32,6 +32,8 @@ silently between now and the day the laptop is available.
 | Windows-only sources compile: credential store, BitLocker check, job objects | PASS — they are skipped by filename on this host, which is why the cross-build is in the routine run |
 | The installer's identity is the product's own | PASS — it shipped as "My Product" by "My Company" at version 0.0.1 until this was checked |
 | The installer's version matches what the application reports | PASS — a diagnostic report that disagrees with Add/Remove Programs is one nobody can act on |
+| The uninstaller removes no AppData folder but the WebView2 one | PASS — on Windows the data folder is `%AppData%\talent-hound` and the WebView2 directory is `%AppData%\talent-hound.exe`, four characters apart in the same parent |
+| The uninstaller says where the data folder is | PASS — printed to the log, and shown when the uninstall is not silent, along with the credential store |
 
 What this does not check is anything about running: linking is not launching,
 and every row below still needs the machine.
@@ -46,8 +48,8 @@ and every row below still needs the machine.
 | Sidecar is installed beside the application at the expected path | NOT RUN | |
 | Sidecar reports the pinned version from the packaged build | NOT RUN | |
 | Upgrade over the previous build keeps the data folder | NOT RUN | |
-| Uninstall removes the application and leaves the data folder | NOT RUN | |
-| Uninstall documents where the data folder is | NOT RUN | |
+| Uninstall removes the application and leaves the data folder | NOT RUN — the script is checked, the behaviour is not |
+| Uninstall documents where the data folder is | NOT RUN — the message exists and is pinned by a test; nobody has read it on Windows |
 | Reinstall over a retained data folder opens it | NOT RUN | |
 
 ## Defender and SmartScreen

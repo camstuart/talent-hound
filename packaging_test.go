@@ -111,3 +111,47 @@ func TestTheInstallerVersionMatchesTheApplication(t *testing.T) {
 		t.Fatalf("build/config.yml does not carry version %q", numeric)
 	}
 }
+
+// The uninstaller runs on a machine this suite never runs on, and it is the one
+// place a mistake destroys everything a recruiter holds. On Windows the data
+// folder is %AppData%\talent-hound, and the WebView2 directory the uninstaller
+// does remove is %AppData%\talent-hound.exe — four characters apart, in the
+// same parent.
+func TestTheUninstallerKeepsTheDataFolderAndSaysWhereItIs(t *testing.T) {
+	raw, err := os.ReadFile("build/windows/nsis/project.nsi")
+	if err != nil {
+		t.Fatalf("reading the installer script: %v", err)
+	}
+	script := string(raw)
+	start := strings.Index(script, `Section "uninstall"`)
+	if start < 0 {
+		t.Fatal("the installer script has no uninstall section")
+	}
+	uninstall := script[start:]
+
+	// Nothing may recursively remove the data folder. The WebView2 directory is
+	// named for the executable and keeps its suffix.
+	for _, line := range strings.Split(uninstall, "\n") {
+		trimmed := strings.TrimSpace(line)
+		if strings.HasPrefix(trimmed, "#") || !strings.Contains(trimmed, "RMDir") {
+			continue
+		}
+		if !strings.Contains(trimmed, "$AppData") {
+			continue
+		}
+		if !strings.Contains(trimmed, "PRODUCT_EXECUTABLE") {
+			t.Fatalf("the uninstaller removes an AppData folder that is not the WebView2 one: %q", trimmed)
+		}
+	}
+
+	// And it says where the data is, rather than leaving the recruiter to
+	// wonder whether it went with the application.
+	for _, required := range []string{"data folder", "INFO_PROJECTNAME", "Credential Manager"} {
+		if !strings.Contains(uninstall, required) {
+			t.Fatalf("the uninstaller never mentions %q", required)
+		}
+	}
+	if !strings.Contains(uninstall, "DetailPrint") {
+		t.Fatal("the uninstaller says nothing in a silent uninstall's log")
+	}
+}
