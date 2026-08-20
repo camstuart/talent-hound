@@ -209,6 +209,18 @@ Asking the model again about the single phrase, with nothing else in the
 prompt, recovered nothing and was withdrawn. What is left needs either a
 gazetteer or a looser evidence rule, and neither was added.
 
+### A 32B was tried and is not viable on this class of machine
+
+`qwen2.5:32b-instruct`, 19 GB, pulled and run against the same corpus. The
+first listing exceeded the six-minute classify budget, and a one-line prompt
+sent directly to the endpoint had not returned after ten minutes. The run was
+stopped and the model removed.
+
+That is a finding about the hardware, not the model: the PoC's target is a
+16 GB CPU-only laptop, so a 32B was never going to be viable there either. It
+rules out "use a bigger model" as the answer to the one remaining constraint,
+on this class of machine.
+
 **Model selection consequence.****Model selection consequence.****Model selection consequence.****Model selection consequence.** Three models were tried on this machine and
 none is a candidate for the pinned classify role:
 
