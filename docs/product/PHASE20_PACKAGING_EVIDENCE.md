@@ -19,6 +19,21 @@ just check                     # the full suite on the target machine
 
 Then work through the tables below on the packaged build, not on `just dev`.
 
+## What is checked from here
+
+These run in `just check` on any machine, so the Windows-only code cannot break
+silently between now and the day the laptop is available.
+
+| Check | Result |
+| --- | --- |
+| Every package vets for `GOOS=windows` | PASS — in `just vet-gates` |
+| The desktop binary cross-compiles for Windows | PASS — 26 MB |
+| The server binary cross-compiles for Windows | PASS — 26 MB |
+| Windows-only sources compile: credential store, BitLocker check, job objects | PASS — they are skipped by filename on this host, which is why the cross-build is in the routine run |
+
+What this does not check is anything about running: linking is not launching,
+and every row below still needs the machine.
+
 ## Installer
 
 | Check | Result | Notes |

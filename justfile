@@ -70,13 +70,19 @@ fixtures:
 qa: lint-go sec vuln typecheck lint-ts dupes vet-gates
 
 # Keep the build-tagged gate code compiling even though routine runs skip it.
-# On non-Windows hosts the *_windows.go files are skipped by filename; run
-# `GOOS=windows go vet -tags windowsgate ./internal/platform/` to cover those too.
+#
+# On non-Windows hosts the *_windows.go files are skipped by filename, so the
+# credential store, the BitLocker check, and the job-object containment are
+# never compiled by a routine run — a typo in them would wait until packaging
+# day. This vets every package for Windows and builds both binaries that ship.
 vet-gates:
     go vet -tags windowsgate ./internal/platform/
     go vet -tags livemodel ./internal/platform/
     go vet -tags livemodel .
     GOOS=windows go vet -tags windowsgate .
+    GOOS=windows go vet ./...
+    GOOS=windows go build -o /dev/null .
+    GOOS=windows go build -tags server -o /dev/null .
 
 # Go meta-linter (staticcheck, govet, errcheck, revive, gocritic, gosec, gofmt/goimports, ...)
 lint-go:
