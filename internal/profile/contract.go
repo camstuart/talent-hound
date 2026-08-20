@@ -359,6 +359,23 @@ func ConstraintSchema(kind SubjectKind) map[string]any {
 	return schema
 }
 
+// appendCitations adds citations an aspect does not already carry.
+func appendCitations(held, incoming []Citation) []Citation {
+	seen := map[string]bool{}
+	for _, c := range held {
+		seen[fmt.Sprintf("%d|%s|%s", c.ChunkID, c.Quote, c.Record)] = true
+	}
+	for _, c := range incoming {
+		key := fmt.Sprintf("%d|%s|%s", c.ChunkID, c.Quote, c.Record)
+		if seen[key] {
+			continue
+		}
+		seen[key] = true
+		held = append(held, c)
+	}
+	return held
+}
+
 // MergeConstraints adds constraint aspects the first pass did not record.
 //
 // It never replaces one: the first pass saw the whole document and its aspect
@@ -390,6 +407,7 @@ func MergeConstraints(base *Proposal, extra Proposal) []string {
 				if base.Aspects[i].Type != a.Type {
 					continue
 				}
+				filled := false
 				for field, value := range a.Structured {
 					if value == nil {
 						continue
@@ -402,11 +420,15 @@ func MergeConstraints(base *Proposal, extra Proposal) []string {
 					}
 					base.Aspects[i].Structured[field] = value
 					added = append(added, string(a.Type)+"."+field)
+					filled = true
 				}
-				// An aspect with no wording of its own contributes nothing else.
-				if len(base.Aspects[i].Structured) == 0 && len(a.Structured) > 0 {
-					base.Aspects[i] = a
-					keys[MeaningKey(a)] = true
+				// A field arrives with the evidence that justified it. Merging
+				// the value and leaving the citation behind judges it against
+				// the surviving aspect's sources instead, which is how a
+				// country recorded by the second pass was dropped for lacking
+				// evidence the first pass never cited.
+				if filled {
+					base.Aspects[i].Citations = appendCitations(base.Aspects[i].Citations, a.Citations)
 				}
 				break
 			}

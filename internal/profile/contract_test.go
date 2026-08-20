@@ -226,3 +226,61 @@ func TestTheMergeNeverOverwritesARecordedField(t *testing.T) {
 		t.Fatalf("a field it lacked was not filled: %+v", got)
 	}
 }
+
+// A field arrives with the evidence that justified it. Merging the value and
+// leaving the citation behind judges it against the surviving aspect's sources
+// instead, which dropped a country the second pass had evidenced.
+func TestAMergedFieldBringsItsCitation(t *testing.T) {
+	base := Proposal{Aspects: []Aspect{{
+		Type: WorkRights, Wording: "work rights",
+		Structured: map[string]any{},
+		Citations:  []Citation{{ChunkID: 1, Quote: "existing work rights"}},
+	}}}
+	extra := Proposal{Aspects: []Aspect{{
+		Type: WorkRights, Wording: "Australian work rights; we do not sponsor",
+		Structured: map[string]any{"country": "Australia", "sponsorship_required": false},
+		Citations:  []Citation{{ChunkID: 3, Quote: "You must have existing Australian work rights; we do not sponsor."}},
+	}}}
+
+	MergeConstraints(&base, extra)
+
+	merged := base.Aspects[0]
+	if merged.Structured["country"] != "Australia" {
+		t.Fatalf("the field was not merged: %+v", merged.Structured)
+	}
+	found := false
+	for _, c := range merged.Citations {
+		if c.ChunkID == 3 {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("the evidence that justified it was left behind: %+v", merged.Citations)
+	}
+	// And the merged aspect survives the check that field now faces.
+	sources := []Source{
+		{ChunkID: 1, Text: "You need existing work rights."},
+		{ChunkID: 3, Text: "You must have existing Australian work rights; we do not sponsor."},
+	}
+	DropUnsupportedStructured(&base, sources)
+	if base.Aspects[0].Structured["country"] != "Australia" {
+		t.Fatalf("a field with its own evidence was dropped: %+v", base.Aspects[0].Structured)
+	}
+}
+
+// A citation already held is not duplicated.
+func TestMergedCitationsAreNotDuplicated(t *testing.T) {
+	shared := Citation{ChunkID: 2, Quote: "in Melbourne"}
+	base := Proposal{Aspects: []Aspect{{
+		Type: Location, Wording: "Melbourne", Structured: map[string]any{},
+		Citations: []Citation{shared},
+	}}}
+	extra := Proposal{Aspects: []Aspect{{
+		Type: Location, Wording: "Melbourne", Structured: map[string]any{"city": "Melbourne"},
+		Citations: []Citation{shared},
+	}}}
+	MergeConstraints(&base, extra)
+	if len(base.Aspects[0].Citations) != 1 {
+		t.Fatalf("%d citations after merging one: %+v", len(base.Aspects[0].Citations), base.Aspects[0].Citations)
+	}
+}
