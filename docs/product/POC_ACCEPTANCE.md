@@ -82,26 +82,101 @@ the acceptance run on the laptop should be read the same way.
 
 ### Timings, against the PRD's provisional targets
 
-Recorded by the run itself, with its conditions. Three of five targets are
-missed, and the two decomposition ones are missed by a wide margin — on a
-development machine, against short synthetic listings, with the models already
-resident. The target laptop will not be faster.
+The PRD is explicit that these are not gates: "Functional quality, security,
+offline behavior, deletion, and recovery are acceptance gates. Timing and volume
+targets are provisional measurements on the target laptop." Decomposition is
+marked "indicative only" on top of that. So no row below fails an acceptance
+gate, and none of them is taken in the acceptance environment either.
+
+They are recorded because a provisional measurement still has to be measured,
+and because of what they imply about a machine this is not.
 
 | Measurement | Target | Measured | Met |
 | --- | --- | --- | --- |
-| One role profile, mean | 30 s | 197.18 s | NO |
-| One role profile, slowest | 30 s | 251.91 s | NO |
-| Twenty role profiles, total | 600 s | 3943.66 s | NO |
-| One candidate profile, mean | 180 s | 288.09 s | NO |
+| One role profile, mean | 30 s | 263.81 s | NO |
+| One role profile, slowest | 30 s | 311.62 s | NO |
+| Twenty role profiles, total | 600 s | 5276.11 s | NO |
+| One candidate profile, mean | 180 s | 284.73 s | NO |
+| One resume ingested, chunked and indexed | 60 s | 0.01 s | yes — but already extracted; a real PDF pays the sidecar |
+| Every aspect of twenty roles embedded | none set | 0.02 s | — twenty title aspects, not twenty decomposed profiles |
 | Hybrid retrieval, slowest | 2 s | 0.02 s | yes — but over 20 roles, where the PRD sets the target at approximately 1,000 |
+| Cold start: open a database and migrate | 5 s | 0.01 s | yes — excludes the WebView, the larger half on Windows |
+| One match assessed | 60 s | NOT MEASURED | — needs the generate model, which this benchmark does not use |
 
-Decomposition is two 14B passes per document and nothing else in the product is
-close to model cost: all retrieval, fusion and scoring across the whole run
-came to hundredths of a second. A faster PoC is a smaller model or fewer
-passes, and both are accuracy decisions — the two-pass design is what took the
-constraints from 0 of 100 to 100 of 100, and the second pass is half the time.
-That trade belongs to whoever accepts the PoC, so it is recorded here rather
-than decided here.
+Three role-profile figures moved between runs (197 s, then 264 s) with nothing
+changed but the run. Treat the magnitude, not the digits.
+
+Decomposition is two 14B passes per document, and nothing else in the product
+is close to model cost: all retrieval, fusion and scoring across the whole run
+came to hundredths of a second.
+
+### The platform these figures are not from
+
+The PRD's platform is "Windows 11 x64, **CPU-only inference**, 16 GB RAM". The
+figures above are from an Apple M3 with 24 GB of unified memory, running a 9 GB
+model on the GPU. Those are not the same machine, and the difference runs the
+wrong way: CPU-only inference of a 14B model on 16 GB is slower than this by a
+margin nobody should estimate from here, and 9 GB of weights on a 16 GB machine
+leaves little for anything else.
+
+That makes the model a platform question rather than a timing one, and it is
+answerable before the laptop arrives. `qwen2.5:7b-instruct` is 4.7 GB against
+the 14B's 9.0 GB, which is the difference between comfortable and marginal on a
+16 GB machine. The benchmark exists to answer exactly this — its own harness
+records that a failing run "is a model-selection decision, not a bug in the
+scorer" — so it was scored against the same frozen corpus, the same hash, and
+the same four conditions.
+
+### Model selection: 14B against 7B on the frozen corpus
+
+| | `qwen2.5:14b-instruct` | `qwen2.5:7b-instruct` |
+| --- | --- | --- |
+| Weights | 9.0 GB | 4.7 GB |
+| Every aspect cited | PASS | PASS |
+| No unsupported constraint | PASS (0) | **FAIL (2)** |
+| Material-aspect capture | 99% | 96% |
+| Structured constraints | **100 of 100** | **FAIL (10 misreported)** |
+| Matching, three plausible in the top five | 4 of 5 | 4 of 5 |
+| Outcome | **pass** | **fail** |
+| One role profile, mean | 197.18 s | 173.83 s |
+
+The smaller model fails two of the four classifier conditions, and it is
+**12% faster**, not twice as fast. That second number is the surprising one and
+it changes the conclusion: on this machine, decomposition time is not dominated
+by model size. Halving the weights bought almost nothing, so trading accuracy
+for a smaller model buys almost nothing either.
+
+The caveat that keeps this honest: on CPU-only inference the ratio should favour
+the smaller model more than it does here, because CPU inference is bound by
+memory bandwidth in a way an M3's GPU is not. So the speed column may look
+different on the laptop. The accuracy column will not — it is the same corpus,
+the same hash, and the same scoring, and accuracy is an acceptance gate where
+timing is a provisional measurement.
+
+**Decision: ship the 14B.** It is the only one of the two that passes, and the
+faster one is barely faster. If 9 GB of weights proves unworkable on a 16 GB
+CPU-only laptop, that is a finding for the acceptance run and a PRD reopen
+request — not something to pre-empt here by shipping a model that fails the
+gate.
+
+### What the matching benchmark does not exercise
+
+The matching phase builds each of its twenty roles with a hand-built profile of
+one aspect holding the role title. The listing itself is chunked and searchable,
+so the lexical half of the hybrid retrieval reads the real document — but the
+aspect-level KNN the PRD calls for retrieves over titles, and the structured
+constraints that drive eligibility are not in those profiles at all.
+
+So "4 of 5 scenarios" is a real number about a shortlist built mostly from
+lexical retrieval, and it is not yet evidence about aspect KNN or about
+constraint filtering. The classifier benchmark exercises the real decomposition
+on the same twenty listings; the matching benchmark does not reuse it, because
+the harness adds role aspects through the recruiter-authored path, which
+re-cites them to the role record.
+
+This is the largest known gap between what the benchmark reports and what the
+PRD asks for, and it is recorded here rather than left in the harness for
+someone to find on the laptop.
 
 The corpus currently in the repository is synthetic and says so. It exists to
 prove the harness, the thresholds, and the record are correct. The acceptance

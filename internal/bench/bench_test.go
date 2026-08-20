@@ -833,3 +833,19 @@ func TestEveryStructuredLabelMatchesWhatItsListingStates(t *testing.T) {
 		}
 	}
 }
+
+// A measurement the PRD sets no target for is not a failed one, and a summary
+// that prints "target 0.00, met false" says it is.
+func TestAMeasurementWithNoTargetIsNotReportedAsFailing(t *testing.T) {
+	record := &Record{Measurements: []Measurement{
+		{Name: "aspects embedded", Value: 3.5, Unit: "s", Conditions: "twenty roles"},
+		{Name: "one role profile", Value: 197, Unit: "s", Target: 30, Conditions: "two passes"},
+	}}
+	summary := record.Summary()
+	if !strings.Contains(summary, "aspects embedded: 3.50 s (no target)") {
+		t.Fatalf("an untargeted measurement was reported against a target:\n%s", summary)
+	}
+	if !strings.Contains(summary, "one role profile: 197.00 s (target 30.00, met false)") {
+		t.Fatalf("a targeted measurement lost its target:\n%s", summary)
+	}
+}

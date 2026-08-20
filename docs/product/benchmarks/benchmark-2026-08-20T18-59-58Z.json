@@ -1,0 +1,487 @@
+{
+  "taken": "2026-08-20T18:59:58Z",
+  "version": "0.1.0-poc",
+  "platform": "darwin/arm64",
+  "schemaVersion": "3",
+  "promptVersion": "5",
+  "corpusHash": "66cc623224b13c1c8ce19b532c16398b9b30965663ee837c84df9a49ea00ddb8",
+  "corpusIs": "the synthetic corpus in this repository — invented, not real placements",
+  "cloudAssisted": false,
+  "assignments": [
+    {
+      "role": "classify",
+      "model": "qwen2.5:14b-instruct",
+      "digest": "FROM /Users/cam/.ollama/models/blobs/sha256-2049f5674b1e92b4464e5729975c9689fcfbf0b0e4443ccf10b5339f370f9a54"
+    },
+    {
+      "role": "embed",
+      "model": "nomic-embed-text",
+      "digest": "FROM /Users/cam/.ollama/models/blobs/sha256-970aa74c0a90ef7482477cf803618e776e173c007bf957f635f1015bfcfef0e6"
+    },
+    {
+      "role": "generate",
+      "model": "not used by this benchmark",
+      "digest": "n/a"
+    }
+  ],
+  "classifier": [
+    {
+      "listing": "platform-engineer-melbourne",
+      "extracted": 9,
+      "material": 9,
+      "captured": 9,
+      "captureRate": 1,
+      "missed": [],
+      "uncited": [],
+      "unsupported": [],
+      "misreported": [],
+      "allCited": true,
+      "noUnsupported": true,
+      "captureMet": true,
+      "constraintsExact": true,
+      "pass": true
+    },
+    {
+      "listing": "backend-engineer-sydney",
+      "extracted": 9,
+      "material": 9,
+      "captured": 9,
+      "captureRate": 1,
+      "missed": [],
+      "uncited": [],
+      "unsupported": [],
+      "misreported": [],
+      "allCited": true,
+      "noUnsupported": true,
+      "captureMet": true,
+      "constraintsExact": true,
+      "pass": true
+    },
+    {
+      "listing": "site-reliability-brisbane",
+      "extracted": 9,
+      "material": 9,
+      "captured": 9,
+      "captureRate": 1,
+      "missed": [],
+      "uncited": [],
+      "unsupported": [],
+      "misreported": [],
+      "allCited": true,
+      "noUnsupported": true,
+      "captureMet": true,
+      "constraintsExact": true,
+      "pass": true
+    },
+    {
+      "listing": "data-engineer-melbourne",
+      "extracted": 9,
+      "material": 9,
+      "captured": 8,
+      "captureRate": 0.8888888888888888,
+      "missed": [
+        "skill: Snowflake experience"
+      ],
+      "uncited": [],
+      "unsupported": [],
+      "misreported": [],
+      "allCited": true,
+      "noUnsupported": true,
+      "captureMet": true,
+      "constraintsExact": true,
+      "pass": true
+    },
+    {
+      "listing": "staff-engineer-perth",
+      "extracted": 9,
+      "material": 9,
+      "captured": 9,
+      "captureRate": 1,
+      "missed": [],
+      "uncited": [],
+      "unsupported": [],
+      "misreported": [],
+      "allCited": true,
+      "noUnsupported": true,
+      "captureMet": true,
+      "constraintsExact": true,
+      "pass": true
+    },
+    {
+      "listing": "frontend-engineer-sydney",
+      "extracted": 9,
+      "material": 9,
+      "captured": 9,
+      "captureRate": 1,
+      "missed": [],
+      "uncited": [],
+      "unsupported": [],
+      "misreported": [],
+      "allCited": true,
+      "noUnsupported": true,
+      "captureMet": true,
+      "constraintsExact": true,
+      "pass": true
+    },
+    {
+      "listing": "security-engineer-canberra",
+      "extracted": 9,
+      "material": 9,
+      "captured": 9,
+      "captureRate": 1,
+      "missed": [],
+      "uncited": [],
+      "unsupported": [],
+      "misreported": [],
+      "allCited": true,
+      "noUnsupported": true,
+      "captureMet": true,
+      "constraintsExact": true,
+      "pass": true
+    },
+    {
+      "listing": "ml-engineer-melbourne",
+      "extracted": 9,
+      "material": 9,
+      "captured": 9,
+      "captureRate": 1,
+      "missed": [],
+      "uncited": [],
+      "unsupported": [],
+      "misreported": [],
+      "allCited": true,
+      "noUnsupported": true,
+      "captureMet": true,
+      "constraintsExact": true,
+      "pass": true
+    },
+    {
+      "listing": "devops-engineer-adelaide",
+      "extracted": 9,
+      "material": 9,
+      "captured": 9,
+      "captureRate": 1,
+      "missed": [],
+      "uncited": [],
+      "unsupported": [],
+      "misreported": [],
+      "allCited": true,
+      "noUnsupported": true,
+      "captureMet": true,
+      "constraintsExact": true,
+      "pass": true
+    },
+    {
+      "listing": "mobile-engineer-sydney",
+      "extracted": 9,
+      "material": 9,
+      "captured": 9,
+      "captureRate": 1,
+      "missed": [],
+      "uncited": [],
+      "unsupported": [],
+      "misreported": [],
+      "allCited": true,
+      "noUnsupported": true,
+      "captureMet": true,
+      "constraintsExact": true,
+      "pass": true
+    },
+    {
+      "listing": "principal-engineer-melbourne",
+      "extracted": 9,
+      "material": 9,
+      "captured": 9,
+      "captureRate": 1,
+      "missed": [],
+      "uncited": [],
+      "unsupported": [],
+      "misreported": [],
+      "allCited": true,
+      "noUnsupported": true,
+      "captureMet": true,
+      "constraintsExact": true,
+      "pass": true
+    },
+    {
+      "listing": "backend-contract-melbourne",
+      "extracted": 9,
+      "material": 9,
+      "captured": 9,
+      "captureRate": 1,
+      "missed": [],
+      "uncited": [],
+      "unsupported": [],
+      "misreported": [],
+      "allCited": true,
+      "noUnsupported": true,
+      "captureMet": true,
+      "constraintsExact": true,
+      "pass": true
+    },
+    {
+      "listing": "platform-engineer-remote",
+      "extracted": 9,
+      "material": 9,
+      "captured": 9,
+      "captureRate": 1,
+      "missed": [],
+      "uncited": [],
+      "unsupported": [],
+      "misreported": [],
+      "allCited": true,
+      "noUnsupported": true,
+      "captureMet": true,
+      "constraintsExact": true,
+      "pass": true
+    },
+    {
+      "listing": "qa-engineer-brisbane",
+      "extracted": 9,
+      "material": 9,
+      "captured": 9,
+      "captureRate": 1,
+      "missed": [],
+      "uncited": [],
+      "unsupported": [],
+      "misreported": [],
+      "allCited": true,
+      "noUnsupported": true,
+      "captureMet": true,
+      "constraintsExact": true,
+      "pass": true
+    },
+    {
+      "listing": "data-platform-sydney",
+      "extracted": 9,
+      "material": 9,
+      "captured": 9,
+      "captureRate": 1,
+      "missed": [],
+      "uncited": [],
+      "unsupported": [],
+      "misreported": [],
+      "allCited": true,
+      "noUnsupported": true,
+      "captureMet": true,
+      "constraintsExact": true,
+      "pass": true
+    },
+    {
+      "listing": "engineering-manager-melbourne",
+      "extracted": 9,
+      "material": 9,
+      "captured": 8,
+      "captureRate": 0.8888888888888888,
+      "missed": [
+        "skill: data domain experience"
+      ],
+      "uncited": [],
+      "unsupported": [],
+      "misreported": [],
+      "allCited": true,
+      "noUnsupported": true,
+      "captureMet": true,
+      "constraintsExact": true,
+      "pass": true
+    },
+    {
+      "listing": "integration-engineer-hobart",
+      "extracted": 9,
+      "material": 9,
+      "captured": 9,
+      "captureRate": 1,
+      "missed": [],
+      "uncited": [],
+      "unsupported": [],
+      "misreported": [],
+      "allCited": true,
+      "noUnsupported": true,
+      "captureMet": true,
+      "constraintsExact": true,
+      "pass": true
+    },
+    {
+      "listing": "embedded-engineer-perth",
+      "extracted": 9,
+      "material": 9,
+      "captured": 9,
+      "captureRate": 1,
+      "missed": [],
+      "uncited": [],
+      "unsupported": [],
+      "misreported": [],
+      "allCited": true,
+      "noUnsupported": true,
+      "captureMet": true,
+      "constraintsExact": true,
+      "pass": true
+    },
+    {
+      "listing": "solutions-architect-sydney",
+      "extracted": 9,
+      "material": 9,
+      "captured": 9,
+      "captureRate": 1,
+      "missed": [],
+      "uncited": [],
+      "unsupported": [],
+      "misreported": [],
+      "allCited": true,
+      "noUnsupported": true,
+      "captureMet": true,
+      "constraintsExact": true,
+      "pass": true
+    },
+    {
+      "listing": "junior-backend-melbourne",
+      "extracted": 9,
+      "material": 9,
+      "captured": 9,
+      "captureRate": 1,
+      "missed": [],
+      "uncited": [],
+      "unsupported": [],
+      "misreported": [],
+      "allCited": true,
+      "noUnsupported": true,
+      "captureMet": true,
+      "constraintsExact": true,
+      "pass": true
+    }
+  ],
+  "matching": {
+    "scenarios": [
+      {
+        "scenarioId": "go-platform-melbourne",
+        "distinct": [
+          "platform-engineer-melbourne",
+          "backend-contract-melbourne",
+          "backend-engineer-sydney",
+          "staff-engineer-perth",
+          "platform-engineer-remote"
+        ],
+        "plausible": 5,
+        "met": true
+      },
+      {
+        "scenarioId": "data-python-melbourne",
+        "distinct": [
+          "data-engineer-melbourne",
+          "data-platform-sydney",
+          "security-engineer-canberra",
+          "junior-backend-melbourne",
+          "engineering-manager-melbourne"
+        ],
+        "plausible": 4,
+        "met": true
+      },
+      {
+        "scenarioId": "frontend-accessibility-sydney",
+        "distinct": [
+          "frontend-engineer-sydney",
+          "mobile-engineer-sydney",
+          "embedded-engineer-perth",
+          "solutions-architect-sydney",
+          "engineering-manager-melbourne"
+        ],
+        "plausible": 3,
+        "met": true
+      },
+      {
+        "scenarioId": "sre-kubernetes-brisbane",
+        "distinct": [
+          "site-reliability-brisbane",
+          "security-engineer-canberra",
+          "devops-engineer-adelaide",
+          "mobile-engineer-sydney",
+          "engineering-manager-melbourne"
+        ],
+        "plausible": 2,
+        "met": false
+      },
+      {
+        "scenarioId": "embedded-c-perth",
+        "distinct": [
+          "embedded-engineer-perth",
+          "principal-engineer-melbourne",
+          "platform-engineer-melbourne",
+          "qa-engineer-brisbane",
+          "staff-engineer-perth"
+        ],
+        "plausible": 3,
+        "met": true
+      }
+    ],
+    "metCount": 4,
+    "pass": true
+  },
+  "eligibleRoles": 20,
+  "measurements": [
+    {
+      "name": "one role profile, mean",
+      "value": 263.805588254,
+      "unit": "s",
+      "conditions": "20 listings of roughly 450 characters, two model passes each, darwin/arm64, models resident, the synthetic corpus",
+      "target": 30,
+      "met": false
+    },
+    {
+      "name": "one role profile, slowest",
+      "value": 311.621599375,
+      "unit": "s",
+      "conditions": "the slowest single listing in the run, darwin/arm64, models resident, the synthetic corpus",
+      "target": 30,
+      "met": false
+    },
+    {
+      "name": "20 role profiles, total",
+      "value": 5276.111765084,
+      "unit": "s",
+      "conditions": "sequential, no concurrency, darwin/arm64, models resident, the synthetic corpus",
+      "target": 600,
+      "met": false
+    },
+    {
+      "name": "one candidate profile, mean",
+      "value": 284.73456015,
+      "unit": "s",
+      "conditions": "5 scenario resumes, darwin/arm64, models resident, the synthetic corpus",
+      "target": 180,
+      "met": false
+    },
+    {
+      "name": "one resume ingested, chunked and indexed",
+      "value": 0.014246666,
+      "unit": "s",
+      "conditions": "the slowest of 5 scenario resumes, already extracted — the extraction sidecar is not in this path, so a real PDF costs more",
+      "target": 60,
+      "met": true
+    },
+    {
+      "name": "every aspect of twenty roles embedded",
+      "value": 0.02427825,
+      "unit": "s",
+      "conditions": "the slowest of 5 runs; the PRD sets no target at this size",
+      "target": 0,
+      "met": false
+    },
+    {
+      "name": "hybrid retrieval, slowest of the run",
+      "value": 0.020076833,
+      "unit": "s",
+      "conditions": "5 scenarios over 20 eligible roles — the PRD's target is set at approximately 1,000 candidates and 1,000 roles, which this corpus is not",
+      "target": 2,
+      "met": true
+    },
+    {
+      "name": "cold start: open an empty database and migrate",
+      "value": 0.012334084,
+      "unit": "s",
+      "conditions": "an empty database on darwin/arm64, excluding Ollama and excluding the WebView, which is the larger half on Windows",
+      "target": 5,
+      "met": true
+    }
+  ],
+  "outcome": "pass"
+}

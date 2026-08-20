@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"camstuart/talent-hound/internal/bench"
+	"camstuart/talent-hound/internal/db"
 	"camstuart/talent-hound/internal/fusion"
 	"camstuart/talent-hound/internal/models"
 	"camstuart/talent-hound/internal/platform"
@@ -66,6 +67,7 @@ func TestBenchmark(t *testing.T) {
 	record.Matching, record.EligibleRoles = runMatching(t, corpus, classifyModel, embedModel,
 		&candidateProfiles, &retrievals)
 	record.Measurements = measure(roleProfiles, candidateProfiles, retrievals, len(corpus.Listings))
+	record.Measurements = append(record.Measurements, coldStart(t))
 	record.Conclude()
 
 	write(t, record)
@@ -158,10 +160,13 @@ func runMatching(t *testing.T, corpus *bench.Corpus, classifyModel, embedModel s
 		}
 		// The similarity half retrieves over aspects, so they have to be
 		// embedded — the same step the interface runs when indexing.
+		startedEmbedding := time.Now()
 		if job, err := e.embed.EmbedAspects(e.initiative); err != nil {
 			t.Fatalf("%s: embedding aspects: %v", scenario.ID, err)
 		} else if done := waitForJob(t, e.jobs, job.ID); done.State != models.JobCompleted {
 			t.Logf("%s: aspect embedding is %s (%q)", scenario.ID, done.State, done.FailureReason)
+		} else {
+			embedding = append(embedding, time.Since(startedEmbedding))
 		}
 
 		startedShortlist := time.Now()
@@ -229,8 +234,13 @@ func whyNothingRanked(t *testing.T, e *shortlistEnv, candidateID uint) string {
 //
 // The name is invented and belongs to this repository, not to the scenario: the
 // corpus carries a resume, and a benchmark needs a record to hang it on.
+// indexing collects how long one resume took from attached to chunked and
+// searchable, which is the PRD's indexing measurement.
+var indexing []time.Duration
+
 func scenarioCandidate(t *testing.T, e *shortlistEnv, scenario bench.Scenario) (uint, string) {
 	t.Helper()
+	startedIndexing := time.Now()
 	c, err := e.records.CreateCandidate(models.Candidate{FullName: "Benchmark subject " + scenario.ID})
 	if err != nil {
 		t.Fatalf("creating the candidate: %v", err)
@@ -250,6 +260,7 @@ func scenarioCandidate(t *testing.T, e *shortlistEnv, scenario bench.Scenario) (
 		t.Fatalf("recording extraction: %v", err)
 	}
 	e.chunks2 = e.chunkAndWait(t, a.ID)
+	indexing = append(indexing, time.Since(startedIndexing))
 
 	p, err := e.profiles.Classify(c.ID)
 	if err != nil {
@@ -339,6 +350,15 @@ func measure(roleProfiles, candidateProfiles, retrievals []time.Duration, listin
 		add("one candidate profile, mean", seconds(mean(candidateProfiles)), "s", 180,
 			fmt.Sprintf("%d scenario resumes, %s", len(candidateProfiles), where))
 	}
+	if len(indexing) > 0 {
+		add("one resume ingested, chunked and indexed", seconds(slowest(indexing)), "s", 60,
+			fmt.Sprintf("the slowest of %d scenario resumes, already extracted — the extraction "+
+				"sidecar is not in this path, so a real PDF costs more", len(indexing)))
+	}
+	if len(embedding) > 0 {
+		add("every aspect of twenty roles embedded", seconds(slowest(embedding)), "s", 0,
+			fmt.Sprintf("the slowest of %d runs; the PRD sets no target at this size", len(embedding)))
+	}
 	if len(retrievals) > 0 {
 		// P95 over five scenarios is the slowest of the five, and saying so
 		// beats printing a percentile the sample cannot support.
@@ -347,6 +367,33 @@ func measure(roleProfiles, candidateProfiles, retrievals []time.Duration, listin
 				"approximately 1,000 candidates and 1,000 roles, which this corpus is not", len(retrievals)))
 	}
 	return out
+}
+
+// embedding collects how long every aspect of twenty roles took to embed.
+var embedding []time.Duration
+
+// coldStart measures what the application does before it can show anything:
+// open the database and run every migration. It excludes Ollama, as the PRD's
+// target does, and excludes the WebView — which is the larger half on Windows
+// and cannot be measured from here.
+func coldStart(t *testing.T) bench.Measurement {
+	t.Helper()
+	path := filepath.Join(t.TempDir(), "cold.db")
+	started := time.Now()
+	opened, err := db.Open(path)
+	if err != nil {
+		t.Fatalf("opening a database: %v", err)
+	}
+	elapsed := time.Since(started)
+	if raw, err := opened.DB(); err == nil {
+		_ = raw.Close()
+	}
+	return bench.Measurement{
+		Name: "cold start: open an empty database and migrate", Value: elapsed.Seconds(),
+		Unit: "s", Target: 5, Met: elapsed.Seconds() <= 5,
+		Conditions: "an empty database on " + runtime.GOOS + "/" + runtime.GOARCH +
+			", excluding Ollama and excluding the WebView, which is the larger half on Windows",
+	}
 }
 
 func seconds(d time.Duration) float64 { return d.Seconds() }

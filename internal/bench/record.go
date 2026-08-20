@@ -205,8 +205,14 @@ func (r *Record) Summary() string {
 
 	fmt.Fprintf(&b, "\nEligible roles: %d\n", r.EligibleRoles)
 	for _, m := range r.Measurements {
-		fmt.Fprintf(&b, "  %s: %.2f %s (target %.2f, met %v) — %s\n",
-			m.Name, m.Value, m.Unit, m.Target, m.Met, m.Conditions)
+		// A row the PRD sets no target for reads as a failed one if it is
+		// printed with a target of zero and met false.
+		against := fmt.Sprintf("target %.2f, met %v", m.Target, m.Met)
+		if m.Target == 0 {
+			against = "no target"
+		}
+		fmt.Fprintf(&b, "  %s: %.2f %s (%s) — %s\n",
+			m.Name, m.Value, m.Unit, against, m.Conditions)
 	}
 	fmt.Fprintf(&b, "\nOutcome: %s\n", r.Outcome)
 	if r.Outcome == OutcomeInconclusive {
