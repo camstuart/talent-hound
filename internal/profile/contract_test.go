@@ -186,7 +186,43 @@ func TestAnEmptyConstraintGivesWayToAPopulatedOne(t *testing.T) {
 	if employment.Structured["employment_type"] != "permanent" {
 		t.Fatalf("the empty employment type was kept: %+v", employment.Structured)
 	}
-	if location.Structured["city"] != "Melbourne" || location.Structured["region"] != nil {
-		t.Fatalf("a populated location was replaced: %+v", location.Structured)
+	// The aspect stays and its value grows: the city the first pass recorded is
+	// untouched, and a field it did not hold is added. Whether that field
+	// survives is then the evidence check's business, against this aspect's own
+	// citations.
+	if location.Structured["city"] != "Melbourne" {
+		t.Fatalf("a recorded city was replaced: %+v", location.Structured)
+	}
+	if location.Structured["region"] != "Victoria" {
+		t.Fatalf("a field the first pass lacked was not filled: %+v", location.Structured)
+	}
+	if location.Wording != "Melbourne" {
+		t.Fatalf("the surviving aspect's wording changed: %q", location.Wording)
+	}
+}
+
+// A field the first pass recorded is never overwritten by the second: the
+// first saw the whole document.
+func TestTheMergeNeverOverwritesARecordedField(t *testing.T) {
+	base := Proposal{Aspects: []Aspect{{
+		Type: Location, Wording: "Melbourne",
+		Structured: map[string]any{"city": "Melbourne"},
+	}}}
+	extra := Proposal{Aspects: []Aspect{{
+		Type: Location, Wording: "Sydney office",
+		Structured: map[string]any{"city": "Sydney", "country": "Australia"},
+	}}}
+
+	MergeConstraints(&base, extra)
+
+	if len(base.Aspects) != 1 {
+		t.Fatalf("%d aspects survived", len(base.Aspects))
+	}
+	got := base.Aspects[0].Structured
+	if got["city"] != "Melbourne" {
+		t.Fatalf("the recorded city was overwritten: %+v", got)
+	}
+	if got["country"] != "Australia" {
+		t.Fatalf("a field it lacked was not filled: %+v", got)
 	}
 }

@@ -378,20 +378,36 @@ func MergeConstraints(base *Proposal, extra Proposal) []string {
 			continue
 		}
 		if present[a.Type] {
-			// One exception to never replacing: an aspect of this type is
-			// already there carrying no structured value, and this one has one.
-			// Skipping it kept an empty employment_type over a populated one,
-			// which is the gap this pass exists to fill.
+			// The aspect stays; its structured value grows. The second pass
+			// exists to fill gaps, and a gap inside a structured value is still
+			// a gap: a location recorded as {remote_ok} blocked one recorded as
+			// {city, remote_ok} for as long as this discarded the whole aspect
+			// rather than the fields already held.
+			//
+			// Never overwriting: the first pass saw the whole document, and its
+			// value for a field it did record is the one that stands.
 			for i := range base.Aspects {
-				if base.Aspects[i].Type != a.Type || len(base.Aspects[i].Structured) > 0 {
+				if base.Aspects[i].Type != a.Type {
 					continue
 				}
-				if len(a.Structured) == 0 {
-					break
+				for field, value := range a.Structured {
+					if value == nil {
+						continue
+					}
+					if _, held := base.Aspects[i].Structured[field]; held {
+						continue
+					}
+					if base.Aspects[i].Structured == nil {
+						base.Aspects[i].Structured = map[string]any{}
+					}
+					base.Aspects[i].Structured[field] = value
+					added = append(added, string(a.Type)+"."+field)
 				}
-				base.Aspects[i] = a
-				keys[MeaningKey(a)] = true
-				added = append(added, string(a.Type)+" (filled)")
+				// An aspect with no wording of its own contributes nothing else.
+				if len(base.Aspects[i].Structured) == 0 && len(a.Structured) > 0 {
+					base.Aspects[i] = a
+					keys[MeaningKey(a)] = true
+				}
 				break
 			}
 			continue
