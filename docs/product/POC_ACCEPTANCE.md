@@ -152,6 +152,17 @@ it.
 | 28 | 14B | 99% | 0 | 0 | **1** | 4 | wording verbatim in a source counts as evidence |
 | 29 | 14B | 99% | 0 | 8 | 1 | 4 | a dedicated normalization call — **withdrawn**: it recovered nothing and answered requires_sponsorship on eight listings that refuse it |
 | 30 | 14B | 99% | 0 | **0** | **1** | **4** | that value refused when its only evidence is its own negation |
+| 31 | 14B | 99% | 0 | 0 | 2 | 4 | constraint fields merged rather than whole aspects — a **regression**: a merged field lost the evidence that justified it |
+| 32 | 14B | 99% | 0 | **0** | **1** | **4** | a merged field brings its citation with it |
+
+Runs 31 and 32 are one change and its repair. Merging a field into the
+surviving aspect judged it against that aspect's citations, which I argued was
+"stricter, not looser, so it is safe" — stricter was true and safe was not: a
+country the second pass had cited straight from the work-rights sentence was
+dropped for lacking evidence the first pass never quoted. A field arrives with
+its evidence, and it now travels with it.
+
+The merge rule is better for it. The gate is where it was.
 
 Run 29 is the third measured change withdrawn after measuring, with the
 constraint checklist of run 18 and the fusion constants that were never
@@ -174,8 +185,8 @@ good the ranking is.
 ### Frozen benchmark run, development machine
 
 `just bench`, about ninety minutes per run with the 14B and the two-pass
-classifier. Best configuration: run 30, record
-`docs/product/benchmarks/benchmark-2026-08-20T00-15-23Z.json`.
+classifier. Best configuration: run 32, record
+`docs/product/benchmarks/benchmark-2026-08-20T05-10-55Z.json`.
 
 Models: classify `qwen2.5:14b-instruct`, embed `nomic-embed-text`.
 
@@ -202,12 +213,23 @@ Deriving it would mean knowing that "Melbourne" is a city while "Remote" and
 gazetteer. That is the inference this phase spent nine commits removing from
 the product, and it is not being added back to move a number.
 
-Three approaches were tried against this one error. Scoping evidence to the
+Both model passes omit the city on that listing — the decomposition and the
+constraints pass alike — so there is nothing for the merge to carry, and
+nothing in the pipeline can supply what neither recorded.
+
+Five approaches were tried against this one error. Scoping evidence to the
 cited sentence worked and is kept. Counting wording that appears verbatim in a
 source worked and is kept — together they took the count from three to one.
 Asking the model again about the single phrase, with nothing else in the
-prompt, recovered nothing and was withdrawn. What is left needs either a
-gazetteer or a looser evidence rule, and neither was added.
+prompt, recovered nothing and was withdrawn. Merging constraint fields rather
+than whole aspects regressed the count and was repaired into a better rule that
+did not move it. A larger model was pulled and is not viable on this class of
+machine.
+
+What is left needs either a gazetteer or a looser evidence rule. A pattern
+reading "in X" as a city takes "in Remote (Australia)" as one too, and the
+special cases that would fix that are a gazetteer assembled by reading the
+held-out corpus. Neither was added.
 
 ### A 32B was tried and is not viable on this class of machine
 
