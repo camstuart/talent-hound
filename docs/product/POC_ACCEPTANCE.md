@@ -213,8 +213,9 @@ gazetteer or a looser evidence rule, and neither was added.
 
 `qwen2.5:32b-instruct`, 19 GB, pulled and run against the same corpus. The
 first listing exceeded the six-minute classify budget, and a one-line prompt
-sent directly to the endpoint had not returned after ten minutes. The run was
-stopped and the model removed.
+sent straight to the endpoint — "list three requirements from" one sentence —
+did not answer inside a fifteen-minute request timeout. The run was stopped and
+the model removed.
 
 That is a finding about the hardware, not the model: the PoC's target is a
 16 GB CPU-only laptop, so a 32B was never going to be viable there either. It
