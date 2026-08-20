@@ -120,7 +120,7 @@ export default function DraftsPanel(props: { initiativeId: number }) {
       </div>
 
       <Show when={error()}>
-        <p class="modal-error">{error()}</p>
+        <p class="modal-error" role="alert">{error()}</p>
       </Show>
 
       <ul class="record-list" aria-label="Answers">

@@ -65,7 +65,7 @@ export default function FirstRunWizard() {
             </p>
 
             <Show when={error()}>
-              <p class="modal-error">{error()}</p>
+              <p class="modal-error" role="alert">{error()}</p>
             </Show>
 
             <ol class="record-list" aria-label="Setup steps">

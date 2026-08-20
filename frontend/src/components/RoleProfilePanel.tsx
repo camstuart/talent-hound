@@ -116,7 +116,7 @@ export default function RoleProfilePanel(props: { initiativeId: number }) {
       </p>
 
       <Show when={error()}>
-        <p class="modal-error">{error()}</p>
+        <p class="modal-error" role="alert">{error()}</p>
       </Show>
 
       <ul class="record-list" aria-label="Roles">

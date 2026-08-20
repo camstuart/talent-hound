@@ -37,7 +37,11 @@ test("refuses to draft without approved evidence, in the backend's own words", a
 
   // No approved profile, so the refusal names approval rather than producing a
   // pitch about someone nobody has checked.
-  await expect(panel.getByText(/approved evidence|approved profile/)).toBeVisible({ timeout: 20_000 });
+  //
+  // The refusal, not the panel's standing hint — which also says "approved
+  // evidence", so matching the panel's text passed this test without the
+  // backend having refused anything.
+  await expect(panel.getByRole("alert")).toHaveText(/approved evidence|approved profile/, { timeout: 20_000 });
   await expect(panel.getByRole("list", { name: "Drafts" })).toContainText("No drafts yet.");
 });
 

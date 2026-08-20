@@ -2,6 +2,7 @@ package profile
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -117,15 +118,71 @@ func evidenceFrom(a Aspect, sources []Source) string {
 	// "the role is located in Melbourne, Australia" appears nowhere and counts
 	// for nothing.
 	wording := trimBoundary(normalizeSpace(a.Wording))
+	verbatim := false
 	if wording != "" {
 		for _, s := range sources {
 			if strings.Contains(normalizeSpace(s.Text), wording) {
 				add(wording, s.Text)
+				verbatim = true
 				break
 			}
 		}
 	}
+
+	// Wording assembled entirely from the words of a chunk the aspect cites is
+	// quoting as well, one word at a time — and only the wording counts, not
+	// the sentences it borrowed from.
+	//
+	// Measured: a listing reading "hiring a backend engineer (contract) in
+	// Melbourne. This is a remote role" produced a location worded "remote role
+	// in Melbourne" citing the second sentence. The city was dropped, leaving an
+	// aspect whose wording says Melbourne beside a location field that does not
+	// — the same aspect stating a place in prose and omitting it from the field
+	// the matching uses. The document states the city; the model compressed two
+	// of its sentences rather than inventing anything.
+	//
+	// This adds no word the cited chunk does not already contain, so a place the
+	// listing never names is still unsupported however confidently it is worded.
+	if wording != "" && !verbatim {
+		for _, c := range a.Citations {
+			text, ok := byID[c.ChunkID]
+			if !ok || !assembledFrom(wording, text) {
+				continue
+			}
+			b.WriteString(" " + strings.ToLower(wording))
+			break
+		}
+	}
 	return b.String()
+}
+
+// assembledFrom reports whether every word of the wording appears as a word of
+// the text. Word by word, so "in Melbourne" borrowed from one sentence and
+// "remote role" from the next both count, and "Sydney" counts nowhere the
+// document does not say Sydney.
+func assembledFrom(wording, text string) bool {
+	available := map[string]bool{}
+	for _, word := range wordsIn(text) {
+		available[word] = true
+	}
+	words := wordsIn(wording)
+	if len(words) == 0 {
+		return false
+	}
+	for _, word := range words {
+		if !available[word] {
+			return false
+		}
+	}
+	return true
+}
+
+// wordsIn splits text into lowercase words, dropping punctuation. A word that
+// carries a hyphen or a slash in one place and not the other is the same word.
+func wordsIn(text string) []string {
+	return strings.FieldsFunc(strings.ToLower(text), func(r rune) bool {
+		return (r < 'a' || r > 'z') && (r < '0' || r > '9')
+	})
 }
 
 // sentencesIn splits source text into sentences, which is where a citation
@@ -378,6 +435,27 @@ func NormalizeStructured(p *Proposal) []string {
 	moved := []string{}
 	for i := range p.Aspects {
 		aspect := &p.Aspects[i]
+
+		// A bare place name is the city, which is the convention the prompt
+		// states and the taxonomy is built on. A model that files it under
+		// region records a value the source does not state — measured, two of
+		// ten tuning listings read "hiring a ... in Nelson" and produced
+		// region: Nelson.
+		//
+		// Only when the source called it no kind of place. A sentence that says
+		// region, state, province, or county has said which field it meant, and
+		// the model's reading of it stands.
+		if aspect.Type == Location && len(aspect.Structured) > 0 {
+			region, hasRegion := aspect.Structured["region"].(string)
+			_, hasCity := aspect.Structured["city"]
+			evidence := evidenceFrom(*aspect, nil)
+			if hasRegion && !hasCity && !containsAny(evidence, regionWords) {
+				aspect.Structured["city"] = region
+				delete(aspect.Structured, "region")
+				moved = append(moved, string(aspect.Type)+".region->city")
+			}
+		}
+
 		if aspect.Type != Compensation || len(aspect.Structured) == 0 {
 			continue
 		}
@@ -441,6 +519,10 @@ func DeriveStructured(p *Proposal, sources []Source) []string {
 	return filled
 }
 
+// regionWords are the words a source uses when it means a region rather than
+// a place: any of them and the model's choice of field stands.
+var regionWords = []string{"region", "state", "province", "county", "territory", "district"}
+
 func appliesTo(types []AspectType, t AspectType) bool {
 	for _, candidate := range types {
 		if candidate == t {
@@ -448,4 +530,82 @@ func appliesTo(types []AspectType, t AspectType) bool {
 		}
 	}
 	return false
+}
+
+// DeriveConstraintAspects records a constraint that a cited sentence states
+// outright and no aspect carries, and reports what it added.
+//
+// DeriveStructured fills fields on aspects that exist. It cannot help when the
+// model wrote the constraint into a different aspect's wording and emitted no
+// aspect for it at all — measured, a listing reading "offered as permanent
+// work" produced work_arrangement worded "onsite, permanent" and no employment
+// type, on seven of ten tuning listings and one of twenty frozen ones. The
+// evidence was in the profile, in a sentence the profile already cited, and
+// nothing could reach it.
+//
+// It derives from the same cited sentences every other value is judged by, with
+// the same enumeration, and the new aspect carries the citation that stated it —
+// so it introduces no evidence, only an aspect for evidence already held. A
+// sentence stating two of them states neither: a listing that says both
+// "permanent" and "contract" is ambiguous, and guessing between them is exactly
+// what the rest of this file exists to prevent.
+//
+// ponytail: employment_type only, because that is the hole that was measured.
+// The same shape would extend to work_arrangement and work_rights if either
+// ever shows the same loss.
+func DeriveConstraintAspects(p *Proposal, sources []Source) []string {
+	for _, aspect := range p.Aspects {
+		if aspect.Type == EmploymentType {
+			return nil
+		}
+	}
+	values := evidenceFor["employment_type"]
+
+	for _, aspect := range p.Aspects {
+		if len(aspect.Citations) == 0 {
+			continue
+		}
+		evidence := evidenceFrom(aspect, sources)
+
+		found, wording := "", ""
+		ambiguous := false
+		for _, value := range sortedValues(values) {
+			for _, word := range values[value] {
+				if !strings.Contains(evidence, word) {
+					continue
+				}
+				if found != "" && found != value {
+					ambiguous = true
+				}
+				if found == "" {
+					found, wording = value, word
+				}
+				break
+			}
+		}
+		if found == "" || ambiguous {
+			continue
+		}
+		p.Aspects = append(p.Aspects, Aspect{
+			Type:       EmploymentType,
+			Wording:    wording,
+			Structured: map[string]any{"employment_type": found},
+			Citations:  append([]Citation{}, aspect.Citations...),
+		})
+		return []string{"employment_type"}
+	}
+	return nil
+}
+
+// sortedValues keeps the derivation from depending on map order, so the same
+// profile derives the same aspect on every run.
+func sortedValues(in map[string][]string) []string {
+	out := make([]string, 0, len(in))
+	for value := range in {
+		if value != "unknown" {
+			out = append(out, value)
+		}
+	}
+	sort.Strings(out)
+	return out
 }

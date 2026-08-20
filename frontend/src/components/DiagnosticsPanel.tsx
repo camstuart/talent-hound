@@ -26,7 +26,7 @@ export default function DiagnosticsPanel() {
     <section class="record-section" aria-label="Diagnostics">
       <h3>Diagnostics</h3>
       <Show when={error()}>
-        <p class="modal-error">{error()}</p>
+        <p class="modal-error" role="alert">{error()}</p>
       </Show>
 
       <Show when={report()}>

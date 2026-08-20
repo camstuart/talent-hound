@@ -176,6 +176,7 @@ func (s *ClassifyService) constraints(
 func normalize(proposal *profile.Proposal, sources []profile.Source) {
 	profile.DropUnsupportedStructured(proposal, sources)
 	profile.DeriveStructured(proposal, sources)
+	profile.DeriveConstraintAspects(proposal, sources)
 	profile.NormalizeStructured(proposal)
 	profile.AlignAcrossAspects(proposal)
 }

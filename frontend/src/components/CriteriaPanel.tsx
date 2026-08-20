@@ -157,7 +157,7 @@ export default function CriteriaPanel(props: { initiativeId: number }) {
         </p>
       </Show>
       <Show when={error()}>
-        <p class="modal-error">{error()}</p>
+        <p class="modal-error" role="alert">{error()}</p>
       </Show>
 
       <ul class="record-list" aria-label="Criteria">

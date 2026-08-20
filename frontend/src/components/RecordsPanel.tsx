@@ -205,7 +205,7 @@ export default function RecordsPanel() {
             </select>
           </label>
           <Show when={lookupError()}>
-            <p class="modal-error">{lookupError()}</p>
+            <p class="modal-error" role="alert">{lookupError()}</p>
           </Show>
           <Show when={contactsAt()}>
             {(at) => (

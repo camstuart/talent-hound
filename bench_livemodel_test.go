@@ -57,8 +57,15 @@ func TestBenchmark(t *testing.T) {
 			"generate": {Model: "not used by this benchmark", Digest: "n/a"},
 		})
 
-	record.Classifier = runClassifier(t, corpus, classifyModel)
-	record.Matching, record.EligibleRoles = runMatching(t, corpus, classifyModel, embedModel)
+	// Timings are taken as the run goes and turned into measurements below. A
+	// record that scores the answers and says nothing about what they cost is
+	// half a record: the PRD sets targets for both.
+	roleProfiles, candidateProfiles, retrievals := []time.Duration{}, []time.Duration{}, []time.Duration{}
+
+	record.Classifier = runClassifier(t, corpus, classifyModel, &roleProfiles)
+	record.Matching, record.EligibleRoles = runMatching(t, corpus, classifyModel, embedModel,
+		&candidateProfiles, &retrievals)
+	record.Measurements = measure(roleProfiles, candidateProfiles, retrievals, len(corpus.Listings))
 	record.Conclude()
 
 	write(t, record)
@@ -73,7 +80,7 @@ func TestBenchmark(t *testing.T) {
 
 // runClassifier classifies every frozen listing with the live model and scores
 // each one against its labels.
-func runClassifier(t *testing.T, corpus *bench.Corpus, model string) []bench.ClassifierScore {
+func runClassifier(t *testing.T, corpus *bench.Corpus, model string, elapsed *[]time.Duration) []bench.ClassifierScore {
 	t.Helper()
 	scores := []bench.ClassifierScore{}
 	for _, listing := range corpus.Listings {
@@ -87,9 +94,11 @@ func runClassifier(t *testing.T, corpus *bench.Corpus, model string) []bench.Cla
 			sources[chunk.ID] = chunk.Text
 		}
 
+		started := time.Now()
 		p, err := e.classify.Classify(ClassifyInput{
 			SubjectKind: profile.SubjectRole, SubjectID: 1, ChunkIDs: ids,
 		})
+		*elapsed = append(*elapsed, time.Since(started))
 		if err != nil {
 			// A refusal is a score of nothing captured, which is what it is: the
 			// model did not produce a usable profile for this listing.
@@ -108,7 +117,8 @@ func runClassifier(t *testing.T, corpus *bench.Corpus, model string) []bench.Cla
 // Each scenario's own resume goes through the live classifier: a benchmark that
 // gave every scenario the same candidate would score the same shortlist five
 // times and call it five scenarios.
-func runMatching(t *testing.T, corpus *bench.Corpus, classifyModel, embedModel string) (bench.MatchingScore, int) {
+func runMatching(t *testing.T, corpus *bench.Corpus, classifyModel, embedModel string,
+	candidate, retrieval *[]time.Duration) (bench.MatchingScore, int) {
 	t.Helper()
 	results := []bench.TopFive{}
 	eligible := 0
@@ -135,7 +145,9 @@ func runMatching(t *testing.T, corpus *bench.Corpus, classifyModel, embedModel s
 		// model from memory on a laptop this size, and the resume call then pays
 		// a full reload inside its own timeout. Recruiters work this way round
 		// too: the candidate first, then the roles.
+		startedCandidate := time.Now()
 		candidateID, note := scenarioCandidate(t, e, scenario)
+		*candidate = append(*candidate, time.Since(startedCandidate))
 
 		// Every listing is in scope for every scenario: the benchmark measures
 		// ranking, not filtering.
@@ -152,7 +164,9 @@ func runMatching(t *testing.T, corpus *bench.Corpus, classifyModel, embedModel s
 			t.Logf("%s: aspect embedding is %s (%q)", scenario.ID, done.State, done.FailureReason)
 		}
 
+		startedShortlist := time.Now()
 		shortlist, err := e.shortlist.Build(e.initiative, candidateID)
+		*retrieval = append(*retrieval, time.Since(startedShortlist))
 		if err != nil {
 			// A refusal is the scenario's outcome, recorded as itself rather
 			// than as an empty top five that reads like a ranking failure.
@@ -293,4 +307,71 @@ func write(t *testing.T, record *bench.Record) {
 		t.Fatalf("writing %s: %v", summary, err)
 	}
 	t.Logf("recorded %s", path)
+}
+
+// measure turns the timings a run took into the record's measurements, against
+// the PRD's provisional targets.
+//
+// The conditions are stated with every figure because they are what makes it
+// readable: a decomposition time from a corpus of twenty short listings on a
+// development machine is not the same measurement as one from the recruiter's
+// documents on the target laptop, and a record that omitted the difference
+// would invite exactly that comparison.
+func measure(roleProfiles, candidateProfiles, retrievals []time.Duration, listings int) []bench.Measurement {
+	out := []bench.Measurement{}
+	add := func(name string, value float64, unit string, target float64, conditions string) {
+		out = append(out, bench.Measurement{
+			Name: name, Value: value, Unit: unit, Target: target,
+			Met: target > 0 && value <= target, Conditions: conditions,
+		})
+	}
+	where := runtime.GOOS + "/" + runtime.GOARCH + ", models resident, the synthetic corpus"
+
+	if len(roleProfiles) > 0 {
+		add("one role profile, mean", seconds(mean(roleProfiles)), "s", 30,
+			fmt.Sprintf("%d listings of roughly 450 characters, two model passes each, %s", len(roleProfiles), where))
+		add("one role profile, slowest", seconds(slowest(roleProfiles)), "s", 30,
+			"the slowest single listing in the run, "+where)
+		add(fmt.Sprintf("%d role profiles, total", listings), seconds(total(roleProfiles)), "s", 600,
+			"sequential, no concurrency, "+where)
+	}
+	if len(candidateProfiles) > 0 {
+		add("one candidate profile, mean", seconds(mean(candidateProfiles)), "s", 180,
+			fmt.Sprintf("%d scenario resumes, %s", len(candidateProfiles), where))
+	}
+	if len(retrievals) > 0 {
+		// P95 over five scenarios is the slowest of the five, and saying so
+		// beats printing a percentile the sample cannot support.
+		add("hybrid retrieval, slowest of the run", seconds(slowest(retrievals)), "s", 2,
+			fmt.Sprintf("%d scenarios over 20 eligible roles — the PRD's target is set at "+
+				"approximately 1,000 candidates and 1,000 roles, which this corpus is not", len(retrievals)))
+	}
+	return out
+}
+
+func seconds(d time.Duration) float64 { return d.Seconds() }
+
+func total(in []time.Duration) time.Duration {
+	sum := time.Duration(0)
+	for _, d := range in {
+		sum += d
+	}
+	return sum
+}
+
+func mean(in []time.Duration) time.Duration {
+	if len(in) == 0 {
+		return 0
+	}
+	return total(in) / time.Duration(len(in))
+}
+
+func slowest(in []time.Duration) time.Duration {
+	out := time.Duration(0)
+	for _, d := range in {
+		if d > out {
+			out = d
+		}
+	}
+	return out
 }

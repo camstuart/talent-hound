@@ -106,7 +106,7 @@ export default function NewInitiativeModal(props: Props) {
             </label>
           </Show>
         </Show>
-        {error() && <p class="modal-error">{error()}</p>}
+        {error() && <p class="modal-error" role="alert">{error()}</p>}
         <div class="modal-actions">
           <button type="button" onClick={() => props.onCancel()}>
             Cancel

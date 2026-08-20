@@ -65,7 +65,7 @@ export default function DeletePanel() {
       </p>
 
       <Show when={error()}>
-        <p class="modal-error">{error()}</p>
+        <p class="modal-error" role="alert">{error()}</p>
       </Show>
       <Show when={done()}>
         <p class="muted" aria-label="Deletion outcome">

@@ -175,7 +175,7 @@ export default function SettingsPanel() {
       <DiagnosticsPanel />
 
       <Show when={error()}>
-        <p class="modal-error">{error()}</p>
+        <p class="modal-error" role="alert">{error()}</p>
       </Show>
     </div>
   );

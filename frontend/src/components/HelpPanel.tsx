@@ -47,7 +47,7 @@ export default function HelpPanel() {
       </p>
 
       <Show when={error()}>
-        <p class="modal-error">{error()}</p>
+        <p class="modal-error" role="alert">{error()}</p>
       </Show>
 
       <form

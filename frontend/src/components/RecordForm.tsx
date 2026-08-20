@@ -102,7 +102,7 @@ export default function RecordForm(props: Props) {
         </For>
       </div>
       <Show when={formError()}>
-        <p class="modal-error">{formError()}</p>
+        <p class="modal-error" role="alert">{formError()}</p>
       </Show>
       <div class="record-form-actions">
         <button type="submit" class="primary" disabled={busy()}>

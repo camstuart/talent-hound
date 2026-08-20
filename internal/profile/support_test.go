@@ -554,3 +554,205 @@ func TestSponsorshipIsNotEvidencedByItsOwnNegation(t *testing.T) {
 		t.Fatalf("a stated status was dropped: %+v", offering.Aspects[0].Structured)
 	}
 }
+
+// A model that compressed two of the document's sentences into one wording has
+// quoted both of them. The city is in the document and in the aspect's own
+// wording; dropping it leaves a location that says Melbourne in prose and names
+// no city in the field the matching reads.
+func TestWordingAssembledFromTheCitedChunkSupportsItsValues(t *testing.T) {
+	chunk := "Silverleaf Consulting is hiring a backend engineer (contract) in Melbourne. " +
+		"This is a remote role, offered as contract work at AUD 900 per day."
+	sources := []Source{{ChunkID: 2, Text: chunk}}
+	proposal := &Proposal{Aspects: []Aspect{{
+		Type:       Location,
+		Wording:    "remote role in Melbourne",
+		Structured: map[string]any{"city": "Melbourne", "remote_ok": true},
+		Citations: []Citation{{ChunkID: 2,
+			Quote: "This is a remote role, offered as contract work at AUD 900 per day."}},
+	}}}
+
+	dropped := DropUnsupportedStructured(proposal, sources)
+	if len(dropped) != 0 {
+		t.Fatalf("a value the document states was dropped: %v", dropped)
+	}
+	if proposal.Aspects[0].Structured["city"] != "Melbourne" {
+		t.Fatalf("the stated city was lost: %+v", proposal.Aspects[0].Structured)
+	}
+}
+
+// The same rule adds no word the chunk does not have. A confident wording is
+// not evidence.
+func TestWordingNamingAPlaceTheChunkDoesNotSupportsNothing(t *testing.T) {
+	sources := []Source{{ChunkID: 2, Text: "This is a remote role, offered as contract work."}}
+	proposal := &Proposal{Aspects: []Aspect{{
+		Type:       Location,
+		Wording:    "remote role in Sydney",
+		Structured: map[string]any{"city": "Sydney", "remote_ok": true},
+		Citations:  []Citation{{ChunkID: 2, Quote: "This is a remote role, offered as contract work."}},
+	}}}
+
+	DropUnsupportedStructured(proposal, sources)
+	if _, present := proposal.Aspects[0].Structured["city"]; present {
+		t.Fatalf("a city the document never names was kept: %+v", proposal.Aspects[0].Structured)
+	}
+	if proposal.Aspects[0].Structured["remote_ok"] != true {
+		t.Fatal("the value the document does state was dropped with it")
+	}
+}
+
+// And it is the cited chunk, not any chunk: a wording assembled from a document
+// the aspect did not cite is not quoting that document.
+func TestWordingIsCheckedAgainstTheChunkTheAspectCites(t *testing.T) {
+	sources := []Source{
+		{ChunkID: 2, Text: "This is a remote role."},
+		{ChunkID: 7, Text: "Our Sydney office runs the graduate programme."},
+	}
+	proposal := &Proposal{Aspects: []Aspect{{
+		Type:       Location,
+		Wording:    "remote Sydney role",
+		Structured: map[string]any{"city": "Sydney"},
+		Citations:  []Citation{{ChunkID: 2, Quote: "This is a remote role."}},
+	}}}
+
+	DropUnsupportedStructured(proposal, sources)
+	if _, present := proposal.Aspects[0].Structured["city"]; present {
+		t.Fatal("a city taken from a chunk the aspect never cited was kept")
+	}
+}
+
+// A constraint the model wrote into another aspect's wording and gave no aspect
+// of its own is still stated by a sentence the profile cites.
+func TestAnEmploymentTypeStatedByACitedSentenceIsRecorded(t *testing.T) {
+	sources := []Source{{ChunkID: 2, Text: "This is an onsite role, offered as permanent work at NZD 128,000 base."}}
+	proposal := &Proposal{Aspects: []Aspect{{
+		Type:       WorkArrangement,
+		Wording:    "onsite, permanent",
+		Structured: map[string]any{"arrangement": "onsite"},
+		Citations: []Citation{{ChunkID: 2,
+			Quote: "This is an onsite role, offered as permanent work at NZD 128,000 base."}},
+	}}}
+
+	added := DeriveConstraintAspects(proposal, sources)
+	if len(added) != 1 {
+		t.Fatalf("nothing was derived: %v", added)
+	}
+	var got *Aspect
+	for i := range proposal.Aspects {
+		if proposal.Aspects[i].Type == EmploymentType {
+			got = &proposal.Aspects[i]
+		}
+	}
+	if got == nil {
+		t.Fatal("no employment type was recorded")
+	}
+	if got.Structured["employment_type"] != "permanent" {
+		t.Fatalf("recorded %+v", got.Structured)
+	}
+	if len(got.Citations) == 0 {
+		t.Fatal("the derived aspect cites nothing")
+	}
+}
+
+// It derives nothing when the aspect already exists — the model's own reading
+// stands.
+func TestAnEmploymentTypeAlreadyRecordedIsNotDerivedOver(t *testing.T) {
+	sources := []Source{{ChunkID: 2, Text: "This is offered as permanent work."}}
+	proposal := &Proposal{Aspects: []Aspect{{
+		Type: EmploymentType, Wording: "contract",
+		Structured: map[string]any{"employment_type": "contract"},
+		Citations:  []Citation{{ChunkID: 2, Quote: "This is offered as permanent work."}},
+	}}}
+
+	if added := DeriveConstraintAspects(proposal, sources); len(added) != 0 {
+		t.Fatalf("it overrode what the model read: %v", added)
+	}
+	if len(proposal.Aspects) != 1 {
+		t.Fatalf("a second employment type was added: %+v", proposal.Aspects)
+	}
+}
+
+// A sentence stating two of them states neither.
+func TestAnAmbiguousEmploymentTypeIsNotGuessed(t *testing.T) {
+	sources := []Source{{ChunkID: 2,
+		Text: "A permanent role, with contract work available for the right person."}}
+	proposal := &Proposal{Aspects: []Aspect{{
+		Type: WorkArrangement, Wording: "onsite",
+		Structured: map[string]any{"arrangement": "onsite"},
+		Citations: []Citation{{ChunkID: 2,
+			Quote: "A permanent role, with contract work available for the right person."}},
+	}}}
+
+	if added := DeriveConstraintAspects(proposal, sources); len(added) != 0 {
+		t.Fatalf("it guessed between two: %v", added)
+	}
+}
+
+// And nothing is derived from a sentence nobody cited.
+func TestAnEmploymentTypeNoSentenceCitesIsNotDerived(t *testing.T) {
+	sources := []Source{
+		{ChunkID: 2, Text: "This is an onsite role."},
+		{ChunkID: 7, Text: "Offered as permanent work."},
+	}
+	proposal := &Proposal{Aspects: []Aspect{{
+		Type: WorkArrangement, Wording: "onsite",
+		Structured: map[string]any{"arrangement": "onsite"},
+		Citations:  []Citation{{ChunkID: 2, Quote: "This is an onsite role."}},
+	}}}
+
+	if added := DeriveConstraintAspects(proposal, sources); len(added) != 0 {
+		t.Fatalf("it read a chunk nobody cited: %v", added)
+	}
+}
+
+// A place the source names and calls no kind of place is the city, which is the
+// convention the prompt states. Filed under region it is a value the source
+// does not state.
+func TestABarePlaceNameFiledUnderRegionIsTheCity(t *testing.T) {
+	proposal := &Proposal{Aspects: []Aspect{{
+		Type: Location, Wording: "Nelson",
+		Structured: map[string]any{"region": "Nelson"},
+		Citations:  []Citation{{ChunkID: 2, Quote: "Bluewater Marine is hiring a telemetry engineer in Nelson."}},
+	}}}
+
+	NormalizeStructured(proposal)
+	got := proposal.Aspects[0].Structured
+	if got["city"] != "Nelson" {
+		t.Fatalf("the place was not recorded as the city: %+v", got)
+	}
+	if _, present := got["region"]; present {
+		t.Fatalf("a region the source does not state was kept: %+v", got)
+	}
+}
+
+// A source that says which kind of place it means has said it, and the model's
+// reading stands.
+func TestARegionTheSourceCallsARegionStays(t *testing.T) {
+	proposal := &Proposal{Aspects: []Aspect{{
+		Type: Location, Wording: "the Waikato region",
+		Structured: map[string]any{"region": "Waikato"},
+		Citations:  []Citation{{ChunkID: 2, Quote: "Hiring across the Waikato region."}},
+	}}}
+
+	NormalizeStructured(proposal)
+	got := proposal.Aspects[0].Structured
+	if got["region"] != "Waikato" {
+		t.Fatalf("a stated region was moved: %+v", got)
+	}
+	if _, present := got["city"]; present {
+		t.Fatalf("a city the source never names was recorded: %+v", got)
+	}
+}
+
+// And a city already recorded is never displaced by a region beside it.
+func TestARecordedCityIsNotDisplacedByARegion(t *testing.T) {
+	proposal := &Proposal{Aspects: []Aspect{{
+		Type: Location, Wording: "Nelson",
+		Structured: map[string]any{"city": "Nelson", "region": "Nelson"},
+		Citations:  []Citation{{ChunkID: 2, Quote: "Hiring in Nelson."}},
+	}}}
+
+	NormalizeStructured(proposal)
+	if proposal.Aspects[0].Structured["city"] != "Nelson" {
+		t.Fatalf("the recorded city changed: %+v", proposal.Aspects[0].Structured)
+	}
+}
