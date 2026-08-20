@@ -34,6 +34,8 @@ silently between now and the day the laptop is available.
 | The installer's version matches what the application reports | PASS — a diagnostic report that disagrees with Add/Remove Programs is one nobody can act on |
 | The uninstaller removes no AppData folder but the WebView2 one | PASS — on Windows the data folder is `%AppData%\talent-hound` and the WebView2 directory is `%AppData%\talent-hound.exe`, four characters apart in the same parent |
 | The uninstaller says where the data folder is | PASS — printed to the log, and shown when the uninstall is not silent, along with the credential store |
+| The sidecar pin matches what the application demands | PASS — `requirements.txt`, `PIN.md`, and `PinnedSidecarVersion` are one version; a drift would have the packaged reader refused on first run |
+| Every `just` recipe the pin record names exists | PASS — it named `just sidecar-digest`, which does not exist |
 
 What this does not check is anything about running: linking is not launching,
 and every row below still needs the machine.

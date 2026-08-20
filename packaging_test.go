@@ -5,6 +5,8 @@ import (
 	"os"
 	"strings"
 	"testing"
+
+	"camstuart/talent-hound/internal/extract"
 )
 
 // The identity a recruiter sees before they see the application: the installer,
@@ -154,4 +156,98 @@ func TestTheUninstallerKeepsTheDataFolderAndSaysWhereItIs(t *testing.T) {
 	if !strings.Contains(uninstall, "DetailPrint") {
 		t.Fatal("the uninstaller says nothing in a silent uninstall's log")
 	}
+}
+
+// The version the sidecar is pinned to and the version the application demands
+// of it are the same number in two files. When they drift, the packaged reader
+// is rejected on first run — on the laptop, by an application that will not
+// extract a single document until someone works out why.
+func TestTheSidecarPinMatchesWhatTheApplicationDemands(t *testing.T) {
+	raw, err := os.ReadFile("build/sidecar/requirements.txt")
+	if err != nil {
+		t.Fatalf("reading the sidecar requirements: %v", err)
+	}
+	pinned := ""
+	for _, line := range strings.Split(string(raw), "\n") {
+		trimmed := strings.TrimSpace(line)
+		if !strings.HasPrefix(trimmed, "markitdown") {
+			continue
+		}
+		_, version, ok := strings.Cut(trimmed, "==")
+		if !ok {
+			t.Fatalf("markitdown is not pinned to an exact version: %q", trimmed)
+		}
+		pinned = strings.TrimSpace(version)
+	}
+	if pinned == "" {
+		t.Fatal("the sidecar requirements do not pin markitdown")
+	}
+	if pinned != extract.PinnedSidecarVersion {
+		t.Fatalf("requirements.txt pins markitdown %s and the application demands %s",
+			pinned, extract.PinnedSidecarVersion)
+	}
+
+	// And the record of what was built names the same version.
+	pin, err := os.ReadFile("build/sidecar/PIN.md")
+	if err != nil {
+		t.Fatalf("reading the pin record: %v", err)
+	}
+	if !strings.Contains(string(pin), pinned) {
+		t.Fatalf("PIN.md does not record version %s", pinned)
+	}
+	// A pin record that sends someone to a command that does not exist is worse
+	// than one that says nothing, on the day they have the laptop.
+	for _, referenced := range referencedRecipes(string(pin)) {
+		if !hasRecipe(t, referenced) {
+			t.Fatalf("PIN.md tells the reader to run `just %s`, which does not exist", referenced)
+		}
+	}
+}
+
+// referencedRecipes finds every `just <name>` a document tells the reader to run.
+func referencedRecipes(text string) []string {
+	out := []string{}
+	// Everything after a `just — the first segment is the text before the first
+	// one, and reading it as a reference finds whatever backtick came earlier.
+	segments := strings.Split(text, "`just ")
+	for _, part := range segments[1:] {
+		if !strings.Contains(part, "`") {
+			continue
+		}
+		name, _, _ := strings.Cut(part, "`")
+		name = strings.TrimSpace(strings.SplitN(name, " ", 2)[0])
+		if name != "" {
+			out = append(out, name)
+		}
+	}
+	return out
+}
+
+func recipeNames(t *testing.T) []string {
+	t.Helper()
+	raw, err := os.ReadFile("justfile")
+	if err != nil {
+		t.Fatalf("reading the justfile: %v", err)
+	}
+	names := []string{}
+	for _, line := range strings.Split(string(raw), "\n") {
+		if strings.HasPrefix(line, " ") || strings.HasPrefix(line, "#") || !strings.Contains(line, ":") {
+			continue
+		}
+		name, _, _ := strings.Cut(line, ":")
+		if name = strings.TrimSpace(name); name != "" {
+			names = append(names, name)
+		}
+	}
+	return names
+}
+
+func hasRecipe(t *testing.T, name string) bool {
+	t.Helper()
+	for _, recipe := range recipeNames(t) {
+		if recipe == name {
+			return true
+		}
+	}
+	return false
 }

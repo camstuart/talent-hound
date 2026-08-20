@@ -8,9 +8,9 @@ the committed record of what was built.
 | --- | --- |
 | MarkItDown | 0.1.2 (see `requirements.txt`) |
 | PyInstaller | 6.11.1 |
-| Python | _record the exact `python --version` used_ |
+| Python | _the `python` line printed by `just sidecar`_ |
 | Built on | _date_ |
-| Package SHA-256 | _output of `just sidecar-digest`_ |
+| Executable SHA-256 | _the `sha256` line printed by `just sidecar`_ |
 
-Rebuild with `just sidecar` (Windows). Plugins are off unless `--use-plugins`
+Rebuild with `just sidecar` (Windows); it prints every value above. Plugins are off unless `--use-plugins`
 is passed, and the app never passes it; no network converters are enabled.
