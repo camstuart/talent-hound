@@ -293,6 +293,35 @@ func (s *CloudService) Preview(in PreviewInput) (*Payload, error) {
 	}, nil
 }
 
+// cloudCategories names what kinds of thing this payload disclosed.
+//
+// The base is what a payload for these tasks carries. An organization name is
+// added when one is there, because Redact removes direct identifiers and leaves
+// organizations standing — the same choice the search side makes, for the same
+// reason: naming a company is ordinary recruiting and naming a person is not.
+//
+// A direct identifier cannot be here, because Send refuses a payload still
+// carrying one. It is named anyway if it somehow is, because a disclosure record
+// that cannot describe the unexpected case is a record of the expected one.
+func cloudCategories(text string) string {
+	kinds := []string{"approved profile aspects and selected evidence snippets"}
+	organization, identifier := false, false
+	for _, found := range scrub.Detect(text, scrub.Identifiers{}) {
+		if found.Kind == scrub.KindOrganization {
+			organization = true
+			continue
+		}
+		identifier = true
+	}
+	if organization {
+		kinds = append(kinds, "an organization name")
+	}
+	if identifier {
+		kinds = append(kinds, "a direct identifier")
+	}
+	return strings.Join(kinds, ", ")
+}
+
 // Send transmits a previewed payload, unchanged.
 //
 // Everything it refuses, it refuses before transmitting: the boundary, the
@@ -349,7 +378,7 @@ func (s *CloudService) Send(initiativeID uint, payload Payload) (string, error) 
 		OccurredAt:   time.Now().UTC(),
 		Provider:     "cloud",
 		Task:         payload.Task,
-		Categories:   "approved profile aspects and selected evidence snippets",
+		Categories:   cloudCategories(payload.Text),
 		InitiativeID: &id,
 	}
 	if err := s.db.Create(&event).Error; err != nil {

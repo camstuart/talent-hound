@@ -640,3 +640,63 @@ func TestAPayloadThatSkippedThePreviewIsRefused(t *testing.T) {
 		t.Fatalf("the provider received %q, the recruiter previewed %q", sent, payload.Text)
 	}
 }
+
+// The cloud disclosure record names an organization when one was sent.
+//
+// Redact removes direct identifiers and leaves organizations standing — naming
+// a company is ordinary recruiting and naming a person is not — so a payload
+// can legitimately carry one. The record said "approved profile aspects and
+// selected evidence snippets" either way, which is the same understatement the
+// search side had: it is the evidence somebody checks instead of looking.
+func TestTheCloudDisclosureNamesAnOrganizationThatWasSent(t *testing.T) {
+	e := newCloudEnv(t)
+	e.configure(t, "https://api.example-cloud.invalid/v1")
+	e.withKey(t)
+	if err := e.cloud.Approve(e.initiative, string(cloud.Drafting)); err != nil {
+		t.Fatalf("approving: %v", err)
+	}
+	e.model.respond = func(string) string { return "ok" }
+
+	latest := func(t *testing.T) string {
+		t.Helper()
+		rows := []models.DisclosureEvent{}
+		if err := e.db.Order("id desc").Find(&rows).Error; err != nil {
+			t.Fatalf("reading disclosures: %v", err)
+		}
+		if len(rows) == 0 {
+			t.Fatal("nothing was recorded")
+		}
+		return rows[0].Categories
+	}
+
+	send := func(t *testing.T, text string) {
+		t.Helper()
+		payload, err := e.cloud.Preview(PreviewInput{
+			InitiativeID: e.initiative, Task: string(cloud.Drafting), Text: text,
+		})
+		if err != nil {
+			t.Fatalf("previewing: %v", err)
+		}
+		if _, err := e.cloud.Send(e.initiative, *payload); err != nil {
+			t.Fatalf("sending: %v", err)
+		}
+	}
+
+	t.Run("ordinary wording names only the base kinds", func(t *testing.T) {
+		send(t, "Write a pitch about five years of production Go and SQLite.")
+		if got := latest(t); strings.Contains(got, "organization") {
+			t.Fatalf("categories = %q, which claims more than was sent", got)
+		}
+	})
+
+	t.Run("a company named in the payload is named in the record", func(t *testing.T) {
+		send(t, "Write a pitch about five years at Quokkastack Pty Ltd building Go services.")
+		got := latest(t)
+		if !strings.Contains(got, "an organization name") {
+			t.Fatalf("categories = %q, and a company was in the payload", got)
+		}
+		if strings.Contains(got, "Quokkastack") {
+			t.Fatalf("the record quotes the organization: %q", got)
+		}
+	})
+}
