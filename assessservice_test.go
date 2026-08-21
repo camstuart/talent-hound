@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"strings"
 	"testing"
@@ -590,5 +591,96 @@ func TestTheDatabaseRefusesAnInvalidResultOrDirection(t *testing.T) {
 				t.Fatalf("the database accepted %s", c.name)
 			}
 		})
+	}
+}
+
+// The twenty-role batch: the flow the PRD gives its own target and nothing
+// exercised.
+//
+// AssessAll and its worker had no test at all. Assess-one was covered, and a
+// batch is not one assessment repeated — it builds the shortlist, carries each
+// role's position with it, and hands the work to the job lifecycle, any of
+// which can be wrong while assessing a single role stays right.
+func TestTheBatchAssessesEveryShortlistedRoleAndKeepsItsOrder(t *testing.T) {
+	e := newAssessEnv(t)
+	candidateID := e.assessableCandidate(t)
+	// Listings that share the candidate's wording, so the lexical half of the
+	// shortlist has something to find without an embedding model.
+	first := e.roleWithListing(t, "Platform engineer", "Must have five years of production Go.",
+		profile.Aspect{Type: profile.Skill, Wording: "Strong Go", Priority: profile.MustHave})
+	second := e.roleWithListing(t, "Backend engineer", "Must have production Go experience.",
+		profile.Aspect{Type: profile.Skill, Wording: "Strong Go", Priority: profile.MustHave})
+	e.generateModel(t)
+	e.model.respond = compliant(assess.Met, "the evidence supports it")
+
+	job, err := e.assess.AssessAll(e.initiative, candidateID)
+	if err != nil {
+		t.Fatalf("starting the batch: %v", err)
+	}
+	if job.TotalItems < 2 {
+		t.Fatalf("the batch covers %d roles, want every shortlisted one", job.TotalItems)
+	}
+	done := waitForJob(t, e.jobs, job.ID)
+	if done.State != models.JobCompleted {
+		t.Fatalf("the batch is %s (%q)", done.State, done.FailureReason)
+	}
+	if done.CompletedItems != job.TotalItems {
+		t.Fatalf("completed %d of %d", done.CompletedItems, job.TotalItems)
+	}
+
+	// Every role it covered has a stored match, not just the first.
+	for _, roleID := range []uint{first, second} {
+		match, err := e.assess.Match(e.initiative, candidateID, roleID)
+		if err != nil {
+			t.Fatalf("reading the match for role %d: %v", roleID, err)
+		}
+		if match == nil {
+			t.Fatalf("the batch stored no match for role %d", roleID)
+		}
+		if len(match.Results) == 0 {
+			t.Fatalf("the match for role %d has no results", roleID)
+		}
+	}
+}
+
+// A batch given nothing to do is a finished batch, not a failed one: a
+// recruiter with no shortlist has an empty result, which is an answer.
+func TestABatchWithNothingShortlistedCompletes(t *testing.T) {
+	e := newAssessEnv(t)
+	candidateID := e.assessableCandidate(t)
+	e.generateModel(t)
+
+	job, err := e.assess.AssessAll(e.initiative, candidateID)
+	if err != nil {
+		t.Fatalf("starting the batch: %v", err)
+	}
+	if job.TotalItems != 0 {
+		t.Fatalf("the batch covers %d roles with none shortlisted", job.TotalItems)
+	}
+	if done := waitForJob(t, e.jobs, job.ID); done.State != models.JobCompleted {
+		t.Fatalf("an empty batch is %s (%q), want completed", done.State, done.FailureReason)
+	}
+}
+
+// The worker refuses params it cannot read, with a short code rather than
+// anything quoted out of a document.
+func TestTheBatchWorkerRefusesUnreadableParams(t *testing.T) {
+	e := newAssessEnv(t)
+	_, err := e.assess.work(context.Background(), models.Job{Params: "{not json"}, 0)
+	if err == nil {
+		t.Fatal("unreadable params were accepted")
+	}
+	// A short lowercase code, and nothing lifted out of the params.
+	if !strings.Contains(err.Error(), "bad_params") {
+		t.Fatalf("the failure reason is %q, which does not name the code", err)
+	}
+	if strings.Contains(err.Error(), "not json") {
+		t.Fatalf("the failure quoted its input: %q", err)
+	}
+	// And an item outside the batch is refused rather than assessed as zero.
+	_, err = e.assess.work(context.Background(),
+		models.Job{Params: `{"initiativeId":1,"candidateId":1,"roleIds":[]}`}, 0)
+	if err == nil {
+		t.Fatal("an item outside the batch was accepted")
 	}
 }

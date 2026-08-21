@@ -11,7 +11,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"io"
 	"sort"
 	"strings"
 )
@@ -125,12 +124,6 @@ func (in Inputs) Hash() string {
 	write("role_stale", fmt.Sprintf("%t", in.RoleStale))
 
 	return hex.EncodeToString(h.Sum(nil))
-}
-
-// WriteCanonical writes the same bytes Hash digests, for a test that wants to
-// compare serializations rather than digests.
-func (in Inputs) WriteCanonical(w io.Writer) {
-	_, _ = fmt.Fprint(w, in.Hash())
 }
 
 // Value is one side of a structured comparison.
