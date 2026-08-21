@@ -171,3 +171,57 @@ func TestOrdinaryProfessionalCriteriaPass(t *testing.T) {
 		})
 	}
 }
+
+// Every category the screen is told to list has to be one the check actually
+// refuses, and every category the check can return has to be listed.
+//
+// A screen that names a protected ground the service does not enforce makes a
+// promise nothing keeps; a ground enforced but not listed is a refusal the
+// recruiter cannot anticipate. The two lists come from the same table today,
+// and this is what keeps them from drifting apart when someone adds a rule in
+// one place.
+func TestEveryListedCategoryIsRefusedAndEveryRefusalIsListed(t *testing.T) {
+	listed := Categories()
+	if len(listed) == 0 {
+		t.Fatal("no protected category is listed at all")
+	}
+
+	seen := map[Category]bool{}
+	for _, c := range listed {
+		if strings.TrimSpace(string(c)) == "" {
+			t.Fatal("a listed category is empty")
+		}
+		if seen[c] {
+			t.Fatalf("%q is listed twice", c)
+		}
+		seen[c] = true
+	}
+
+	// Every rule's every phrase is caught, and caught as its own category.
+	for _, r := range protected {
+		if !seen[r.category] {
+			t.Errorf("%q is refused but never listed", r.category)
+		}
+		for _, phrase := range r.phrases {
+			found := Check("must be " + phrase)
+			if found == nil {
+				t.Errorf("%q is a %s phrase and is not refused", phrase, r.category)
+				continue
+			}
+			if found.Category != r.category {
+				t.Errorf("%q is refused as %s, want %s", phrase, found.Category, r.category)
+			}
+		}
+	}
+
+	// And nothing lawful is swept up by them.
+	for _, lawful := range []string{
+		"five years of production Go", "must have work rights in Australia",
+		"senior platform engineer", "willing to work onsite in Melbourne",
+		"holds a current security clearance", "available at short notice",
+	} {
+		if found := Check(lawful); found != nil {
+			t.Errorf("%q was refused as %s (%q)", lawful, found.Category, found.Phrase)
+		}
+	}
+}

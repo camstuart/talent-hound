@@ -52,7 +52,11 @@ export default function JobsPanel(props: { initiativeId: number }) {
       JobService.Enqueue({
         kind: "demo",
         initiativeId: props.initiativeId,
-        params: JSON.stringify({ delayMs: 500, failAt: -1 }),
+        // Long enough to watch. This exists so somebody can see a job queue,
+        // run, report counts, be cancelled and be retried — and at four items
+        // of half a second it could finish before this panel's next poll
+        // rendered it, demonstrating none of them on a busy machine.
+        params: JSON.stringify({ delayMs: 1_500, failAt: -1 }),
         totalItems: 4,
       }),
     );

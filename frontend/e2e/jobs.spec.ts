@@ -20,7 +20,14 @@ test("runs a demo job to completion, showing its progress", async ({ page }) => 
   await page.getByRole("button", { name: "Start demo job" }).click();
 
   // The real backend runs it: state and counts follow the actual work.
-  await expect(jobs.getByText(/demo — (queued|running)/)).toBeVisible();
+  //
+  // Completed is one of the accepted states here, and that is the point rather
+  // than a concession. Queued and running are transient, and the panel polls —
+  // so on a busy machine the first render can arrive after a four-item demo job
+  // has already finished, and waiting longer for "running" makes that worse
+  // rather than better. What this asserts is that the job appears at all; the
+  // line below is where the work is proved, by its count.
+  await expect(jobs.getByText(/demo — (queued|running|completed)/)).toBeVisible();
   await expect(jobs.getByText(/demo — completed, 4\/4/)).toBeVisible({ timeout: 15_000 });
 });
 
@@ -29,6 +36,9 @@ test("cancels a demo job and finds it in the cancelled tab, then retries it", as
   const jobs = page.getByRole("region", { name: "Jobs" });
 
   await page.getByRole("button", { name: "Start demo job" }).click();
+  // This one does need the job still in flight — there is nothing to cancel
+  // otherwise — so the transient state is the assertion rather than an
+  // incidental one.
   await expect(jobs.getByText(/demo — (queued|running)/)).toBeVisible();
 
   const cancel = jobs.getByRole("button", { name: /^Cancel job/ });

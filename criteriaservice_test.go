@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"camstuart/talent-hound/internal/criteria"
 	"camstuart/talent-hound/internal/models"
 	"camstuart/talent-hound/internal/profile"
 )
@@ -602,5 +603,61 @@ func TestReorderingRefusesForeignCriteria(t *testing.T) {
 
 	if err := e.criteria.Reorder(e.initiative, []uint{theirs.ID, mine.ID}); err == nil {
 		t.Fatal("reordering accepted another initiative's criterion")
+	}
+}
+
+// What the screen is told cannot be a criterion, and what the service actually
+// refuses, have to be the same list.
+//
+// Blocked exists so a screen can say what is forbidden rather than only that
+// something was refused. It had no test, and a list that drifted from the
+// enforcement would either promise a protection nothing applies or surprise the
+// recruiter with a refusal they were never warned about.
+func TestWhatIsListedAsBlockedIsWhatIsActuallyRefused(t *testing.T) {
+	e := newCriteriaEnv(t)
+
+	listed := e.criteria.Blocked()
+	if len(listed) == 0 {
+		t.Fatal("the screen would say nothing is protected")
+	}
+	want := criteria.Categories()
+	if len(listed) != len(want) {
+		t.Fatalf("the service lists %d categories and the rules define %d", len(listed), len(want))
+	}
+	have := map[string]bool{}
+	for _, c := range listed {
+		have[c] = true
+	}
+	for _, c := range want {
+		if !have[string(c)] {
+			t.Fatalf("%q is enforced and the screen would not list it", c)
+		}
+	}
+
+	// And a criterion drawn from a listed ground is refused, with the ground
+	// named rather than a bare rejection.
+	// Grounds the hard list refuses outright. It is deliberately narrow — the
+	// list refuses and the model warns — so "no visa holders" is not here:
+	// "visa" is masked as lawful work-rights phrasing on purpose, and whether
+	// that phrasing should be refused outright is a product decision rather
+	// than something a test should settle.
+	for _, text := range []string{
+		"must be under 35", "prefer a male candidate", "must be an Australian citizen",
+	} {
+		_, err := e.criteria.Add(CriterionInput{
+			InitiativeID: e.initiative, Text: text, Priority: string(models.CriterionMustHave),
+		})
+		if err == nil {
+			t.Fatalf("%q was accepted as a criterion", text)
+		}
+		named := false
+		for _, c := range listed {
+			if strings.Contains(strings.ToLower(err.Error()), strings.ToLower(c)) {
+				named = true
+			}
+		}
+		if !named {
+			t.Fatalf("%q was refused without naming a ground: %v", text, err)
+		}
 	}
 }
