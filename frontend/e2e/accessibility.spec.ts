@@ -56,8 +56,17 @@ test("the new-initiative flow is completable with the keyboard alone", async ({ 
   await page.getByPlaceholder("Initiative name").fill(name);
   await page.getByLabel("Initiative type").selectOption("talent_search");
   // Reach Create by keyboard and activate it the same way.
-  await page.getByRole("button", { name: "Create" }).focus();
-  await expect(page.getByRole("button", { name: "Create" })).toBeFocused();
+  //
+  // Focusing is retried rather than done once. Choosing the type updates state,
+  // the dialog re-renders, and a button replaced between the focus and the
+  // assertion is not focused any more — so a single focus() can lose a race it
+  // looks like it cannot lose. toBeFocused retries the question and not the
+  // focusing, which is what makes retrying both necessary here.
+  const create = page.getByRole("button", { name: "Create" });
+  await expect(async () => {
+    await create.focus();
+    await expect(create).toBeFocused({ timeout: 1_000 });
+  }).toPass({ timeout: 15_000 });
   await page.keyboard.press("Enter");
 
   await expect(page.getByRole("tab", { name: new RegExp(name) })).toBeVisible();
