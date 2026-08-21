@@ -341,7 +341,35 @@ two and fails.
 What remains unexplained is narrow and specific: the shipped ranking scores one
 plausible on `embedded-c-perth` where ranking by raw word overlap scores three.
 
-**One defect was found on the way and has nothing to do with the above.**
+**A second defect was found, and this one is on the path.** The candidate's
+profile records the place — `location "Perth, onsite, permanent, around AUD
+160,000"` — and the shortlist searched with neither half of it. Structured types
+were excluded from the query set entirely, justified by a comment that is only
+about embeddings: "Melbourne" and "Sydney" are close in an embedding space and
+opposite in fact. True, and a good reason to keep a place out of the similarity
+half. Not a reason to keep it out of FTS5, where "Perth" matches "Perth" exactly
+and cannot be confused with Sydney. One correct argument applied one scope too
+wide.
+
+So `embedded-c-perth` lives in Perth and works at Redgum Mining Tech;
+`staff-engineer-perth` is a role at Redgum Mining Tech in Perth whose
+nice-to-have is mining domain experience. Four facts both documents state, the
+recruiter calls it plausible, and the word Perth reached no query at all.
+
+Places are now lexical-only queries, taken from the normalized value rather than
+the aspect wording, so the search is `Perth` and not `Perth, onsite, permanent,
+around AUD 160,000`. Two tests pin it: the city becomes a lexical-only query and
+the whole wording never does, and a shared city cannot outrank the work — a
+listing naming Perth three times about laminated dough still loses to the right
+role in Hobart.
+
+Measured on the tuning corpus it changes nothing, and the reason is structural:
+every tuning candidate's city holds exactly one role and it already ranks first,
+where the frozen corpus has three roles in Perth alone. The instrument cannot
+exercise this fix, which is why the harm case is a unit test rather than a
+score.
+
+**A third defect was found and is recorded unfixed.**
 Seniority aspects become search queries, so the shortlist searches for `"six
 years"` and `"seven years"` with the words ORed. Almost every listing says
 "years", so those queries retrieve nearly the whole corpus and contribute a

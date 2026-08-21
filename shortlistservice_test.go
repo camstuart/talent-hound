@@ -531,13 +531,13 @@ func TestAnAspectSentenceStillFindsItsRole(t *testing.T) {
 
 // candidateWithAspect approves a candidate profile holding one aspect with the
 // given wording, cited to the resume it came from.
-func (e *shortlistEnv) candidateWithAspect(t *testing.T, wording string) uint {
+func (e *shortlistEnv) candidateWithAspect(t *testing.T, wording string, extra ...profile.Aspect) uint {
 	t.Helper()
 	c, err := e.records.CreateCandidate(models.Candidate{FullName: "Nadia Frost"})
 	if err != nil {
 		t.Fatalf("creating candidate: %v", err)
 	}
-	md := "# Nadia Frost\n\n## Experience\n\n" + wording + ".\n"
+	md := "# Nadia Frost\n\n## Experience\n\n" + wording + ".\n\n## Location\n\nPerth, onsite.\n"
 	a, err := e.artifacts.create("resume", "resume.md", "test", []byte(md),
 		models.LinkCandidate, c.ID)
 	if err != nil {
@@ -567,9 +567,20 @@ func (e *shortlistEnv) candidateWithAspect(t *testing.T, wording string) uint {
 		t.Fatal("no chunk holds the aspect wording")
 	}
 	cite := []profile.Citation{{ChunkID: chunkID, Quote: wording}}
-	e.model.responses = []string{jsonProposal(t, []profile.Aspect{
-		{Type: profile.Experience, Wording: wording, Citations: cite},
-	})}
+	aspects := []profile.Aspect{{Type: profile.Experience, Wording: wording, Citations: cite}}
+	for _, a := range extra {
+		if len(a.Citations) == 0 {
+			// Cited to the line the resume actually carries, so the aspect is
+			// as answerable as any other.
+			for _, ch := range e.chunks2 {
+				if strings.Contains(ch.Text, "Perth, onsite") {
+					a.Citations = []profile.Citation{{ChunkID: ch.ID, Quote: "Perth, onsite"}}
+				}
+			}
+		}
+		aspects = append(aspects, a)
+	}
+	e.model.responses = []string{jsonProposal(t, aspects)}
 	p, err := e.profiles.Classify(c.ID)
 	if err != nil {
 		t.Fatalf("classifying: %v", err)
@@ -744,5 +755,88 @@ func TestARoleIsRankedByItsBestAspectNotByHowManyItHas(t *testing.T) {
 	}
 	if terse != 2 {
 		t.Fatalf("%d terse roles survived the truncation, want 2", terse)
+	}
+}
+
+// A candidate's city is evidence, and the full-text half can use it safely.
+//
+// Places are kept out of the similarity half because "Melbourne" and "Sydney"
+// are close in an embedding space and opposite in fact. That reasoning is about
+// embeddings, and it had been applied to both halves, so the word never reached
+// retrieval at all. Measured: a candidate living in Perth and working at Redgum
+// Mining Tech never surfaced a role at Redgum Mining Tech in Perth.
+func TestACandidatesCityReachesTheFullTextHalfOnly(t *testing.T) {
+	e := newShortlistEnv(t)
+	// The place as the classifier records it: a wording carrying the
+	// arrangement with it, and a normalized value holding only the city.
+	candidateID := e.candidateWithAspect(t, "Embedded C for conveyor control units",
+		profile.Aspect{Type: profile.Location, Wording: "Perth, onsite",
+			Structured: map[string]any{"city": "Perth"}})
+
+	queries, err := e.shortlist.queries(e.initiative, candidateID)
+	if err != nil {
+		t.Fatalf("building queries: %v", err)
+	}
+	var place *query
+	for i := range queries {
+		if queries[i].text == "Perth" {
+			place = &queries[i]
+		}
+	}
+	if place == nil {
+		t.Fatalf("the candidate's city never became a query: %+v", queries)
+	}
+	if !place.lexicalOnly {
+		t.Fatal("the city reaches the similarity half, where Perth and Sydney are neighbours")
+	}
+	// By its normalized value, not the aspect's wording, which carries the
+	// arrangement and the salary with it.
+	for _, q := range queries {
+		if strings.Contains(q.text, "Perth,") {
+			t.Fatalf("the whole location wording became a query: %q", q.text)
+		}
+	}
+}
+
+// A shared city is evidence, not a trump card.
+//
+// Letting the place reach the full-text half risks the opposite error: a role
+// down the road in an unrelated field outranking the right role in another
+// city. It is one query among many for exactly that reason.
+func TestASharedCityDoesNotOutrankTheWork(t *testing.T) {
+	e := newShortlistEnv(t)
+	candidateID := e.candidateWithAspect(t, "Embedded C for conveyor control units",
+		profile.Aspect{Type: profile.Location, Wording: "Perth, onsite",
+			Structured: map[string]any{"city": "Perth"}})
+
+	// The right work, in the wrong city.
+	right := e.roleWithListing(t, "Firmware engineer",
+		"Must have embedded C for conveyor control units in Hobart.",
+		profile.Aspect{Type: profile.Skill, Wording: "Embedded C for conveyor control units",
+			Citations: []profile.Citation{{Record: "recruiter"}}})
+	// The wrong work, in the candidate's own city, naming it repeatedly.
+	e.roleWithListing(t, "Pastry chef",
+		"Must have laminated dough. Perth kitchen, Perth hours, Perth team.",
+		profile.Aspect{Type: profile.Skill, Wording: "laminated dough",
+			Citations: []profile.Citation{{Record: "recruiter"}}})
+
+	if _, err := e.registry.Assign(AssignInput{Role: models.RoleEmbed, Model: "nomic-embed-text"}); err != nil {
+		t.Fatalf("assigning the embed role: %v", err)
+	}
+	job, err := e.embed.EmbedAspects(e.initiative)
+	if err != nil {
+		t.Fatalf("embedding aspects: %v", err)
+	}
+	if done := waitForJob(t, e.jobs, job.ID); done.State != models.JobCompleted {
+		t.Fatalf("aspect embedding is %s (%q)", done.State, done.FailureReason)
+	}
+
+	list := e.build(t, candidateID)
+	if len(list.Entries) == 0 {
+		t.Fatal("nothing ranked")
+	}
+	if list.Entries[0].RoleID != right {
+		t.Fatalf("a shared city outranked the work: first is %q",
+			list.Entries[0].Title)
 	}
 }

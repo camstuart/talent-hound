@@ -141,6 +141,9 @@ func (s *ShortlistService) Build(initiativeID, candidateID uint) (*Shortlist, er
 		}
 		lists = append(lists, fusion.Ranked{Source: q.source, Method: "lexical", Keys: lexical})
 
+		if q.lexicalOnly {
+			continue
+		}
 		lists = append(lists, fusion.Ranked{
 			Source: q.source, Method: "semantic",
 			Keys: s.semantic(initiativeID, q.text, allowed),
@@ -215,6 +218,19 @@ type query struct {
 	// does. It is the same distinction Phase 17 drew for questions, arriving
 	// here for the same reason.
 	anyTerms bool
+	// lexicalOnly keeps a term out of the similarity half.
+	//
+	// A place is the case this exists for. "Melbourne" and "Sydney" are close
+	// in an embedding space and opposite in fact, so a place must never reach
+	// the similarity half — but the full-text half matches "Perth" against
+	// "Perth" exactly and cannot confuse the two, and a candidate in the city a
+	// role is in is evidence a recruiter would use.
+	//
+	// Measured: embedded-c-perth lives in Perth and works at Redgum Mining
+	// Tech; staff-engineer-perth is a role at Redgum Mining Tech in Perth. The
+	// recruiter calls it plausible and the shortlist never surfaced it, because
+	// the word Perth reached neither half of the retrieval.
+	lexicalOnly bool
 }
 
 // queries builds the search terms: every approved criterion, and every
@@ -259,6 +275,26 @@ func (s *ShortlistService) queries(initiativeID, candidateID uint) ([]query, err
 			continue
 		}
 		out = append(out, query{source: a.Wording, text: a.Wording, anyTerms: true})
+	}
+
+	// And the places, by their normalized value rather than their wording: the
+	// aspect reads "Perth, onsite, permanent, around AUD 160,000" and only the
+	// city is the place.
+	for _, a := range approved.Aspects {
+		if profile.AspectType(a.Type) != profile.Location {
+			continue
+		}
+		values := map[string]any{}
+		if err := json.Unmarshal([]byte(a.Structured), &values); err != nil {
+			continue
+		}
+		for _, field := range []string{"city", "region", "country"} {
+			place, ok := values[field].(string)
+			if !ok || strings.TrimSpace(place) == "" {
+				continue
+			}
+			out = append(out, query{source: place, text: place, lexicalOnly: true})
+		}
 	}
 	return out, nil
 }
