@@ -759,3 +759,64 @@ func TestAQueryCanBeBuiltFromCriteriaAlone(t *testing.T) {
 		t.Errorf("the query does not carry the criteria: %q", preview.Query)
 	}
 }
+
+// The disclosure record says what the query actually disclosed.
+//
+// A generated query carries professional requirements and search criteria, and
+// the record used to say exactly that for every search regardless. The recruiter
+// may edit a query before sending — an organization name is allowed outright,
+// and a direct identifier is permitted after a warning saying it discloses who
+// the candidate is — and both were recorded as though neither had happened.
+//
+// This is the evidence that every non-local request was what it was meant to be.
+// A record that understates what left the machine is worse than none: it is what
+// somebody checks instead of looking.
+func TestTheDisclosureRecordNamesWhatWasActuallySent(t *testing.T) {
+	e := newDiscoveryEnv(t)
+	candidateID := e.approvedCandidate(t)
+
+	latest := func(t *testing.T) string {
+		t.Helper()
+		events, err := e.discovery.Disclosures()
+		if err != nil {
+			t.Fatalf("reading disclosures: %v", err)
+		}
+		if len(events) == 0 {
+			t.Fatal("nothing was recorded")
+		}
+		return events[0].Categories
+	}
+
+	t.Run("a generated query names the two ordinary kinds and no more", func(t *testing.T) {
+		if _, err := e.discovery.Send(SendInput{
+			InitiativeID: e.initiative, CandidateID: candidateID,
+			Query: "senior platform engineer Go SQLite Melbourne", Limit: 10,
+		}); err != nil {
+			t.Fatalf("sending: %v", err)
+		}
+		got := latest(t)
+		if !strings.Contains(got, "professional requirements") || !strings.Contains(got, "search criteria") {
+			t.Fatalf("categories = %q", got)
+		}
+		if strings.Contains(got, "identifier") || strings.Contains(got, "organization") {
+			t.Fatalf("categories = %q, which claims more than was sent", got)
+		}
+	})
+
+	t.Run("an edited query carrying a name says an identifier was sent", func(t *testing.T) {
+		if _, err := e.discovery.Send(SendInput{
+			InitiativeID: e.initiative, CandidateID: candidateID,
+			Query: "Kalinda Reyes senior platform engineer", Limit: 10,
+		}); err != nil {
+			t.Fatalf("sending: %v", err)
+		}
+		got := latest(t)
+		if !strings.Contains(got, "a direct identifier") {
+			t.Fatalf("categories = %q, and a candidate's name was in the query", got)
+		}
+		// The kind, never the thing itself.
+		if strings.Contains(got, "Kalinda") || strings.Contains(got, "Reyes") {
+			t.Fatalf("the disclosure record quotes the identifier: %q", got)
+		}
+	})
+}

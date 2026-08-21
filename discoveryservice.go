@@ -274,7 +274,7 @@ func (s *DiscoveryService) recordDisclosure(at time.Time, in SendInput) error {
 		Provider:   models.ProviderExa,
 		Task:       models.TaskRoleSearch,
 		// Names of kinds, never the things themselves.
-		Categories: "professional requirements, search criteria",
+		Categories: s.categories(in),
 	}
 	if in.InitiativeID != 0 {
 		id := in.InitiativeID
@@ -288,6 +288,45 @@ func (s *DiscoveryService) recordDisclosure(at time.Time, in SendInput) error {
 		return fmt.Errorf("recording the disclosure: %w", err)
 	}
 	return nil
+}
+
+// categories names what kinds of thing this query disclosed.
+//
+// It used to be a constant reading "professional requirements, search criteria",
+// which is what a generated query carries and not what every query carries. The
+// recruiter may edit one, and the design lets them: an organization name is
+// allowed outright and a direct identifier is permitted after a warning that
+// says sending it discloses who the candidate is. Both were then recorded as
+// though neither had happened.
+//
+// A disclosure record is the evidence that every non-local request was what it
+// was supposed to be. One that understates what left the machine is worse than
+// none, because it is the thing somebody would check instead of looking.
+//
+// Kinds, never the things themselves: that an identifier was sent, never which.
+func (s *DiscoveryService) categories(in SendInput) string {
+	kinds := []string{"professional requirements", "search criteria"}
+	ids, err := s.identifiers(in.CandidateID)
+	if err != nil {
+		// The record is still made. A disclosure that happened is not made not
+		// to have happened by a lookup failing afterwards.
+		return strings.Join(append(kinds, "unverified content"), ", ")
+	}
+	organization, identifier := false, false
+	for _, found := range scrub.Detect(in.Query, ids) {
+		if found.Kind == scrub.KindOrganization {
+			organization = true
+			continue
+		}
+		identifier = true
+	}
+	if organization {
+		kinds = append(kinds, "an organization name")
+	}
+	if identifier {
+		kinds = append(kinds, "a direct identifier")
+	}
+	return strings.Join(kinds, ", ")
 }
 
 // observe resolves a result to a role and applies the source-observation rules.
