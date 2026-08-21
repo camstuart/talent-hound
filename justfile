@@ -51,6 +51,21 @@ gate-model-classify:
 bench:
     go test -tags livemodel -v -count=1 -timeout 240m -run TestBenchmark .
 
+# Measure one assessment against the PRD's 60 second target. Separate from the
+# benchmark, which never calls the generate model.
+# Set TH_CLASSIFY_MODEL and TH_GENERATE_MODEL.
+bench-assess:
+    go test -tags livemodel -v -count=1 -timeout 60m -run TestAssessOneMatch .
+
+# Diagnose the matching ranking on the tuning corpus — never the frozen one.
+# Set TH_CLASSIFY_MODEL and TH_EMBED_MODEL.
+tune-matching:
+    go test -tags livemodel -v -count=1 -timeout 120m -run TestTuneMatching .
+
+# Score the classifier on the tuning corpus. Set TH_CLASSIFY_MODEL.
+tune-classify:
+    go test -tags livemodel -v -count=1 -timeout 90m -run TestTuneClassifier .
+
 # Choose the retrieval constants on the tuning corpus — never the frozen one.
 # Set TH_CLASSIFY_MODEL and TH_EMBED_MODEL.
 tune:

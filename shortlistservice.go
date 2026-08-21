@@ -293,7 +293,10 @@ func (s *ShortlistService) semantic(initiativeID uint, text string, allowed map[
 	// similarity query matched the sentences every listing shares. An aspect is
 	// one statement, which is what a candidate's aspect should be compared
 	// against.
-	hits, err := s.embed.SearchAspects(initiativeID, text, s.depth())
+	// Roles, not aspects: the depth is a number of roles to consider, and
+	// limiting aspects instead hides a role whose best aspect fell outside the
+	// page because other listings wrote more of them.
+	hits, err := s.embed.SearchRoles(initiativeID, text, s.depth())
 	if err != nil {
 		// Deliberately swallowed: no embedding space yet is the ordinary state
 		// before anything is embedded, and it is not a failure of the

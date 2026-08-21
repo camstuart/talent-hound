@@ -51,7 +51,7 @@ corpus was the synthetic one in this repository or the recruiter's.
 | 3 | Purge a stale role and verify its derived content is gone | PASS — Go and Playwright |
 | 4 | Delete a candidate after its initiatives, resolving shared artifacts | PASS — Go and Playwright |
 | 5 | Every non-local request had its preview or approval | PASS — audit and consent tests; confirm again on the acceptance run |
-| 6 | Held-out matching benchmark | **PASS on the development machine** (4 of 5 scenarios, 14B) — NOT RUN on the target laptop |
+| 6 | Held-out matching benchmark | **FAIL on the development machine** (3 of 5 scenarios against real role profiles, 14B) — NOT RUN on the target laptop |
 | 7 | Held-out classifier benchmark | **PASS on the development machine** (all four conditions, 14B) — NOT RUN on the target laptop |
 | 8 | Real-data mode refused on an unencrypted volume | PARTIAL — enforced and tested; BitLocker itself is a gate |
 | 9 | Recover a copied data folder without corruption or partial migration | PASS off-laptop — second-machine run is a gate |
@@ -68,7 +68,7 @@ recorded further down and cannot fill them in.
 | Classifier: no unsupported critical constraint | none | PASS on the development machine; NOT RUN on the target laptop |
 | Classifier: material-aspect capture | ≥ 80% | 99% on the development machine; NOT RUN on the target laptop |
 | Classifier: structured constraints reproduced | all | **100 of 100** on the development machine; NOT RUN on the target laptop |
-| Matching: three plausible in the top five | ≥ 4 of 5 scenarios | **4 of 5** on the development machine; NOT RUN on the target laptop |
+| Matching: three plausible in the top five | ≥ 4 of 5 scenarios | **3 of 5** on the development machine against real role profiles; NOT RUN on the target laptop |
 | Live acceptance: eligible roles found | ≥ 10, else inconclusive | 20 in scope |
 | Live acceptance: Ready profiles and assessments | ≥ 10 | NOT RUN |
 | Live acceptance: usable evidence-backed draft | ≥ 1 | NOT RUN |
@@ -101,7 +101,7 @@ and because of what they imply about a machine this is not.
 | Every aspect of twenty roles embedded | none set | 0.02 s | — twenty title aspects, not twenty decomposed profiles |
 | Hybrid retrieval, slowest | 2 s | 0.02 s | yes — but over 20 roles, where the PRD sets the target at approximately 1,000 |
 | Cold start: open a database and migrate | 5 s | 0.01 s | yes — excludes the WebView, the larger half on Windows |
-| One match assessed | 60 s | NOT MEASURED | — needs the generate model, which this benchmark does not use |
+| One match assessed | 60 s | 37.82 s | **yes** — 9 results, one generate call each, `just bench-assess` |
 
 Three role-profile figures moved between runs (197 s, then 264 s) with nothing
 changed but the run. Treat the magnitude, not the digits.
@@ -159,24 +159,67 @@ CPU-only laptop, that is a finding for the acceptance run and a PRD reopen
 request — not something to pre-empt here by shipping a model that fails the
 gate.
 
-### What the matching benchmark does not exercise
+### The matching benchmark, corrected — and now failing
 
-The matching phase builds each of its twenty roles with a hand-built profile of
-one aspect holding the role title. The listing itself is chunked and searchable,
-so the lexical half of the hybrid retrieval reads the real document — but the
-aspect-level KNN the PRD calls for retrieves over titles, and the structured
-constraints that drive eligibility are not in those profiles at all.
+The matching phase used to build each of its twenty roles with a hand-built
+profile of one aspect holding the role title. The listing was chunked and
+searchable, so the lexical half read the real document, but the aspect-level KNN
+the PRD calls for ranked titles, and the structured constraints that drive
+eligibility were not in those profiles at all. Every "4 of 5" recorded before
+2026-08-21 was that.
 
-So "4 of 5 scenarios" is a real number about a shortlist built mostly from
-lexical retrieval, and it is not yet evidence about aspect KNN or about
-constraint filtering. The classifier benchmark exercises the real decomposition
-on the same twenty listings; the matching benchmark does not reuse it, because
-the harness adds role aspects through the recruiter-authored path, which
-re-cites them to the role record.
+It now decomposes all twenty listings with the live model and shortlists five
+candidates against those profiles — one workspace rather than one per scenario,
+which is twenty classifications instead of a hundred.
 
-This is the largest known gap between what the benchmark reports and what the
-PRD asks for, and it is recorded here rather than left in the harness for
-someone to find on the laptop.
+Measured properly, it scores **3 of 5, under the PRD's bar of 4**.
+
+| Scenario | Plausible in the top five |
+| --- | --- |
+| go-platform-melbourne | 5 |
+| data-python-melbourne | 4 |
+| sre-kubernetes-brisbane | 3 |
+| frontend-accessibility-sydney | 2 |
+| embedded-c-perth | 1 |
+
+Real profiles made the ranking worse, which is the useful part.
+`frontend-accessibility-sydney` ranked `frontend-engineer-sydney` **first** when
+every role was a title and **fifth** once the roles carried their real
+requirements, behind a solutions architect and two platform roles. Structured
+types are already excluded from the similarity half, so this is not constraint
+noise; something about ranking over many aspects rather than one is diluting the
+signal.
+
+**This is an open PRD gap, not a harness artifact.**
+
+One mechanical defect was found and fixed on the way, and it is not the cause.
+The similarity half asked for a page of the closest *aspects* and then collapsed
+them to roles, so twenty roles holding nine aspects each gave a hundred and
+eighty aspects, the closest thirty were whichever listings wrote the most, and a
+role whose best aspect ranked thirty-first was invisible however well it
+matched. `SearchRoles` collapses to each role's closest aspect before
+truncating, and a test pins it — one prolific listing can no longer fill the
+page.
+
+Measured on the tuning corpus, enlarged to twenty listings for the purpose, the
+fix changes nothing: 2 of 3 scenarios before and after, with identical
+per-scenario counts. The role predicted to be rescued by it was already ranked
+second without it. So the defect is real, the fix is correct, and **the cause of
+the matching failure is still unknown**.
+
+What is ruled out: aspect-page truncation, structured-constraint noise (those
+types never enter the similarity half), and the harness itself. What is not yet
+looked at: the provenance of each ranked role — whether the wrong entries come
+from the lexical half, the similarity half, or the fusion of the two — which the
+shortlist already records per entry and no diagnostic has yet read.
+
+One caveat on the tuning corpus as an instrument: its plausibility labels are
+invented, and for `search-relevance-invercargill` they call a geospatial analyst
+and a broadcast streaming engineer plausible for a search-and-metadata
+candidate. A ranking cannot be expected to reproduce a judgement no evidence in
+the listing supports, so a scenario can be unwinnable by construction. The
+frozen corpus has the same property until the acceptance run replaces it with
+real placements.
 
 The corpus currently in the repository is synthetic and says so. It exists to
 prove the harness, the thresholds, and the record are correct. The acceptance

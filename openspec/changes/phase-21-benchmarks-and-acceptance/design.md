@@ -78,6 +78,15 @@ one, and been a coincidence.
 A defect is different from a constant. ORing the word "the" into every query
 was a defect, and fixing it was not tuning.
 
+**That sweep's conclusion no longer transfers.** It was run when the semantic
+half asked for a page of *aspects* and collapsed them to roles, and when the
+benchmark's roles carried a single aspect holding the title — so `perQueryDepth`
+was thirty aspects against twenty of them, and every role entered every list.
+Depth now counts roles, and the roles carry their real decomposed profiles. The
+constants are unchanged and nothing here proposes changing them; what changed is
+that the evidence for them was gathered under different retrieval semantics, and
+a future sweep has to be run again rather than cited.
+
 ## Risks / Trade-offs
 
 - **The frozen corpus is invented.** Stated in the corpus and in the record. It exercises the harness; it does not substitute for the recruiter's real placements, and the acceptance record says so.

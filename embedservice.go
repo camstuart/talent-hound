@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"sort"
 	"time"
 
@@ -143,7 +144,9 @@ type AspectHit struct {
 
 // SearchAspects is exact-cosine KNN over role Profile Aspects.
 func (s *EmbedService) SearchAspects(initiativeID uint, query string, limit int) ([]AspectHit, error) {
-	if limit <= 0 || limit > 100 {
+	if limit == allAspects {
+		limit = math.MaxInt
+	} else if limit <= 0 || limit > 100 {
 		limit = 20
 	}
 	q, space, err := s.queryVector(query)
@@ -191,18 +194,64 @@ func (s *EmbedService) SearchAspects(initiativeID uint, query string, limit int)
 			Wording: row.Wording, Score: score,
 		})
 	}
-	// Highest first, and the lowest identifier first on a tie, so repeated runs
-	// return the same order.
+	sortHits(hits)
+	if len(hits) > limit {
+		hits = hits[:limit]
+	}
+	return hits, nil
+}
+
+// sortHits puts the highest score first, and the lowest identifier first on a
+// tie, so repeated runs return the same order.
+func sortHits(hits []AspectHit) {
 	sort.SliceStable(hits, func(a, b int) bool {
 		if hits[a].Score != hits[b].Score {
 			return hits[a].Score > hits[b].Score
 		}
 		return hits[a].AspectID < hits[b].AspectID
 	})
-	if len(hits) > limit {
-		hits = hits[:limit]
+}
+
+// allAspects asks SearchAspects for every aspect rather than a page of them.
+// Only SearchRoles uses it, because only SearchRoles has to collapse to roles
+// before it can truncate anything.
+const allAspects = -1
+
+// SearchRoles is aspect KNN answered as a ranking of roles: each role scores as
+// its own closest aspect, and the limit counts roles.
+//
+// SearchAspects limits aspects, which is the right answer to the question it
+// asks and the wrong one for a shortlist. A corpus of twenty roles holding nine
+// aspects each has a hundred and eighty aspects, so the thirty closest are
+// whichever roles wrote the most of them, and a role whose best aspect ranks
+// thirty-first is invisible however well it matches. Measured: with one aspect
+// per role — twenty in total, under the limit — the ranking was fair, and the
+// same corpus decomposed properly put the obviously right role fifth.
+//
+// Collapsing before truncating is the whole fix. A role is as relevant as its
+// best statement, not as prolific as its listing.
+func (s *EmbedService) SearchRoles(initiativeID uint, query string, limit int) ([]AspectHit, error) {
+	if limit <= 0 {
+		limit = 20
 	}
-	return hits, nil
+	hits, err := s.SearchAspects(initiativeID, query, allAspects)
+	if err != nil {
+		return nil, err
+	}
+	best := []AspectHit{}
+	seen := map[uint]bool{}
+	sortHits(hits)
+	for _, h := range hits {
+		if seen[h.RoleID] {
+			continue
+		}
+		seen[h.RoleID] = true
+		best = append(best, h)
+	}
+	if len(best) > limit {
+		best = best[:limit]
+	}
+	return best, nil
 }
 
 // queryVector embeds a query and returns it with the space it belongs to.
@@ -450,7 +499,9 @@ type SemanticHit struct {
 // is one convenient call site away from comparing last month's geometry with
 // this month's, and the result of that call looks entirely normal.
 func (s *EmbedService) SemanticSearch(initiativeID uint, query string, limit int) ([]SemanticHit, error) {
-	if limit <= 0 || limit > 100 {
+	if limit == allAspects {
+		limit = math.MaxInt
+	} else if limit <= 0 || limit > 100 {
 		limit = 20
 	}
 	space, err := s.CurrentSpace()

@@ -125,52 +125,69 @@ func runMatching(t *testing.T, corpus *bench.Corpus, classifyModel, embedModel s
 	results := []bench.TopFive{}
 	eligible := 0
 
+	// One workspace holding every role, rather than one per scenario.
+	//
+	// The roles used to be built with a hand-written aspect holding the role
+	// title, because decomposing twenty listings inside each of five scenarios
+	// is a hundred classifications. The consequence was that the half of the
+	// retrieval this benchmark exists to measure — aspect-level KNN — ranked
+	// titles, and the structured constraints that decide eligibility were not
+	// in the profiles at all. Building the roles once and shortlisting five
+	// candidates against them costs twenty classifications, not a hundred, and
+	// the roles are the ones the product would actually hold.
+	//
+	// Candidates do not interact: a shortlist is built for one candidate over
+	// the roles in scope, and another candidate in the same workspace is not in
+	// scope for it.
+	e := newShortlistEnv(t)
+	live := NewClassifyService(e.db, e.registry, platform.NewOllama())
+	e.classify = live
+	e.profiles = NewCandidateProfileService(e.db, live, e.records)
+	e.roles = NewRoleProfileService(e.db, live)
+	e.shortlist = NewShortlistService(e.db, e.search, e.embed, e.criteria, e.profiles, e.roles)
+
+	e.assignClassify(t, classifyModel)
+	if _, err := e.registry.Assign(AssignInput{
+		Role: models.RoleEmbed, Model: embedModel,
+	}); err != nil {
+		t.Fatalf("assigning the embedding model: %v", err)
+	}
+
+	// Every listing is in scope for every scenario: the benchmark measures
+	// ranking, not filtering.
+	byRole := map[uint]string{}
+	for _, listing := range corpus.Listings {
+		roleID := classifiedRole(t, e, listing)
+		byRole[roleID] = listing.ID
+	}
+
+	// Then the candidates, before the embedding model is called. Running the
+	// embedding model evicts the classify model from memory on a laptop this
+	// size, and every classify call after it pays a full reload inside its own
+	// timeout — so all of them happen first.
+	candidateIDs := map[string]uint{}
+	notes := map[string]string{}
 	for _, scenario := range corpus.Scenarios {
-		e := newShortlistEnv(t)
-		// Every service that decomposes anything is rebuilt against the live
-		// model, so nothing in this run is answered by a scripted fake.
-		live := NewClassifyService(e.db, e.registry, platform.NewOllama())
-		e.classify = live
-		e.profiles = NewCandidateProfileService(e.db, live, e.records)
-		e.roles = NewRoleProfileService(e.db, live)
-		e.shortlist = NewShortlistService(e.db, e.search, e.embed, e.criteria, e.profiles, e.roles)
-
-		e.assignClassify(t, classifyModel)
-		if _, err := e.registry.Assign(AssignInput{
-			Role: models.RoleEmbed, Model: embedModel,
-		}); err != nil {
-			t.Fatalf("assigning the embedding model: %v", err)
-		}
-
-		// The candidate is profiled before the listings are brought in. Setting
-		// up twenty listings runs the embedding model, which evicts the classify
-		// model from memory on a laptop this size, and the resume call then pays
-		// a full reload inside its own timeout. Recruiters work this way round
-		// too: the candidate first, then the roles.
 		startedCandidate := time.Now()
 		candidateID, note := scenarioCandidate(t, e, scenario)
 		*candidate = append(*candidate, time.Since(startedCandidate))
+		candidateIDs[scenario.ID], notes[scenario.ID] = candidateID, note
+	}
 
-		// Every listing is in scope for every scenario: the benchmark measures
-		// ranking, not filtering.
-		byRole := map[uint]string{}
-		for _, listing := range corpus.Listings {
-			roleID := e.roleWithListing(t, listing.Title, listing.Markdown)
-			byRole[roleID] = listing.ID
-		}
-		// The similarity half retrieves over aspects, so they have to be
-		// embedded — the same step the interface runs when indexing.
-		startedEmbedding := time.Now()
-		if job, err := e.embed.EmbedAspects(e.initiative); err != nil {
-			t.Fatalf("%s: embedding aspects: %v", scenario.ID, err)
-		} else if done := waitForJob(t, e.jobs, job.ID); done.State != models.JobCompleted {
-			t.Logf("%s: aspect embedding is %s (%q)", scenario.ID, done.State, done.FailureReason)
-		} else {
-			embedding = append(embedding, time.Since(startedEmbedding))
-		}
+	// The similarity half retrieves over aspects, so they have to be embedded —
+	// the same step the interface runs when indexing.
+	startedEmbedding := time.Now()
+	if job, err := e.embed.EmbedAspects(e.initiative); err != nil {
+		t.Fatalf("embedding aspects: %v", err)
+	} else if done := waitForJob(t, e.jobs, job.ID); done.State != models.JobCompleted {
+		t.Logf("aspect embedding is %s (%q)", done.State, done.FailureReason)
+	} else {
+		embedding = append(embedding, time.Since(startedEmbedding))
+	}
 
+	for _, scenario := range corpus.Scenarios {
 		startedShortlist := time.Now()
-		shortlist, err := e.shortlist.Build(e.initiative, candidateID)
+		shortlist, err := e.shortlist.Build(e.initiative, candidateIDs[scenario.ID])
 		*retrieval = append(*retrieval, time.Since(startedShortlist))
 		if err != nil {
 			// A refusal is the scenario's outcome, recorded as itself rather
@@ -184,12 +201,12 @@ func runMatching(t *testing.T, corpus *bench.Corpus, classifyModel, embedModel s
 		}
 		eligible = shortlist.Eligible
 
-		top := bench.TopFive{ScenarioID: scenario.ID, RoleIDs: []string{}, Note: note}
+		top := bench.TopFive{ScenarioID: scenario.ID, RoleIDs: []string{}, Note: notes[scenario.ID]}
 		if len(shortlist.Entries) == 0 && top.Note == "" {
 			// An empty list with a profile in place is a different failure from
 			// an empty list with no profile, and the record has to be able to
 			// tell them apart.
-			top.Note = whyNothingRanked(t, e, candidateID)
+			top.Note = whyNothingRanked(t, e, candidateIDs[scenario.ID])
 		}
 		for _, entry := range shortlist.Entries {
 			if len(top.RoleIDs) == 5 {
@@ -201,6 +218,69 @@ func runMatching(t *testing.T, corpus *bench.Corpus, classifyModel, embedModel s
 		results = append(results, top)
 	}
 	return bench.ScoreMatching(corpus, results), eligible
+}
+
+// classifiedRole creates a role from a listing and decomposes it with the live
+// model, which is what makes its profile the one the product would hold.
+//
+// Not roleWithListing: that assigns a synthetic classify model and adds aspects
+// through the recruiter-authored path, which stamps them recruiter origin and
+// re-cites them to the role record. A role is Ready when it has a current
+// profile whose source hash still matches its listing, so nothing here has to
+// approve anything.
+func classifiedRole(t *testing.T, e *shortlistEnv, listing bench.Listing) uint {
+	t.Helper()
+	role, err := e.records.CreateRole(models.Role{
+		Title:          listing.Title,
+		Origin:         models.RoleOriginRecruiterEntered,
+		LifecycleState: models.RoleOpen,
+	})
+	if err != nil {
+		t.Fatalf("creating the role: %v", err)
+	}
+	a, err := e.artifacts.create(listing.Title, listing.ID+".md", "test",
+		[]byte(listing.Markdown), models.LinkRole, role.ID)
+	if err != nil {
+		t.Fatalf("attaching the listing: %v", err)
+	}
+	if err := e.artifacts.Link(a.ID, models.LinkInitiative, e.initiative); err != nil {
+		t.Fatalf("linking to the initiative: %v", err)
+	}
+	err = e.db.Model(&models.Artifact{}).Where("id = ?", a.ID).Updates(map[string]any{
+		"extraction_state":  models.ExtractionExtracted,
+		"extractor":         "native-text",
+		"extractor_version": "1",
+		"markdown":          listing.Markdown,
+	}).Error
+	if err != nil {
+		t.Fatalf("recording extraction: %v", err)
+	}
+	chunks := e.chunkAndWait(t, a.ID)
+	if len(chunks) == 0 {
+		t.Fatalf("%s produced no chunks", listing.ID)
+	}
+	ids := []uint{}
+	for _, chunk := range chunks {
+		ids = append(ids, chunk.ID)
+	}
+
+	if _, err := e.classify.Classify(ClassifyInput{
+		SubjectKind: profile.SubjectRole, SubjectID: role.ID, ChunkIDs: ids,
+	}); err != nil {
+		// A listing the model cannot decompose is a role with no profile, which
+		// the shortlist will find ineligible. That is the product's own
+		// behaviour and the record should show it, not a fabricated profile.
+		t.Logf("%s: the model produced no usable role profile: %v", listing.ID, err)
+		return role.ID
+	}
+	status, err := e.roles.Status(role.ID)
+	if err != nil {
+		t.Fatalf("reading role status: %v", err)
+	}
+	if status.State != RoleProfileReady {
+		t.Logf("%s is %q (%s)", listing.ID, status.State, status.Reason)
+	}
+	return role.ID
 }
 
 // whyNothingRanked reports what the shortlist had to work with, so an empty

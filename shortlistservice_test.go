@@ -668,3 +668,81 @@ func TestAspectRetrievalRespectsScope(t *testing.T) {
 		}
 	}
 }
+
+// A role is as relevant as its best statement, not as prolific as its listing.
+//
+// Aspect KNN limited to a page of aspects hides a role whose best aspect fell
+// outside the page because other listings wrote more of them. With one aspect
+// per role the whole corpus fits under the limit and the bug is invisible; it
+// appears the moment listings are decomposed properly. Measured on the frozen
+// corpus, the obviously right role went from first to fifth.
+//
+// The vectors are fixed rather than hashed, so this asserts the ranking rule
+// and not the embedder: one prolific listing owns the six closest aspects, and
+// asking for three roles still has to return three roles.
+func TestARoleIsRankedByItsBestAspectNotByHowManyItHas(t *testing.T) {
+	e := newShortlistEnv(t)
+
+	const query = "distributed storage engineering"
+	near := func(t *testing.T, text string, closeness float32) {
+		t.Helper()
+		v := make([]float32, 8)
+		v[0], v[1] = closeness, 1-closeness
+		e.endpoint.set(text, v)
+	}
+	near(t, query, 1)
+
+	// Six aspects on one role, every one of them closer than anything else.
+	crowding := []profile.Aspect{}
+	for i, wording := range []string{"storage replication", "storage sharding",
+		"storage compaction", "storage tiering", "storage durability", "storage indexing"} {
+		near(t, wording, 0.99-float32(i)/1000)
+		crowding = append(crowding, profile.Aspect{Type: profile.Skill, Wording: wording,
+			Citations: []profile.Citation{{Record: "recruiter"}}})
+	}
+	prolific := e.roleWithListing(t, "Prolific listing", "Writes everything down.", crowding...)
+
+	others := map[uint]bool{}
+	for i, wording := range []string{"storage systems", "storage platforms", "storage tooling"} {
+		near(t, wording, 0.90)
+		id := e.roleWithListing(t, fmt.Sprintf("Terse listing %d", i), "Says one thing.",
+			profile.Aspect{Type: profile.Skill, Wording: wording,
+				Citations: []profile.Citation{{Record: "recruiter"}}})
+		others[id] = true
+	}
+
+	if _, err := e.registry.Assign(AssignInput{Role: models.RoleEmbed, Model: "nomic-embed-text"}); err != nil {
+		t.Fatalf("assigning the embed role: %v", err)
+	}
+	job, err := e.embed.EmbedAspects(e.initiative)
+	if err != nil {
+		t.Fatalf("embedding aspects: %v", err)
+	}
+	if done := waitForJob(t, e.jobs, job.ID); done.State != models.JobCompleted {
+		t.Fatalf("aspect embedding is %s (%q)", done.State, done.FailureReason)
+	}
+
+	roles, err := e.embed.SearchRoles(e.initiative, query, 3)
+	if err != nil {
+		t.Fatalf("searching roles: %v", err)
+	}
+	if len(roles) != 3 {
+		t.Fatalf("asked for three roles and got %d — one listing filled the page", len(roles))
+	}
+	if roles[0].RoleID != prolific {
+		t.Fatalf("the closest role is %d, want %d", roles[0].RoleID, prolific)
+	}
+	seen, terse := map[uint]bool{}, 0
+	for _, r := range roles {
+		if seen[r.RoleID] {
+			t.Fatalf("role %d appears twice", r.RoleID)
+		}
+		seen[r.RoleID] = true
+		if others[r.RoleID] {
+			terse++
+		}
+	}
+	if terse != 2 {
+		t.Fatalf("%d terse roles survived the truncation, want 2", terse)
+	}
+}
