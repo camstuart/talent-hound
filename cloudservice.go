@@ -12,6 +12,7 @@ import (
 
 	"camstuart/talent-hound/internal/cloud"
 	"camstuart/talent-hound/internal/models"
+	"camstuart/talent-hound/internal/platform"
 	"camstuart/talent-hound/internal/scrub"
 )
 
@@ -22,6 +23,11 @@ import (
 // configuration, consent that cannot generalize across initiative, endpoint, or
 // task, and a preview that is the payload rather than a description of it.
 type CloudService struct {
+	// transport, when set, is used instead of building one for the configured
+	// endpoint. Only tests set it: a real send builds its own from the endpoint
+	// the recruiter approved and the credential read at that moment.
+	transport Classifier
+
 	db       *gorm.DB
 	model    Classifier
 	records  *RecordService
@@ -373,28 +379,38 @@ func (s *CloudService) Send(initiativeID uint, payload Payload) (string, error) 
 		return "", fmt.Errorf("no cloud credential is stored — the provider is disabled")
 	}
 
-	// And the transport actually goes where the recruiter approved.
+	// The credential is read here, at the moment of the request, and lives no
+	// longer than this call. Nothing stores it, nothing logs it, and no
+	// exported method can be asked for it.
+	key, err := s.credentials.secret("cloud")
+	if err != nil {
+		return "", fmt.Errorf("the cloud credential could not be read — the provider is disabled")
+	}
+
+	// A transport for this endpoint, not the local runtime.
 	//
-	// It does not. This build wires one client, pointed at the local runtime,
-	// and hands the same instance to this service — so a payload previewed for
-	// an endpoint, approved for that endpoint and recorded as disclosed to it
-	// was answered by the model on this machine. Safe, and a lie in both
-	// directions: the recruiter was told their text went somewhere it did not,
-	// and the disclosure record said a disclosure happened that had not.
+	// This service used to be handed the same client the rest of the
+	// application classifies with, which points at localhost. A payload
+	// previewed for a provider, approved for that provider and recorded as
+	// disclosed to it was answered by the model on this machine: safe, and
+	// untrue in both directions.
 	//
-	// Refused rather than quietly answered. Wiring a real OpenAI-compatible
-	// transport is the fix, and it is the one change in this product that makes
-	// candidate-derived text leave the machine — so it belongs to somebody who
-	// can watch it happen, not to a guess made where it cannot be observed.
-	if at, ok := s.model.(addressable); ok && at.Endpoint() != endpoint.URL {
+	// A caller may supply its own transport, which is how the tests reach this
+	// without a provider. Whatever it is, it has to say it goes where the
+	// recruiter approved.
+	transport := s.transport
+	if transport == nil {
+		transport = platform.NewCloud(endpoint.URL, key)
+	}
+	if at, ok := transport.(addressable); ok && at.Endpoint() != endpoint.URL {
 		return "", fmt.Errorf(
-			"this build has no cloud transport: it would send to %s rather than to %s, "+
-				"so nothing was sent", at.Endpoint(), endpoint.URL)
+			"this transport sends to %s rather than to the approved %s, so nothing was sent",
+			at.Endpoint(), endpoint.URL)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), cloudTimeout)
 	defer cancel()
-	answer, sendErr := s.model.Chat(ctx, endpoint.Model, payload.Text, nil)
+	answer, sendErr := transport.Chat(ctx, endpoint.Model, payload.Text, nil)
 
 	// The request was transmitted, so the disclosure happened — whether or not
 	// the provider then answered.

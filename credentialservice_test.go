@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"reflect"
 	"runtime"
 	"strings"
 	"sync"
@@ -246,5 +247,36 @@ func TestThePlatformStoreRefusesWhereThereIsNoStore(t *testing.T) {
 	// And nothing anywhere pretends it worked.
 	if has, err := svc.Has("exa"); has || err == nil {
 		t.Fatalf("Has reported %v (err %v) on a platform with no store", has, err)
+	}
+}
+
+// The service's exported surface is exactly four methods, and none of them
+// hands back a secret.
+//
+// The absence of a getter is the design, and until now it was asserted by
+// calling what exists. That catches a getter nobody adds. This catches the one
+// somebody adds: Wails binds exported methods, so an exported reader is a
+// reader reachable from the frontend, and from there a secret is one console
+// log or one crash report away from being written down.
+//
+// Go code that needs the value reads it through the unexported reader, at the
+// moment of the request. That is deliberately not on this list.
+func TestTheExportedSurfaceCannotHandBackASecret(t *testing.T) {
+	allowed := map[string]bool{"Store": true, "Has": true, "List": true, "Delete": true}
+
+	surface := reflect.TypeOf(&CredentialService{})
+	seen := map[string]bool{}
+	for i := 0; i < surface.NumMethod(); i++ {
+		name := surface.Method(i).Name
+		seen[name] = true
+		if !allowed[name] {
+			t.Errorf("CredentialService exports %q, which the frontend can call — "+
+				"if it can return a secret, the store's whole point is gone", name)
+		}
+	}
+	for name := range allowed {
+		if !seen[name] {
+			t.Errorf("%q is gone, and this test is now guarding a surface that moved", name)
+		}
 	}
 }

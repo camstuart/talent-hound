@@ -41,6 +41,29 @@ func NewCredentialService() *CredentialService {
 	return &CredentialService{store: platformStore{}}
 }
 
+// secret reads a stored value for Go code that has to make a request with it.
+//
+// Unexported on purpose, and that is the whole of the rule. The comment on this
+// type says a getter bound to the frontend is a getter reachable from the
+// frontend; Wails binds exported methods, so this one is reachable only from
+// this package. It exists because "Go code that eventually needs the value
+// reads it from the store at the moment of the request" needs a way to do that,
+// and the alternative — handing the value to a caller through an exported
+// method — is the thing being avoided.
+//
+// It returns a string because that is what an Authorization header wants, and
+// keeping a []byte here would only look careful.
+func (s *CredentialService) secret(provider string) (string, error) {
+	if !slices.Contains(Providers, provider) {
+		return "", fmt.Errorf("%q is not a provider this application stores a credential for", provider)
+	}
+	raw, err := s.store.Load(provider)
+	if err != nil {
+		return "", err
+	}
+	return string(raw), nil
+}
+
 // platformStore is the shipping implementation: the operating system's.
 type platformStore struct{}
 

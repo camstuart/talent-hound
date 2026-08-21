@@ -2,7 +2,11 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 
@@ -27,9 +31,14 @@ func newCloudEnv(t *testing.T) *cloudEnv {
 	base := newQAEnv(t)
 	store := newMemoryStore()
 	credentials := &CredentialService{store: store}
+	svc := NewCloudService(base.db, base.model, base.records, base.profiles, credentials)
+	// A send builds a transport for the approved endpoint and reads the
+	// credential to authorize it. Neither exists in a test, so the scripted
+	// model stands in — through the same seam a real send would not use.
+	svc.transport = base.model
 	return &cloudEnv{
 		qaEnv:       base,
-		cloud:       NewCloudService(base.db, base.model, base.records, base.profiles, credentials),
+		cloud:       svc,
 		credentials: credentials,
 		store:       store,
 	}
@@ -730,7 +739,7 @@ func TestAMisdirectedTransportIsRefusedRatherThanAnsweredLocally(t *testing.T) {
 
 	// A transport that says it goes somewhere else, which is what the shipped
 	// one does.
-	e.cloud.model = elsewhere{answer: "answered locally"}
+	e.cloud.transport = elsewhere{answer: "answered locally"}
 
 	before := e.disclosureCount(t)
 	if _, err := e.cloud.Send(e.initiative, *payload); err == nil {
@@ -759,4 +768,82 @@ func (e *cloudEnv) disclosureCount(t *testing.T) int64 {
 		t.Fatalf("counting disclosures: %v", err)
 	}
 	return n
+}
+
+// The credential reaches the provider and nothing else does.
+//
+// The endpoint is contacted for real here — an httptest server standing in for
+// the provider — so this exercises the path a recruiter's approved send takes:
+// the credential read at the moment of the request, the approved endpoint, the
+// previewed text, and no third thing.
+func TestAnApprovedSendReachesTheEndpointWithTheStoredCredential(t *testing.T) {
+	var (
+		auth string
+		sent map[string]any
+	)
+	provider := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		auth = r.Header.Get("Authorization")
+		body, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(body, &sent)
+		_, _ = w.Write([]byte(`{"choices":[{"message":{"content":"a pitch"}}]}`))
+	}))
+	defer provider.Close()
+
+	e := newCloudEnv(t)
+	// No stand-in: this send builds its own transport, as a real one does.
+	e.cloud.transport = nil
+	e.configure(t, provider.URL)
+	e.withKey(t)
+	if err := e.cloud.Approve(e.initiative, string(cloud.Drafting)); err != nil {
+		t.Fatalf("approving: %v", err)
+	}
+
+	payload, err := e.cloud.Preview(PreviewInput{
+		InitiativeID: e.initiative, Task: string(cloud.Drafting),
+		Text: "Write a pitch about five years of production Go.",
+	})
+	if err != nil {
+		t.Fatalf("previewing: %v", err)
+	}
+	answer, err := e.cloud.Send(e.initiative, *payload)
+	if err != nil {
+		t.Fatalf("sending: %v", err)
+	}
+	if answer != "a pitch" {
+		t.Fatalf("answer = %q", answer)
+	}
+	if auth != "Bearer not-a-real-key-CLOUD-7f31a2" {
+		t.Fatalf("the provider received authorization %q", auth)
+	}
+	messages, _ := sent["messages"].([]any)
+	if len(messages) != 1 {
+		t.Fatalf("sent %d messages", len(messages))
+	}
+	first, _ := messages[0].(map[string]any)
+	if first["content"] != payload.Text {
+		t.Fatalf("the provider received %v, the recruiter previewed %q", first["content"], payload.Text)
+	}
+}
+
+// Without a stored credential nothing is sent, whatever else is in order.
+func TestAnApprovedSendWithNoCredentialReachesNobody(t *testing.T) {
+	asked := false
+	provider := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
+		asked = true
+	}))
+	defer provider.Close()
+
+	e := newCloudEnv(t)
+	e.cloud.transport = nil
+	e.configure(t, provider.URL)
+	if err := e.cloud.Approve(e.initiative, string(cloud.Drafting)); err != nil {
+		t.Fatalf("approving: %v", err)
+	}
+	payload := Payload{Task: string(cloud.Drafting), Text: "Write a pitch.", Endpoint: provider.URL}
+	if _, err := e.cloud.Send(e.initiative, payload); err == nil {
+		t.Fatal("a send with no stored credential was accepted")
+	}
+	if asked {
+		t.Fatal("the provider was contacted without a credential")
+	}
 }
