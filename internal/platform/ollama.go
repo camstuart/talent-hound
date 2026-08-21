@@ -120,15 +120,46 @@ func (o *Ollama) Show(ctx context.Context, model string) (ModelInfo, error) {
 	}
 	digest := out.Digest
 	if digest == "" {
-		// Older builds report the digest only inside the modelfile header.
+		// Older builds report the digest only inside the modelfile header, as a
+		// FROM line naming the blob on disk.
 		for _, line := range strings.Split(out.Modelfile, "\n") {
-			if strings.Contains(line, "sha256") {
-				digest = strings.TrimSpace(line)
+			if hex := sha256In(line); hex != "" {
+				digest = hex
 				break
 			}
 		}
 	}
 	return ModelInfo{Name: model, Digest: digest}, nil
+}
+
+// sha256In pulls the digest out of whatever line carries it, and returns it in
+// the form the native API uses.
+//
+// The whole line used to be kept, so every benchmark record in this repository
+// stores a model digest reading "FROM /Users/someone/.ollama/models/blobs/
+// sha256-2049…". That is a path on one machine, not an identity: the same model
+// on the acceptance laptop produces a different string, and the field exists so
+// two runs can be compared.
+func sha256In(line string) string {
+	for _, sep := range []string{"sha256-", "sha256:"} {
+		at := strings.Index(line, sep)
+		if at < 0 {
+			continue
+		}
+		hex := line[at+len(sep):]
+		end := 0
+		for end < len(hex) && isHexDigit(hex[end]) {
+			end++
+		}
+		if end == 64 {
+			return "sha256:" + hex[:end]
+		}
+	}
+	return ""
+}
+
+func isHexDigit(b byte) bool {
+	return b >= '0' && b <= '9' || b >= 'a' && b <= 'f' || b >= 'A' && b <= 'F'
 }
 
 // LoadedBytes reports how much memory Ollama currently holds for model (total

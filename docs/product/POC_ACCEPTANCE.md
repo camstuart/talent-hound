@@ -73,6 +73,20 @@ recorded further down and cannot fill them in.
 | Live acceptance: Ready profiles and assessments | ≥ 10 | NOT RUN |
 | Live acceptance: usable evidence-backed draft | ≥ 1 | NOT RUN |
 
+### The model digests in records written before 2026-08-22
+
+Every benchmark record in `docs/product/benchmarks/` before that date stores a
+model digest reading `FROM /Users/…/.ollama/models/blobs/sha256-2049…`. That is
+a path on one machine rather than an identity, so a laptop run of the same model
+would record a different string and the two could not be compared — which is the
+one thing the field is for.
+
+Ollama reports the digest natively; the fallback that reads it out of the
+modelfile kept the whole line it found. It now keeps the digest, as
+`sha256:<hex>`, and refuses anything that is not one. Older records are left as
+they are: they are what those runs recorded, and rewriting evidence after the
+fact is worse than a wrong field with an explanation beside it.
+
 ### What the passing run does not settle
 
 Two runs of the frozen corpus differed on `platform-engineer-melbourne`: one
