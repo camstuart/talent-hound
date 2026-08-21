@@ -269,6 +269,21 @@ the listing supports, so a scenario can be unwinnable by construction. The
 frozen corpus has the same property until the acceptance run replaces it with
 real placements.
 
+### Where the acceptance run's records go
+
+A record carries the corpus inside it, as extract rather than by name: a missed
+aspect is recorded as "skill: Snowflake experience", a misreported constraint as
+the value beside the one wanted, an uncited aspect as its wording. That detail is
+deliberate — a corpus-level failure nobody can attribute to a listing is a number
+nobody can act on.
+
+It is also the recruiter's material once the corpus is theirs. So a run against
+an invented corpus records into `docs/product/benchmarks/`, which this
+repository commits as evidence, and a run against the real one records into
+`docs/product/benchmarks/private/`, which git ignores. The acceptance run's
+records are findable in the same place and are not committable, and a test holds
+both halves of that.
+
 The corpus currently in the repository is synthetic and says so. It exists to
 prove the harness, the thresholds, and the record are correct. The acceptance
 run replaces it with the recruiter's five frozen past-placement scenarios and

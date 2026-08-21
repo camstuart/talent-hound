@@ -70,7 +70,7 @@ func TestBenchmark(t *testing.T) {
 	record.Measurements = append(record.Measurements, coldStart(t))
 	record.Conclude()
 
-	write(t, record)
+	write(t, record, corpus.Synthetic)
 	t.Log("\n" + record.Summary())
 
 	// The outcome is evidence either way: a failing benchmark is a
@@ -380,14 +380,14 @@ func digestOf(t *testing.T, model string) string {
 }
 
 // write stores the record beside the other product evidence.
-func write(t *testing.T, record *bench.Record) {
+func write(t *testing.T, record *bench.Record, synthetic bool) {
 	t.Helper()
 	raw, err := record.JSON()
 	if err != nil {
 		t.Fatalf("writing the record: %v", err)
 	}
 	name := fmt.Sprintf("benchmark-%s.json", strings.ReplaceAll(record.Taken, ":", "-"))
-	path := filepath.Join("docs", "product", "benchmarks", name)
+	path := filepath.Join(bench.RecordDir(synthetic), name)
 	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 		t.Fatalf("creating the benchmark folder: %v", err)
 	}

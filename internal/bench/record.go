@@ -3,6 +3,7 @@ package bench
 import (
 	"encoding/json"
 	"fmt"
+	"path/filepath"
 	"sort"
 	"strings"
 
@@ -220,4 +221,29 @@ func (r *Record) Summary() string {
 			MinimumEligibleRoles)
 	}
 	return b.String()
+}
+
+// RecordDir is where a run's record belongs, which depends on what it ran
+// against.
+//
+// A record carries the corpus in it. Not by name — by extract: a missed aspect
+// is recorded as "skill: Snowflake experience", a misreported constraint as the
+// value beside the one that was wanted, an uncited aspect as its wording. That
+// detail is the point, because a corpus-level failure nobody can attribute to a
+// listing is a number nobody can act on.
+//
+// It is also the recruiter's material. The acceptance run replaces the invented
+// corpus with five actual past placements and twenty real role listings, and
+// the documented process — just bench, or just laptop-gates — would then write
+// verbatim extracts from them into a directory this repository commits.
+//
+// So an invented corpus records into the repository, where the evidence belongs
+// beside the code that produced it, and a real one records outside it.
+func RecordDir(synthetic bool) string {
+	if synthetic {
+		return filepath.Join("docs", "product", "benchmarks")
+	}
+	// Inside the same folder, so it is found by whoever looks for a record, and
+	// ignored by git so it is never committed by whoever does not.
+	return filepath.Join("docs", "product", "benchmarks", "private")
 }

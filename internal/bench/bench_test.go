@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
@@ -884,5 +885,36 @@ func TestEveryCorpusInThisRepositorySaysItIsInvented(t *testing.T) {
 		if len(corpus.Listings) == 0 || len(corpus.Scenarios) == 0 {
 			t.Errorf("%s is empty, so this checked nothing about it", name)
 		}
+	}
+}
+
+// A record made against the recruiter's own corpus does not go where this
+// repository commits things.
+//
+// The detail in a record is an extract of the corpus: a missed aspect appears
+// as "skill: Snowflake experience", an uncited one as its wording. Against the
+// invented corpus that is evidence worth committing beside the code. Against
+// five real past placements and twenty real listings it is the recruiter's
+// material, and the documented process would have written it into a directory
+// under version control.
+func TestARealCorpusRecordsOutsideTheRepository(t *testing.T) {
+	invented := RecordDir(true)
+	recruiters := RecordDir(false)
+	if invented == recruiters {
+		t.Fatal("both corpora record to the same place")
+	}
+	if !strings.HasPrefix(recruiters, invented) {
+		t.Fatalf("a real record goes to %q, which is not findable from %q", recruiters, invented)
+	}
+
+	// And the place it goes is ignored, which is the half that actually keeps
+	// it out of a commit.
+	ignored, err := os.ReadFile(filepath.Join("..", "..", ".gitignore"))
+	if err != nil {
+		t.Fatalf("reading .gitignore: %v", err)
+	}
+	slashed := filepath.ToSlash(recruiters)
+	if !strings.Contains(string(ignored), slashed) {
+		t.Fatalf(".gitignore does not ignore %q, so a real record would be committable", slashed)
 	}
 }
