@@ -849,3 +849,40 @@ func TestAMeasurementWithNoTargetIsNotReportedAsFailing(t *testing.T) {
 		t.Fatalf("a targeted measurement lost its target:\n%s", summary)
 	}
 }
+
+// Every corpus this repository ships says it is invented, because the rule is
+// that real candidate information never enters source control.
+//
+// The frozen corpus is checked above. The tuning corpus was not, and it is the
+// one that gets edited: it was enlarged from ten listings to twenty in a single
+// afternoon. A corpus is also the most tempting place for real data to arrive —
+// the acceptance run replaces these with the recruiter's actual placements, and
+// the difference between using that corpus and committing it is one careless
+// copy.
+//
+// The flag is not decoration. A record reads "the recruiter's frozen corpus"
+// instead of "invented, not real placements" on the strength of it, so a real
+// corpus committed without the flag would be described correctly in the record
+// and wrongly in the repository, and one committed with it would be described
+// wrongly in both.
+func TestEveryCorpusInThisRepositorySaysItIsInvented(t *testing.T) {
+	corpora := map[string]func() (*Corpus, error){
+		"the frozen corpus": Load,
+		"the tuning corpus": LoadTuning,
+	}
+	for name, load := range corpora {
+		corpus, err := load()
+		if err != nil {
+			t.Fatalf("loading %s: %v", name, err)
+		}
+		if !corpus.Synthetic {
+			t.Errorf("%s is not marked synthetic, so a run would record it as the recruiter's own", name)
+		}
+		if !strings.Contains(corpus.Note, "invented") {
+			t.Errorf("%s does not say in its own words that it is invented", name)
+		}
+		if len(corpus.Listings) == 0 || len(corpus.Scenarios) == 0 {
+			t.Errorf("%s is empty, so this checked nothing about it", name)
+		}
+	}
+}
