@@ -46,7 +46,7 @@ corpus was the synthetic one in this repository or the recruiter's.
 
 | # | Gate | Result |
 | --- | --- | --- |
-| 1 | Work offline: CRM, artifacts, profiles, retrieval, Q&A, generation | NOT RUN — needs the laptop with models installed |
+| 1 | Work offline: CRM, artifacts, profiles, retrieval, Q&A, generation | NOT RUN — needs the laptop with the cable out. The half that is provable anywhere is: every outbound client is confined to the Exa and Ollama files, and every absolute destination in the repository is the local runtime or a gated remote. A third file gaining one fails the day it is written. |
 | 2 | No message-sending capability | PASS — repository-wide sender scan, plus no service method |
 | 3 | Purge a stale role and verify its derived content is gone | PASS — Go and Playwright |
 | 4 | Delete a candidate after its initiatives, resolving shared artifacts | PASS — Go and Playwright |

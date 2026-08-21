@@ -269,3 +269,87 @@ func TestNoTelemetrySettingExists(t *testing.T) {
 		}
 	}
 }
+
+// Working offline is a property of where the code can reach, not a hope.
+//
+// The PRD's first additional gate is that the recruiter disconnects from the
+// internet and keeps using the CRM, artifacts, approved profiles, retrieval,
+// Q&A and generation. Proving that fully needs the laptop and a cable pulled
+// out. What can be proved from anywhere is the half that would make it
+// impossible: a client this repository builds, pointed somewhere that is not
+// the local model runtime, that nothing gated it.
+//
+// So every construction of an HTTP client is confined to two files, and every
+// absolute destination in the repository is either the local runtime or a
+// remote the recruiter is asked about first. A third file gaining one is the
+// thing that breaks offline use, and it fails here on the day it is written
+// rather than on the day the cable comes out.
+func TestNothingReachesTheNetworkExceptTheRuntimeAndApprovedRemotes(t *testing.T) {
+	// Where an outbound client may be built at all. Exa is recruiter-initiated
+	// with a per-query preview; the cloud endpoint is per-task approved; the
+	// runtime is local.
+	allowed := map[string]bool{
+		filepath.Join("internal", "platform", "exa.go"):    true,
+		filepath.Join("internal", "platform", "ollama.go"): true,
+	}
+	// Destinations that may appear anywhere: the local runtime, and the remotes
+	// the PRD names as gated.
+	permitted := []string{
+		"http://localhost", "http://127.0.0.1", "https://api.exa.ai",
+	}
+
+	builders := []string{"http.NewRequest", "http.Client{", "http.Post(", "http.Get(", "http.Head("}
+	offenders := []string{}
+	err := filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
+		if err != nil || info.IsDir() {
+			if info != nil && info.IsDir() && skipped[info.Name()] {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if filepath.Ext(path) != ".go" || strings.HasSuffix(path, "_test.go") {
+			return nil
+		}
+		body := string(mustRead(path))
+		if strings.Contains(body, exemptionMarker) {
+			return nil
+		}
+		clean := filepath.Clean(path)
+		for _, builder := range builders {
+			if strings.Contains(body, builder) && !allowed[clean] {
+				offenders = append(offenders, clean+" builds an outbound client ("+builder+")")
+			}
+		}
+		// And any absolute destination, wherever it is written.
+		for _, line := range strings.Split(body, "\n") {
+			at := strings.Index(line, "http://")
+			if at < 0 {
+				at = strings.Index(line, "https://")
+			}
+			if at < 0 || strings.Contains(line, "//") && strings.TrimSpace(line)[0] == '/' {
+				continue
+			}
+			url := line[at:]
+			if cut := strings.IndexAny(url, `"`+" \t)`"); cut > 0 {
+				url = url[:cut]
+			}
+			ok := false
+			for _, p := range permitted {
+				if strings.HasPrefix(url, p) {
+					ok = true
+				}
+			}
+			if !ok {
+				offenders = append(offenders, clean+" names "+url)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("walking the repository: %v", err)
+	}
+	if len(offenders) > 0 {
+		t.Fatalf("the application can reach somewhere it was not gated for:\n  %s",
+			strings.Join(offenders, "\n  "))
+	}
+}
