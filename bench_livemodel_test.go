@@ -215,7 +215,7 @@ func runMatching(t *testing.T, corpus *bench.Corpus, classifyModel, embedModel s
 			top.RoleIDs = append(top.RoleIDs, byRole[entry.RoleID])
 		}
 		t.Logf("%s: top five %v of %d eligible", scenario.ID, top.RoleIDs, eligible)
-		explain(t, scenario, shortlist, byRole)
+		explain(t, scenario, shortlist, byRole, e, candidateIDs[scenario.ID])
 		results = append(results, top)
 	}
 	return bench.ScoreMatching(corpus, results), eligible
@@ -511,8 +511,17 @@ func slowest(in []time.Duration) time.Duration {
 // nowhere in the list at all is a retrieval or eligibility problem, and the two
 // have nothing to do with each other. Guessing which one is happening is how
 // three hypotheses in a row were wrong.
-func explain(t *testing.T, scenario bench.Scenario, shortlist *Shortlist, byRole map[uint]string) {
+func explain(t *testing.T, scenario bench.Scenario, shortlist *Shortlist,
+	byRole map[uint]string, e2 *shortlistEnv, candidateID uint) {
 	t.Helper()
+	// What the shortlist actually searched with. Ranking by raw word overlap
+	// against the whole resume beats the shipped ranking on one frozen
+	// scenario, and the queries are the obvious difference: the resume is a
+	// page, and the queries are whatever the classifier lifted out of it.
+	for _, q := range queriesOf(t, e2, candidateID) {
+		t.Logf("  %s: query %q anyTerms=%v", scenario.ID, q.text, q.anyTerms)
+	}
+
 	rank := map[string]int{}
 	entry := map[string]Entry{}
 	for i, e := range shortlist.Entries {
@@ -566,4 +575,15 @@ func why(e Entry) string {
 		out = append(out, fmt.Sprintf("%s %d lists best rank %d", method, count[method], best[method]))
 	}
 	return strings.Join(out, ", ")
+}
+
+// queriesOf reads the search terms the shortlist would build for this candidate.
+func queriesOf(t *testing.T, e *shortlistEnv, candidateID uint) []query {
+	t.Helper()
+	out, err := e.shortlist.queries(e.initiative, candidateID)
+	if err != nil {
+		t.Logf("reading the queries: %v", err)
+		return nil
+	}
+	return out
 }

@@ -276,8 +276,9 @@ top five.
 profiles the model actually decomposed. Every earlier pass was measured against
 roles whose entire profile was their job title.
 
-**Replacement within the PRD: none found.** Everything the specified design
-offers was tried and measured. Collapsing aspect KNN to roles before truncating
+**Replacement within the PRD: not yet found, and not yet ruled out.**
+Everything the specified design offers *at the level of constants* was tried and
+measured. Collapsing aspect KNN to roles before truncating
 is a real defect fixed, and changed no scenario. The retrieval constants were
 swept again on a corrected instrument — real profiles, K from 1 to 60, depth
 from 3 to 30 — and all thirty configurations score identically; at K=1 the
@@ -285,13 +286,29 @@ similarity half is fully dominant and nothing moves. The provenance shows the
 ranking is decided by lexical hits, and the roles it misses are missed because
 no evidence connects them to the candidate.
 
-**Why.** The labels ask for a judgement the documents do not contain.
-`embedded-c-perth` is nine years of embedded C, CAN bus drivers and safety
-interlocks; three of its four plausible roles are a Go distributed systems role,
-a Playwright QA role and a SOAP integration role. FTS5, exact-cosine aspect KNN
-and reciprocal rank fusion rank on evidence. No setting of them produces an
-ordering that evidence does not support, and a system that did produce it would
-be guessing.
+**Why — an earlier answer here was wrong, and is retracted.** This entry
+previously said the labels ask for a judgement the documents do not contain,
+reasoning from three hand-picked skill lists. Measured across every rating in
+both corpora, that is false: roles the recruiter called plausible share
+consistently more wording with the candidate than roles they did not.
+
+| Scenario | plausible mean overlap | other | ranked by overlap alone, plausible in top five | the product |
+| --- | --- | --- | --- | --- |
+| go-platform-melbourne | 8.9 | 6.3 | 5 | 5 |
+| data-python-melbourne | 4.8 | 3.9 | 2 | 4 |
+| frontend-accessibility-sydney | 5.8 | 4.0 | 2 | 2 |
+| sre-kubernetes-brisbane | 6.0 | 3.9 | 2 | 3 |
+| embedded-c-perth | 7.2 | 3.6 | **3** | **1** |
+
+On `embedded-c-perth` — the scenario used to argue the labels were
+unsatisfiable — plausible roles carry twice the overlap of the rest, and
+ranking by raw word overlap alone reaches the bar. The shipped ranking scores
+one. The product is beaten by the crudest possible baseline on that scenario,
+which is a defect, not a corpus problem.
+
+Overall the product still ranks better than that baseline — three scenarios to
+two — and the two disagree about which scenarios they win. That is what makes
+this worth pursuing rather than closing.
 
 **The reopen request — two resolutions, and the choice is not the implementer's.**
 
@@ -311,9 +328,26 @@ be guessing.
    locked decision on deterministic ranking, so it is a PRD change and not a
    tuning exercise.
 
-**What would falsify this analysis.** A configuration of the shipped design that
-reaches four of five on the frozen corpus. Thirty were tried; if someone finds a
-thirty-first, this entry is wrong and should be deleted.
+**What is still open: the cause is not known.** Five explanations have been
+proposed and each was refuted by measurement — aspect-page truncation (fixed,
+changed nothing), structured-constraint noise (those types never enter the
+similarity half), fusion flattening (thirty configurations score identically),
+unsatisfiable labels (retracted above), and candidate query granularity. The
+last is worth recording because the correlation runs backwards: on the tuning
+corpus the scenario whose queries are four rambling sentences scores four
+plausible and passes, and the scenario with eight clean atomic queries scores
+two and fails.
+
+What remains unexplained is narrow and specific: the shipped ranking scores one
+plausible on `embedded-c-perth` where ranking by raw word overlap scores three.
+
+**One defect was found on the way and has nothing to do with the above.**
+Seniority aspects become search queries, so the shortlist searches for `"six
+years"` and `"seven years"` with the words ORed. Almost every listing says
+"years", so those queries retrieve nearly the whole corpus and contribute a
+near-uniform list to the fusion. It is the same shape as ORing "the" into every
+query, which this project already treats as a defect rather than a tuning knob.
+Whether removing it moves any score is unmeasured; it is wrong regardless.
 
 ## Development-machine live-model runs
 
