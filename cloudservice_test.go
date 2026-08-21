@@ -573,3 +573,70 @@ func TestRemovingNothingIsNotAFailure(t *testing.T) {
 		t.Fatalf("removing nothing: %v", err)
 	}
 }
+
+// A payload that skipped the preview is refused, and a previewed one is not
+// touched.
+//
+// Redaction happens in Preview, and Send transmits what it is handed. That is
+// deliberate — redacting again in Send could transmit text differing from what
+// the recruiter approved, and approval has to be about the thing that leaves.
+// It also meant a caller could hand Send raw text and have it sent, and Send is
+// a bound method: anything running in the window can reach it.
+//
+// Redaction is idempotent, so asking whether the text is already redacted
+// changes nothing about a previewed payload and refuses one that never was.
+func TestAPayloadThatSkippedThePreviewIsRefused(t *testing.T) {
+	e := newCloudEnv(t)
+	e.configure(t, "https://api.example-cloud.invalid/v1")
+	e.withKey(t)
+	if err := e.cloud.Approve(e.initiative, string(cloud.Drafting)); err != nil {
+		t.Fatalf("approving: %v", err)
+	}
+
+	reached := false
+	e.model.respond = func(string) string {
+		reached = true
+		return "ok"
+	}
+
+	// A real preview, so the endpoint and the task are exactly right, and then
+	// the text swapped for what never went through redaction. Anything less
+	// than this is refused by a different check — the first version of this
+	// test built the payload by hand, and Send turned it away because the
+	// endpoint field was empty, which proved nothing about identifiers.
+	const line = "Kalinda Reyes, kalinda.reyes@example.invalid, +61 400 123 456 — five years of Go."
+	previewed, err := e.cloud.Preview(PreviewInput{
+		InitiativeID: e.initiative, Task: string(cloud.Drafting), Text: line,
+	})
+	if err != nil {
+		t.Fatalf("previewing: %v", err)
+	}
+	raw := *previewed
+	raw.Text = line
+
+	_, err = e.cloud.Send(e.initiative, raw)
+	if err == nil {
+		t.Fatal("a payload carrying an email and a phone number was sent")
+	}
+	if reached {
+		t.Fatal("the endpoint received it before the refusal")
+	}
+	// The refusal says what to do, and does not quote what it refused.
+	if strings.Contains(err.Error(), "kalinda") || strings.Contains(err.Error(), "400 123") {
+		t.Fatalf("the refusal quoted the payload: %v", err)
+	}
+
+	// And the previewed path is unaffected: same text in, same text out.
+	payload := previewed
+	var sent string
+	e.model.respond = func(prompt string) string {
+		sent = prompt
+		return "ok"
+	}
+	if _, err := e.cloud.Send(e.initiative, *payload); err != nil {
+		t.Fatalf("sending a previewed payload: %v", err)
+	}
+	if sent != payload.Text {
+		t.Fatalf("the provider received %q, the recruiter previewed %q", sent, payload.Text)
+	}
+}

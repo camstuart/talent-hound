@@ -302,6 +302,18 @@ func (s *CloudService) Send(initiativeID uint, payload Payload) (string, error) 
 	if err := cloud.Allowed(cloud.Task(payload.Task)); err != nil {
 		return "", err
 	}
+	// The payload arrives from the caller, and redaction happens in Preview. A
+	// caller that skipped it — a bound method is reachable from anything the
+	// window runs — would transmit whatever it was handed, and the recruiter
+	// would have approved a preview of something else.
+	//
+	// Checked rather than redone. Redacting here would send text that differs
+	// from what was previewed, which is the opposite failure: approval has to
+	// be about the thing that leaves. Redaction is idempotent, so a previewed
+	// payload passes through this unchanged and raw text does not.
+	if cloud.Redact(payload.Text, scrub.Identifiers{}) != payload.Text {
+		return "", fmt.Errorf("this payload still carries a direct identifier: preview it first")
+	}
 	endpoint, err := s.Endpoint()
 	if err != nil {
 		return "", err
