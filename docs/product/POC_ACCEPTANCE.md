@@ -53,7 +53,7 @@ corpus was the synthetic one in this repository or the recruiter's.
 | 5 | Every non-local request had its preview or approval | PASS — audit and consent tests; confirm again on the acceptance run |
 | 6 | Held-out matching benchmark | **PASS on the development machine** (5 of 5 scenarios against real role profiles, 14B) — NOT RUN on the target laptop |
 | 7 | Held-out classifier benchmark | **PASS on the development machine** (all four conditions, 14B) — NOT RUN on the target laptop |
-| 8 | Real-data mode refused on an unencrypted volume | PARTIAL — enforced and tested; BitLocker itself is a gate |
+| 8 | Real-data mode refused on an unencrypted volume | PARTIAL — enforced and tested, and the BitLocker readings are now parsed by code any machine can test, including the answers a laptop with encryption on cannot produce. Running it against a real unencrypted volume is still a gate. |
 | 9 | Recover a copied data folder without corruption or partial migration | PASS off-laptop — second-machine run is a gate |
 
 ## Benchmarks

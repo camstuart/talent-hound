@@ -3,7 +3,6 @@ package platform
 import (
 	"context"
 	"path/filepath"
-	"strings"
 )
 
 // VolumeEncryption reports whether the volume holding path is protected by
@@ -22,20 +21,7 @@ func VolumeEncryption(ctx context.Context, path string) EncryptionStatus {
 
 func manageBDEStatus(ctx context.Context, vol string) EncryptionStatus {
 	out, err := runSystemTool(ctx, "manage-bde", "-status", vol, "-protectors")
-	if s := denialOrEmpty(out, err); s != "" {
-		return s
-	}
-	// Localized output is version-dependent; parse defensively and fall back to
-	// the CIM query rather than guessing.
-	low := strings.ToLower(out)
-	switch {
-	case strings.Contains(low, "protection on"):
-		return StatusEncrypted
-	case strings.Contains(low, "protection off"), strings.Contains(low, "fully decrypted"):
-		return StatusUnencrypted
-	default:
-		return StatusUnavailable
-	}
+	return readManageBDE(out, err)
 }
 
 func cimStatus(ctx context.Context, vol string) EncryptionStatus {
@@ -43,15 +29,5 @@ func cimStatus(ctx context.Context, vol string) EncryptionStatus {
 	query := `(Get-CimInstance -Namespace root/cimv2/security/microsoftvolumeencryption ` +
 		`-ClassName Win32_EncryptableVolume -Filter "DriveLetter='` + vol + `'").ProtectionStatus`
 	out, err := runSystemTool(ctx, "powershell", "-NoProfile", "-NonInteractive", "-Command", query)
-	if s := denialOrEmpty(out, err); s != "" {
-		return s
-	}
-	switch strings.TrimSpace(out) {
-	case "1":
-		return StatusEncrypted
-	case "0", "2":
-		return StatusUnencrypted
-	default:
-		return StatusUnavailable
-	}
+	return readCIM(out, err)
 }

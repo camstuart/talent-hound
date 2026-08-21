@@ -34,6 +34,69 @@ func denialOrEmpty(out string, err error) EncryptionStatus {
 	return ""
 }
 
+// readManageBDE interprets `manage-bde -status`, and readCIM interprets the
+// Win32_EncryptableVolume ProtectionStatus. Both live here rather than beside
+// the call that produces them, because they are the part that decides whether
+// real candidate data may be stored and the part a development machine can
+// exercise. On Windows the gate can only ever report what that machine's own
+// volume happens to be: a laptop with BitLocker on cannot produce "protection
+// off", which is the answer with consequences.
+//
+// Localized output is version-dependent, so both parse defensively and answer
+// unavailable rather than guess. No path here returns encrypted from anything
+// but an explicit statement that it is.
+func readManageBDE(out string, err error) EncryptionStatus {
+	if s := denialOrEmpty(out, err); s != "" {
+		return s
+	}
+	low := strings.ToLower(out)
+	switch {
+	case saysWord(low, "protection on"):
+		return StatusEncrypted
+	case saysWord(low, "protection off"), saysWord(low, "fully decrypted"):
+		return StatusUnencrypted
+	default:
+		return StatusUnavailable
+	}
+}
+
+// saysWord reports whether text states the phrase and not a longer word ending
+// in it. "Protection Onwards" contains "protection on", and reading protection
+// out of it is the one mistake here with consequences — real candidate data on
+// a disk nobody encrypted. Unrecognised output answers unavailable instead,
+// which costs a recruiter an explanation and costs nobody their data.
+func saysWord(text, phrase string) bool {
+	for at := 0; ; {
+		i := strings.Index(text[at:], phrase)
+		if i < 0 {
+			return false
+		}
+		end := at + i + len(phrase)
+		if end == len(text) || !isWordByte(text[end]) {
+			return true
+		}
+		at = end
+	}
+}
+
+func isWordByte(b byte) bool {
+	return b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9'
+}
+
+func readCIM(out string, err error) EncryptionStatus {
+	if s := denialOrEmpty(out, err); s != "" {
+		return s
+	}
+	switch strings.TrimSpace(out) {
+	case "1":
+		return StatusEncrypted
+	case "0", "2":
+		return StatusUnencrypted
+	default:
+		return StatusUnavailable
+	}
+}
+
 func runSystemTool(ctx context.Context, name string, args ...string) (string, error) {
 	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
 	defer cancel()
