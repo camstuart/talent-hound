@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"testing"
@@ -699,4 +700,63 @@ func TestTheCloudDisclosureNamesAnOrganizationThatWasSent(t *testing.T) {
 			t.Fatalf("the record quotes the organization: %q", got)
 		}
 	})
+}
+
+// A payload is not sent to the local runtime while the record says it went to a
+// provider.
+//
+// This build wires one client, pointed at the local model, and hands the same
+// instance to the cloud service. So a payload previewed for an endpoint,
+// approved for that endpoint and recorded as disclosed to it was answered on
+// this machine. No data left, which is the safe half; the recruiter was told it
+// had and the disclosure record agreed, which is the other half.
+//
+// Refused now, and refused before anything is recorded: a disclosure event for
+// a disclosure that did not happen is the same defect pointing the other way.
+func TestAMisdirectedTransportIsRefusedRatherThanAnsweredLocally(t *testing.T) {
+	e := newCloudEnv(t)
+	e.configure(t, "https://api.example-cloud.invalid/v1")
+	e.withKey(t)
+	if err := e.cloud.Approve(e.initiative, string(cloud.Drafting)); err != nil {
+		t.Fatalf("approving: %v", err)
+	}
+	payload, err := e.cloud.Preview(PreviewInput{
+		InitiativeID: e.initiative, Task: string(cloud.Drafting),
+		Text: "Write a pitch about five years of production Go.",
+	})
+	if err != nil {
+		t.Fatalf("previewing: %v", err)
+	}
+
+	// A transport that says it goes somewhere else, which is what the shipped
+	// one does.
+	e.cloud.model = elsewhere{answer: "answered locally"}
+
+	before := e.disclosureCount(t)
+	if _, err := e.cloud.Send(e.initiative, *payload); err == nil {
+		t.Fatal("a payload was answered by a transport pointed somewhere else")
+	}
+	if after := e.disclosureCount(t); after != before {
+		t.Fatalf("a disclosure was recorded for a request that was refused (%d then %d)", before, after)
+	}
+}
+
+// elsewhere is a transport that reports an endpoint other than the configured
+// one, and answers if it is ever actually called.
+type elsewhere struct{ answer string }
+
+func (e elsewhere) Endpoint() string { return "http://localhost:11434" }
+
+func (e elsewhere) Chat(context.Context, string, string, map[string]any) (string, error) {
+	return e.answer, nil
+}
+
+// disclosureCount is how many disclosure events exist right now.
+func (e *cloudEnv) disclosureCount(t *testing.T) int64 {
+	t.Helper()
+	var n int64
+	if err := e.db.Model(&models.DisclosureEvent{}).Count(&n).Error; err != nil {
+		t.Fatalf("counting disclosures: %v", err)
+	}
+	return n
 }

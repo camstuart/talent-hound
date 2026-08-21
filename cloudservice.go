@@ -39,6 +39,12 @@ func NewCloudService(
 		profiles: profiles, credentials: credentials}
 }
 
+// addressable is a transport that can say where it sends. A transport that
+// cannot is a test double, and a test double is where it says it is.
+type addressable interface {
+	Endpoint() string
+}
+
 // cloudTimeout bounds one cloud request.
 const cloudTimeout = 2 * time.Minute
 
@@ -365,6 +371,25 @@ func (s *CloudService) Send(initiativeID uint, payload Payload) (string, error) 
 	has, err := s.credentials.Has("cloud")
 	if err != nil || !has {
 		return "", fmt.Errorf("no cloud credential is stored — the provider is disabled")
+	}
+
+	// And the transport actually goes where the recruiter approved.
+	//
+	// It does not. This build wires one client, pointed at the local runtime,
+	// and hands the same instance to this service — so a payload previewed for
+	// an endpoint, approved for that endpoint and recorded as disclosed to it
+	// was answered by the model on this machine. Safe, and a lie in both
+	// directions: the recruiter was told their text went somewhere it did not,
+	// and the disclosure record said a disclosure happened that had not.
+	//
+	// Refused rather than quietly answered. Wiring a real OpenAI-compatible
+	// transport is the fix, and it is the one change in this product that makes
+	// candidate-derived text leave the machine — so it belongs to somebody who
+	// can watch it happen, not to a guess made where it cannot be observed.
+	if at, ok := s.model.(addressable); ok && at.Endpoint() != endpoint.URL {
+		return "", fmt.Errorf(
+			"this build has no cloud transport: it would send to %s rather than to %s, "+
+				"so nothing was sent", at.Endpoint(), endpoint.URL)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), cloudTimeout)

@@ -40,6 +40,10 @@ func NewOllama() *Ollama {
 	return &Ollama{BaseURL: OllamaBaseURL, Client: &http.Client{Timeout: 5 * time.Minute}}
 }
 
+// Endpoint is where this client sends, so a caller that must reach a particular
+// one can check rather than assume.
+func (o *Ollama) Endpoint() string { return o.BaseURL }
+
 // Chat returns the assistant message for a single user prompt. When schema is
 // non-nil the response is constrained to it and returned as raw JSON.
 func (o *Ollama) Chat(ctx context.Context, model, prompt string, schema map[string]any) (string, error) {
