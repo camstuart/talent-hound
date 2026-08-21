@@ -176,7 +176,13 @@ export default function RoleProfilePanel(props: { initiativeId: number }) {
               <ul class="record-list" aria-label={`Requirements of ${titleOf(status.roleId)}`}>
                 <For each={status.aspects ?? []} fallback={<li class="muted">No requirements recorded.</li>}>
                   {(aspect, i) => (
-                    <li>
+                    // A requirement a model lifted out of a listing is marked as
+                    // one, the same way a candidate's aspects are. It said
+                    // "extracted" in small grey text and carried none of the
+                    // marking the stylesheet gives model output — so identical
+                    // content was labelled "Written by a model — check it" on
+                    // one screen and not the other.
+                    <li data-provenance={aspect.origin === "recruiter_supplied" ? "recruiter" : "ai"}>
                       <span class="artifact-name">
                         {aspect.type}
                         <span class="muted">
