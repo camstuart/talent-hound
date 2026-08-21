@@ -50,7 +50,7 @@ corpus was the synthetic one in this repository or the recruiter's.
 | 2 | No message-sending capability | PASS — repository-wide sender scan, plus no service method |
 | 3 | Purge a stale role and verify its derived content is gone | PASS — Go and Playwright |
 | 4 | Delete a candidate after its initiatives, resolving shared artifacts | PASS — Go and Playwright |
-| 5 | Every non-local request had its preview or approval | PASS — audit and consent tests; confirm again on the acceptance run |
+| 5 | Every non-local request had its preview or approval | PASS — audit and consent tests, including that revoking an endpoint revokes what was approved for it: approvals are keyed by endpoint revision, revisions restart at one, and consents used to outlive the endpoint they named. Confirm again on the acceptance run. |
 | 6 | Held-out matching benchmark | **PASS on the development machine** (5 of 5 scenarios against real role profiles, 14B) — NOT RUN on the target laptop |
 | 7 | Held-out classifier benchmark | **PASS on the development machine** (all four conditions, 14B) — NOT RUN on the target laptop |
 | 8 | Real-data mode refused on an unencrypted volume | PARTIAL — enforced and tested, and the BitLocker readings are now parsed by code any machine can test, including the answers a laptop with encryption on cannot produce. Running it against a real unencrypted volume is still a gate. |

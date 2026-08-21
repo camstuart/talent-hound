@@ -99,10 +99,26 @@ func (s *CloudService) Endpoint() (*CloudEndpoint, error) {
 
 // Remove clears the cloud endpoint entirely.
 func (s *CloudService) Remove() error {
-	if err := s.db.Where("1 = 1").Delete(&models.CloudEndpointRow{}).Error; err != nil {
-		return fmt.Errorf("removing the cloud endpoint: %w", err)
-	}
-	return nil
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("1 = 1").Delete(&models.CloudEndpointRow{}).Error; err != nil {
+			return fmt.Errorf("removing the cloud endpoint: %w", err)
+		}
+		// And everything approved for it. An approval is approval to send this
+		// task to that endpoint, and it cannot outlive the endpoint it names.
+		//
+		// It used to. Revisions restart at one when no endpoint exists, so
+		// revoking one provider and configuring a different one gave the new
+		// one revision one again — and every consent keyed to revision one,
+		// granted for a provider that is gone, matched it. A task the recruiter
+		// approved for one company was approved for another without anyone
+		// being asked.
+		//
+		// Deleting the consents here is what makes restarting at one safe.
+		if err := tx.Where("1 = 1").Delete(&models.CloudConsent{}).Error; err != nil {
+			return fmt.Errorf("revoking what was approved for it: %w", err)
+		}
+		return nil
+	})
 }
 
 // TaskState is what a screen needs to say about one task.

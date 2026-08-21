@@ -511,3 +511,65 @@ func TestTheCloudEndpointDoesNotReplaceTheLocalConfiguration(t *testing.T) {
 		t.Fatalf("local work failed with a cloud endpoint configured: %v", err)
 	}
 }
+
+// Revocation, which FR-11 requires alongside visible configuration and which
+// nothing exercised.
+//
+// Removing the endpoint has to take the approvals with it. An approval is
+// approval to send this task to that endpoint, and leaving one behind after the
+// endpoint is gone means the next endpoint configured inherits a permission
+// nobody granted it.
+func TestRemovingTheEndpointRevokesWhatWasApprovedForIt(t *testing.T) {
+	e := newCloudEnv(t)
+	e.configure(t, "https://api.example-cloud.invalid/v1")
+	e.withKey(t)
+
+	approvable := ""
+	states, err := e.cloud.Tasks(e.initiative)
+	if err != nil {
+		t.Fatalf("reading tasks: %v", err)
+	}
+	for _, s := range states {
+		if !s.Denied {
+			approvable = s.Task
+		}
+	}
+	if approvable == "" {
+		t.Fatal("no task can be approved, so this proves nothing")
+	}
+	if err := e.cloud.Approve(e.initiative, approvable); err != nil {
+		t.Fatalf("approving %s: %v", approvable, err)
+	}
+
+	if err := e.cloud.Remove(); err != nil {
+		t.Fatalf("removing the endpoint: %v", err)
+	}
+	endpoint, err := e.cloud.Endpoint()
+	if err != nil {
+		t.Fatalf("reading the endpoint: %v", err)
+	}
+	if endpoint != nil {
+		t.Fatal("the endpoint survived its own removal")
+	}
+
+	// Configure a different endpoint. It must start with nothing approved.
+	e.configure(t, "https://api.other-cloud.invalid/v1")
+	states, err = e.cloud.Tasks(e.initiative)
+	if err != nil {
+		t.Fatalf("reading tasks after reconfiguring: %v", err)
+	}
+	for _, s := range states {
+		if s.Approved {
+			t.Fatalf("%s is approved for an endpoint nobody approved it for", s.Task)
+		}
+	}
+}
+
+// Removing an endpoint that was never configured is not an error: a recruiter
+// clicking revoke twice has revoked it.
+func TestRemovingNothingIsNotAFailure(t *testing.T) {
+	e := newCloudEnv(t)
+	if err := e.cloud.Remove(); err != nil {
+		t.Fatalf("removing nothing: %v", err)
+	}
+}
