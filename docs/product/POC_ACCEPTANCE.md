@@ -51,7 +51,7 @@ corpus was the synthetic one in this repository or the recruiter's.
 | 3 | Purge a stale role and verify its derived content is gone | PASS — Go and Playwright |
 | 4 | Delete a candidate after its initiatives, resolving shared artifacts | PASS — Go and Playwright |
 | 5 | Every non-local request had its preview or approval | PASS — audit and consent tests; confirm again on the acceptance run |
-| 6 | Held-out matching benchmark | **FAIL on the development machine** (3 of 5 scenarios against real role profiles, 14B) — NOT RUN on the target laptop |
+| 6 | Held-out matching benchmark | **PASS on the development machine** (5 of 5 scenarios against real role profiles, 14B) — NOT RUN on the target laptop |
 | 7 | Held-out classifier benchmark | **PASS on the development machine** (all four conditions, 14B) — NOT RUN on the target laptop |
 | 8 | Real-data mode refused on an unencrypted volume | PARTIAL — enforced and tested; BitLocker itself is a gate |
 | 9 | Recover a copied data folder without corruption or partial migration | PASS off-laptop — second-machine run is a gate |
@@ -68,7 +68,7 @@ recorded further down and cannot fill them in.
 | Classifier: no unsupported critical constraint | none | PASS on the development machine; NOT RUN on the target laptop |
 | Classifier: material-aspect capture | ≥ 80% | 99% on the development machine; NOT RUN on the target laptop |
 | Classifier: structured constraints reproduced | all | **100 of 100** on the development machine; NOT RUN on the target laptop |
-| Matching: three plausible in the top five | ≥ 4 of 5 scenarios | **3 of 5** on the development machine against real role profiles; NOT RUN on the target laptop |
+| Matching: three plausible in the top five | ≥ 4 of 5 scenarios | **5 of 5** on the development machine against real role profiles; NOT RUN on the target laptop |
 | Live acceptance: eligible roles found | ≥ 10, else inconclusive | 20 in scope |
 | Live acceptance: Ready profiles and assessments | ≥ 10 | NOT RUN |
 | Live acceptance: usable evidence-backed draft | ≥ 1 | NOT RUN |
@@ -267,7 +267,24 @@ Cloud-assisted runs are recorded separately and cannot pass any of the above.
 _For each failure: the gate, what failed, and either the replacement
 implementation choice within the PRD or the explicit PRD reopen request._
 
-### Held-out matching benchmark — FAIL, and a PRD reopen request
+### Held-out matching benchmark — resolved, and the reopen request withdrawn
+
+**It passes: 5 of 5.** The entry below is kept in full because it is the record
+of how a wrong diagnosis nearly became a request to change the product's locked
+design, and because the measurements in it are still true.
+
+The cause was neither the labels nor the constants. The candidate's city never
+reached retrieval: structured types were excluded from the query set on a
+justification that only holds for embeddings. Letting places reach the full-text
+half — where "Perth" matches "Perth" exactly — took `embedded-c-perth` from one
+plausible to three, and every other scenario improved with it.
+
+**No label was edited, no constant was tuned, and the corpus hash is unchanged
+from the first run of the session.**
+
+---
+
+### The failing record, kept
 
 **The gate.** At least four of five scenarios put three plausible roles in the
 top five.
@@ -310,7 +327,8 @@ Overall the product still ranks better than that baseline — three scenarios to
 two — and the two disagree about which scenarios they win. That is what makes
 this worth pursuing rather than closing.
 
-**The reopen request — two resolutions, and the choice is not the implementer's.**
+**The reopen request, withdrawn.** It rested on there being no replacement
+within the PRD. There was one.
 
 1. **The acceptance run decides it.** The PRD already says the synthetic corpus
    is replaced with the recruiter's five frozen past placements, labelled by the
