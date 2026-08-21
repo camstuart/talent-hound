@@ -11,13 +11,19 @@ covered by the Go, Vitest, and Playwright suites and runs everywhere.
 ## How to produce this record
 
 ```
-just sidecar                   # build the pinned MarkItDown one-dir sidecar
-wails3 task package            # build the Windows application and installer
-just gate                      # Windows-native platform proofs
-just check                     # the full suite on the target machine
+just laptop-gates
 ```
 
-Then work through the tables below on the packaged build, not on `just dev`.
+One recipe, in the order the steps have to happen: the full suite, the
+Windows-native platform proofs, the pinned sidecar, the local-model proofs, the
+classifier contract, both frozen benchmarks, one assessment against its target,
+and the packaged application and installer. It ends by printing every remaining
+gate as a checklist — read out of the tables below, so the checklist and the
+record cannot drift apart.
+
+Then work through those gates on the packaged build, not on `just dev`, and
+write each result into this file. A test fails if the recipe stops running any
+of the gates it claims to, or if these tables stop being the checklist it reads.
 
 ## What is checked from here
 

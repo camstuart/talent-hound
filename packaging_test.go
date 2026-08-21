@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"os"
+	"slices"
 	"strings"
 	"testing"
 
@@ -250,4 +251,62 @@ func hasRecipe(t *testing.T, name string) bool {
 		}
 	}
 	return false
+}
+
+// The laptop acceptance run has one entry point, and it names every gate that
+// cannot run anywhere else.
+//
+// The recipe prints its manual checklist by reading the evidence document, so
+// the two cannot drift — but it can only do that while the recipe exists and
+// the document still has the tables it reads. Both are checked here, because
+// the day this matters is the day someone has the laptop and no time.
+func TestTheLaptopAcceptanceRunHasOneEntryPoint(t *testing.T) {
+	recipes := recipeNames(t)
+	if !hasRecipe(t, "laptop-gates") {
+		t.Fatal("there is no laptop-gates recipe")
+	}
+	raw, err := os.ReadFile("justfile")
+	if err != nil {
+		t.Fatalf("reading the justfile: %v", err)
+	}
+	body := string(raw)
+	start := strings.Index(body, "\nlaptop-gates:")
+	if start < 0 {
+		t.Fatal("laptop-gates is listed but has no body")
+	}
+	recipe := body[start:]
+	if end := strings.Index(recipe[1:], "\n\n# "); end > 0 {
+		recipe = recipe[:end]
+	}
+
+	// Every gate that needs Windows or the real models has to be reachable from
+	// it, or it is not the entry point it claims to be.
+	for _, needed := range []string{"check", "gate", "sidecar", "gate-model",
+		"gate-model-classify", "bench", "bench-assess"} {
+		if !strings.Contains(recipe, "just "+needed+"\n") {
+			t.Errorf("laptop-gates never runs `just %s`", needed)
+		}
+		if !slices.Contains(recipes, needed) {
+			t.Errorf("laptop-gates runs `just %s`, which does not exist", needed)
+		}
+	}
+	if !strings.Contains(recipe, "wails3 task package") {
+		t.Error("laptop-gates never packages the application")
+	}
+
+	// And the document it reads its checklist out of still has one to read.
+	evidence, err := os.ReadFile("docs/product/PHASE20_PACKAGING_EVIDENCE.md")
+	if err != nil {
+		t.Fatalf("reading the packaging evidence: %v", err)
+	}
+	rows := 0
+	for _, line := range strings.Split(string(evidence), "\n") {
+		if strings.HasPrefix(line, "| ") && !strings.HasPrefix(line, "| Check") &&
+			!strings.HasPrefix(line, "| ---") {
+			rows++
+		}
+	}
+	if rows < 20 {
+		t.Fatalf("the packaging evidence has %d checklist rows, which is too few to be the record", rows)
+	}
 }
