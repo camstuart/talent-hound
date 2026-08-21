@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"camstuart/talent-hound/internal/models"
@@ -136,6 +137,75 @@ func TestVerifyRefusesWhatIsNotOurSidecar(t *testing.T) {
 			}
 			if _, err := s.resolve(); Code(err) != c.want {
 				t.Errorf("resolve gave %q, want %q", Code(err), c.want)
+			}
+		})
+	}
+}
+
+// Where the sidecar is looked for, and what happens when what is there is not
+// what was expected. These are the laptop's first four failure modes and none
+// of them had a test.
+func TestTheSidecarIsFoundBesideTheApplicationOrRefusedClearly(t *testing.T) {
+	t.Run("the override wins, because that is what it is for", func(t *testing.T) {
+		t.Setenv(SidecarPathEnv, filepath.Join("/opt", "somewhere", "markitdown-sidecar"))
+		if got := DefaultSidecarPath(); got != filepath.Join("/opt", "somewhere", "markitdown-sidecar") {
+			t.Fatalf("DefaultSidecarPath = %q", got)
+		}
+	})
+
+	t.Run("otherwise it sits in its own folder beside the binary", func(t *testing.T) {
+		t.Setenv(SidecarPathEnv, "")
+		got := DefaultSidecarPath()
+		if got == "" {
+			t.Skip("this process has no resolvable executable")
+		}
+		if !filepath.IsAbs(got) {
+			t.Fatalf("the default path is relative: %q", got)
+		}
+		if filepath.Base(filepath.Dir(got)) != "markitdown-sidecar" {
+			t.Fatalf("the sidecar is not in its own one-dir folder: %q", got)
+		}
+		// The name carries .exe exactly when the application binary does.
+		wantExe := strings.EqualFold(filepath.Ext(os.Args[0]), ".exe")
+		if strings.EqualFold(filepath.Ext(got), ".exe") != wantExe {
+			t.Fatalf("the sidecar name is %q for an application named %q",
+				filepath.Base(got), filepath.Base(os.Args[0]))
+		}
+	})
+}
+
+// Verification refuses everything it cannot prove, with a code and a detail
+// that names the install rather than a document.
+func TestVerificationRefusesWhatItCannotProve(t *testing.T) {
+	dir := t.TempDir()
+	relative := "markitdown-sidecar"
+	absent := filepath.Join(dir, "not-there")
+
+	for _, c := range []struct {
+		name, path, wantIn string
+	}{
+		{"nothing configured", "", "no sidecar path configured"},
+		{"a relative path", relative, "is not absolute"},
+		{"a path with nothing at it", absent, "not found"},
+		{"a directory", dir, "is a directory"},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			s := Verify(context.Background(), c.path)
+			if s.Available() {
+				t.Fatal("verification accepted it")
+			}
+			if s.Reason() != models.ReasonSidecarMissing {
+				t.Fatalf("reason = %q", s.Reason())
+			}
+			if !strings.Contains(s.Detail(), c.wantIn) {
+				t.Fatalf("detail = %q, want it to mention %q", s.Detail(), c.wantIn)
+			}
+			if s.Version() != "" {
+				t.Fatalf("a refused sidecar reports version %q", s.Version())
+			}
+			// The detail is logged, so it must never carry a document.
+			if strings.Contains(strings.ToLower(s.Detail()), "resume") {
+				t.Fatalf("the detail mentions a document: %q", s.Detail())
 			}
 		})
 	}
