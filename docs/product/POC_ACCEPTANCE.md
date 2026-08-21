@@ -262,6 +262,59 @@ twenty role listings, labelled before any model runs against them.
 
 Cloud-assisted runs are recorded separately and cannot pass any of the above.
 
+## Failed gates and consequences
+
+_For each failure: the gate, what failed, and either the replacement
+implementation choice within the PRD or the explicit PRD reopen request._
+
+### Held-out matching benchmark — FAIL, and a PRD reopen request
+
+**The gate.** At least four of five scenarios put three plausible roles in the
+top five.
+
+**What failed.** Three of five, measured for the first time against role
+profiles the model actually decomposed. Every earlier pass was measured against
+roles whose entire profile was their job title.
+
+**Replacement within the PRD: none found.** Everything the specified design
+offers was tried and measured. Collapsing aspect KNN to roles before truncating
+is a real defect fixed, and changed no scenario. The retrieval constants were
+swept again on a corrected instrument — real profiles, K from 1 to 60, depth
+from 3 to 30 — and all thirty configurations score identically; at K=1 the
+similarity half is fully dominant and nothing moves. The provenance shows the
+ranking is decided by lexical hits, and the roles it misses are missed because
+no evidence connects them to the candidate.
+
+**Why.** The labels ask for a judgement the documents do not contain.
+`embedded-c-perth` is nine years of embedded C, CAN bus drivers and safety
+interlocks; three of its four plausible roles are a Go distributed systems role,
+a Playwright QA role and a SOAP integration role. FTS5, exact-cosine aspect KNN
+and reciprocal rank fusion rank on evidence. No setting of them produces an
+ordering that evidence does not support, and a system that did produce it would
+be guessing.
+
+**The reopen request — two resolutions, and the choice is not the implementer's.**
+
+1. **The acceptance run decides it.** The PRD already says the synthetic corpus
+   is replaced with the recruiter's five frozen past placements, labelled by the
+   recruiter before any model runs. If those labels mark roles that share
+   evidence with the candidate, evidence-based retrieval can reach the bar and
+   this failure says nothing about the product. **This is the expected
+   resolution and it needs no PRD change** — only the real corpus.
+
+2. **If the real labels look like these, the design is what is wrong.** If a
+   recruiter's genuine placements also cross domains the documents never
+   connect — an embedded engineer placed into a distributed systems role because
+   the recruiter knows the person — then ranking by document evidence cannot
+   reproduce recruiter judgement, and matching needs a reasoning step that
+   assesses fit rather than retrieves similarity. That contradicts the PRD's
+   locked decision on deterministic ranking, so it is a PRD change and not a
+   tuning exercise.
+
+**What would falsify this analysis.** A configuration of the shipped design that
+reaches four of five on the frozen corpus. Thirty were tried; if someone finds a
+thirty-first, this entry is wrong and should be deleted.
+
 ## Development-machine live-model runs
 
 Not the acceptance environment. This is a macOS development machine, so nothing
