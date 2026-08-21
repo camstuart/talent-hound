@@ -502,3 +502,63 @@ func TestAnUnknownDraftKindIsRefused(t *testing.T) {
 		t.Fatal("an unknown draft kind was accepted")
 	}
 }
+
+// A draft belongs to the initiative it was written in, and the listing is the
+// only thing that says so on the screen.
+//
+// Drafts had no test for listing them. Everything about a draft is
+// candidate-derived — a pitch quoting someone's résumé — and a listing that
+// dropped its scope would put one recruiter's work about one candidate on
+// another initiative's screen, in a product whose deletion invariants are
+// written around exactly that boundary.
+func TestDraftsAreListedOnlyForTheInitiativeTheyWereWrittenIn(t *testing.T) {
+	e := newQAEnv(t)
+	id := e.draftableCandidate(t)
+	e.generateModel(t)
+	e.model.respond = func(string) string {
+		return drafted("A platform engineer worth meeting",
+			"They have five years of production Go and SQLite.",
+			Claim{Text: "five years of production Go and SQLite", Refs: []string{"profile-1"}})
+	}
+
+	mine, err := e.drafts.Generate(DraftInput{
+		InitiativeID: e.initiative, CandidateID: id, Kind: models.DraftPitch,
+	})
+	if err != nil {
+		t.Fatalf("generating: %v", err)
+	}
+
+	// A second workspace, and nothing written in it.
+	other := models.Initiative{Name: "Another search", Type: models.InitiativeTypeJobSearch}
+	if err := e.db.Create(&other).Error; err != nil {
+		t.Fatalf("creating the second initiative: %v", err)
+	}
+
+	listed, err := e.drafts.Drafts(e.initiative)
+	if err != nil {
+		t.Fatalf("listing: %v", err)
+	}
+	if len(listed) != 1 || listed[0].ID != mine.ID {
+		t.Fatalf("the initiative that wrote the draft lists %d of them", len(listed))
+	}
+	elsewhere, err := e.drafts.Drafts(other.ID)
+	if err != nil {
+		t.Fatalf("listing the second initiative: %v", err)
+	}
+	if len(elsewhere) != 0 {
+		t.Fatalf("an initiative nobody drafted in lists %d drafts", len(elsewhere))
+	}
+
+	// And the copy count travels with the draft rather than being counted
+	// across all of them.
+	if err := e.drafts.Copy(mine.ID); err != nil {
+		t.Fatalf("copying: %v", err)
+	}
+	listed, err = e.drafts.Drafts(e.initiative)
+	if err != nil {
+		t.Fatalf("listing after the copy: %v", err)
+	}
+	if listed[0].Copies != 1 {
+		t.Fatalf("the draft reports %d copies after one", listed[0].Copies)
+	}
+}

@@ -734,3 +734,59 @@ Hiring a data engineer in Melbourne. This is a remote role.
 	}
 	t.Fatal("no location survived the merge")
 }
+
+// A candidate's profile history is not a role's, and the only thing keeping
+// them apart is that the query asks for the kind as well as the identifier.
+//
+// Candidate 1 and role 1 are both subject 1. A query that dropped subject_kind
+// would return one subject's versions under the other's name, and every row
+// would look plausible: same shape, same version numbers, someone else's
+// requirements. History had no test at all.
+func TestProfileHistoryIsScopedToTheSubjectAndItsKind(t *testing.T) {
+	e := newClassifyEnv(t)
+	ids := e.withSource(t, "listing", roleListing)
+	e.assignClassify(t, "synthetic-classify")
+
+	// The same numeric identifier, two different kinds of subject.
+	const shared = uint(1)
+	e.model.responses = []string{
+		e.response(t, profile.Aspect{Type: profile.Skill, Wording: skillQuote,
+			Citations: []profile.Citation{{ChunkID: e.chunkQuoting(t), Quote: skillQuote}}}),
+	}
+	if _, err := e.classify.Classify(ClassifyInput{
+		SubjectKind: profile.SubjectRole, SubjectID: shared, ChunkIDs: ids,
+	}); err != nil {
+		t.Fatalf("classifying the role: %v", err)
+	}
+	e.model.responses = []string{
+		e.response(t, profile.Aspect{Type: profile.Skill, Wording: skillQuote,
+			Citations: []profile.Citation{{ChunkID: e.chunkQuoting(t), Quote: skillQuote}}}),
+	}
+	if _, err := e.classify.Classify(ClassifyInput{
+		SubjectKind: profile.SubjectCandidate, SubjectID: shared, ChunkIDs: ids,
+	}); err != nil {
+		t.Fatalf("classifying the candidate: %v", err)
+	}
+
+	for _, kind := range []profile.SubjectKind{profile.SubjectRole, profile.SubjectCandidate} {
+		versions, err := e.classify.History(kind, shared)
+		if err != nil {
+			t.Fatalf("reading %s history: %v", kind, err)
+		}
+		if len(versions) != 1 {
+			t.Fatalf("%s subject %d has %d versions, want its own one", kind, shared, len(versions))
+		}
+		if versions[0].SubjectKind != string(kind) {
+			t.Fatalf("%s history returned a %s profile", kind, versions[0].SubjectKind)
+		}
+	}
+
+	// And a subject nobody profiled has no history rather than someone else's.
+	versions, err := e.classify.History(profile.SubjectRole, 999)
+	if err != nil {
+		t.Fatalf("reading an unprofiled subject: %v", err)
+	}
+	if len(versions) != 0 {
+		t.Fatalf("an unprofiled subject has %d versions", len(versions))
+	}
+}
