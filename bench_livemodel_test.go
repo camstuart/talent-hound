@@ -215,6 +215,7 @@ func runMatching(t *testing.T, corpus *bench.Corpus, classifyModel, embedModel s
 			top.RoleIDs = append(top.RoleIDs, byRole[entry.RoleID])
 		}
 		t.Logf("%s: top five %v of %d eligible", scenario.ID, top.RoleIDs, eligible)
+		explain(t, scenario, shortlist, byRole)
 		results = append(results, top)
 	}
 	return bench.ScoreMatching(corpus, results), eligible
@@ -501,4 +502,68 @@ func slowest(in []time.Duration) time.Duration {
 		}
 	}
 	return out
+}
+
+// explain says where every role the recruiter called plausible actually landed,
+// and what retrieved the ones that beat them.
+//
+// A plausible role at rank seven is a ranking problem; a plausible role that is
+// nowhere in the list at all is a retrieval or eligibility problem, and the two
+// have nothing to do with each other. Guessing which one is happening is how
+// three hypotheses in a row were wrong.
+func explain(t *testing.T, scenario bench.Scenario, shortlist *Shortlist, byRole map[uint]string) {
+	t.Helper()
+	rank := map[string]int{}
+	entry := map[string]Entry{}
+	for i, e := range shortlist.Entries {
+		rank[byRole[e.RoleID]] = i + 1
+		entry[byRole[e.RoleID]] = e
+	}
+
+	for _, rating := range scenario.Ratings {
+		if !rating.Plausible {
+			continue
+		}
+		at, listed := rank[rating.RoleID]
+		if !listed {
+			t.Logf("  %s: plausible %s is NOWHERE in %d ranked",
+				scenario.ID, rating.RoleID, len(shortlist.Entries))
+			continue
+		}
+		t.Logf("  %s: plausible %s at rank %d, score %.5f, %s",
+			scenario.ID, rating.RoleID, at, entry[rating.RoleID].Score,
+			why(entry[rating.RoleID]))
+	}
+
+	// And what the top five were retrieved by, so a wrong pick can be traced to
+	// the half that produced it.
+	for i, e := range shortlist.Entries {
+		if i == 5 {
+			break
+		}
+		t.Logf("  %s: rank %d %s score %.5f, %s",
+			scenario.ID, i+1, byRole[e.RoleID], e.Score, why(e))
+	}
+}
+
+// why summarises one entry's provenance: how many lists of each method found
+// it, and the best rank it reached in each.
+func why(e Entry) string {
+	best := map[string]int{}
+	count := map[string]int{}
+	for _, c := range e.Why {
+		count[c.Method]++
+		if at, seen := best[c.Method]; !seen || c.Rank < at {
+			best[c.Method] = c.Rank
+		}
+	}
+	out := []string{}
+	for _, method := range []string{"lexical", "semantic"} {
+		if count[method] == 0 {
+			out = append(out, method+" none")
+			continue
+		}
+		out = append(out, fmt.Sprintf("%s %d lists best rank %d", method, count[method], best[method]))
+	}
+	return strings.Join(out, ", ")
 }

@@ -35,41 +35,59 @@ func TestTuneRetrieval(t *testing.T) {
 		t.Fatalf("loading the tuning corpus: %v", err)
 	}
 
-	depths := []int{5, 10, 20, 30}
-	ks := []int{5, 10, 20, 60}
+	// K is the lever the provenance pointed at. Reciprocal rank fusion divides
+	// by K plus the rank, so against twenty roles a K of sixty scores rank one
+	// at 1/61 and rank twenty at 1/80 — a spread of under a third across the
+	// whole corpus, which is less than one lexical hit is worth. Small values
+	// are in the sweep because that arithmetic says they should be.
+	depths := []int{3, 5, 10, 20, 30}
+	ks := []int{1, 2, 5, 10, 20, 60}
 
-	// The profiles cost a model call each and do not depend on the constants,
-	// so every scenario is set up once and every configuration reuses it.
+	// One workspace holding every role, and a candidate per scenario in it.
+	// Decomposing twenty listings once per scenario is sixty classifications
+	// for a set of constants that does not depend on which candidate is asking.
 	type prepared struct {
-		env         *shortlistEnv
 		scenario    bench.Scenario
 		candidateID uint
-		byRole      map[uint]string
 	}
+	e := newShortlistEnv(t)
+	live := NewClassifyService(e.db, e.registry, platform.NewOllama())
+	e.classify = live
+	e.profiles = NewCandidateProfileService(e.db, live, e.records)
+	e.roles = NewRoleProfileService(e.db, live)
+	e.shortlist = NewShortlistService(e.db, e.search, e.embed, e.criteria, e.profiles, e.roles)
+	e.assignClassify(t, classifyModel)
+	if _, err := e.registry.Assign(AssignInput{Role: models.RoleEmbed, Model: embedModel}); err != nil {
+		t.Fatalf("assigning the embedding model: %v", err)
+	}
+
+	byRole := map[uint]string{}
+	for _, listing := range corpus.Listings {
+		// Decomposed by the model, not a hand-built aspect holding the title: a
+		// constant swept against twenty one-aspect profiles is a constant
+		// chosen for a corpus the product never has.
+		byRole[classifiedRole(t, e, listing)] = listing.ID
+	}
+
 	ready := []prepared{}
 	for _, scenario := range corpus.Scenarios {
-		e := newShortlistEnv(t)
-		live := NewClassifyService(e.db, e.registry, platform.NewOllama())
-		e.classify = live
-		e.profiles = NewCandidateProfileService(e.db, live, e.records)
-		e.roles = NewRoleProfileService(e.db, live)
-		e.shortlist = NewShortlistService(e.db, e.search, e.embed, e.criteria, e.profiles, e.roles)
-		e.assignClassify(t, classifyModel)
-		if _, err := e.registry.Assign(AssignInput{Role: models.RoleEmbed, Model: embedModel}); err != nil {
-			t.Fatalf("assigning the embedding model: %v", err)
-		}
-
 		candidateID, note := scenarioCandidate(t, e, scenario)
 		if note != "" {
 			t.Logf("%s: %s", scenario.ID, note)
 			continue
 		}
-		byRole := map[uint]string{}
-		for _, listing := range corpus.Listings {
-			byRole[e.roleWithListing(t, listing.Title, listing.Markdown)] = listing.ID
-		}
-		ready = append(ready, prepared{env: e, scenario: scenario, candidateID: candidateID, byRole: byRole})
+		ready = append(ready, prepared{scenario: scenario, candidateID: candidateID})
 	}
+
+	// The aspects have to be embedded before the similarity half can retrieve
+	// anything, and every candidate is classified before that call so the
+	// classify model is not evicted and reloaded between them.
+	if job, err := e.embed.EmbedAspects(e.initiative); err != nil {
+		t.Fatalf("embedding aspects: %v", err)
+	} else if done := waitForJob(t, e.jobs, job.ID); done.State != models.JobCompleted {
+		t.Fatalf("aspect embedding is %s (%q)", done.State, done.FailureReason)
+	}
+
 	if len(ready) == 0 {
 		t.Skip("no tuning scenario produced a profile")
 	}
@@ -84,9 +102,9 @@ func TestTuneRetrieval(t *testing.T) {
 		for _, k := range ks {
 			tops := []bench.TopFive{}
 			for _, p := range ready {
-				p.env.shortlist.Depth = depth
-				p.env.shortlist.FusionK = k
-				list, err := p.env.shortlist.Build(p.env.initiative, p.candidateID)
+				e.shortlist.Depth = depth
+				e.shortlist.FusionK = k
+				list, err := e.shortlist.Build(e.initiative, p.candidateID)
 				if err != nil {
 					t.Fatalf("%s: building: %v", p.scenario.ID, err)
 				}
@@ -95,7 +113,7 @@ func TestTuneRetrieval(t *testing.T) {
 					if len(top.RoleIDs) == 5 {
 						break
 					}
-					top.RoleIDs = append(top.RoleIDs, p.byRole[entry.RoleID])
+					top.RoleIDs = append(top.RoleIDs, byRole[entry.RoleID])
 				}
 				tops = append(tops, top)
 			}

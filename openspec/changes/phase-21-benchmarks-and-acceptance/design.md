@@ -78,7 +78,12 @@ one, and been a coincidence.
 A defect is different from a constant. ORing the word "the" into every query
 was a defect, and fixing it was not tuning.
 
-**That sweep's conclusion no longer transfers.** It was run when the semantic
+**Re-run on a corrected instrument, the conclusion held.** Real decomposed role
+profiles, one workspace, K from 1 to 60, depth from 3 to 30: all thirty
+configurations score identically. The constants were right and the reasoning
+that defended them was lucky — see below for what the instrument could not see.
+
+**That sweep's original conclusion did not transfer.** It was run when the semantic
 half asked for a page of *aspects* and collapsed them to roles, and when the
 benchmark's roles carried a single aspect holding the title — so `perQueryDepth`
 was thirty aspects against twenty of them, and every role entered every list.

@@ -208,10 +208,44 @@ second without it. So the defect is real, the fix is correct, and **the cause of
 the matching failure is still unknown**.
 
 What is ruled out: aspect-page truncation, structured-constraint noise (those
-types never enter the similarity half), and the harness itself. What is not yet
-looked at: the provenance of each ranked role — whether the wrong entries come
-from the lexical half, the similarity half, or the fusion of the two — which the
-shortlist already records per entry and no diagnostic has yet read.
+types never enter the similarity half), the harness, and the retrieval
+constants.
+
+**The provenance says the similarity half is nearly inert.** Every role enters
+every semantic list, because the depth exceeds the corpus, and reciprocal rank
+fusion at K=60 scores rank one at 1/61 and rank twenty at 1/80 — a spread of
+under a third, which is less than one lexical hit is worth. On the tuning corpus
+`geospatial-analyst-napier` is the second closest role by embedding and finishes
+twentieth of twenty, on zero lexical hits. Scores track lexical list count
+exactly: 5 lists 0.211, 3 lists 0.180, 2 lists 0.163, 1 list 0.149, none 0.124.
+
+**And sharpening it changes nothing.** The constant sweep was re-run on a
+corrected instrument — real decomposed role profiles rather than title stubs,
+one workspace rather than one per scenario, K from 1 to 60 and depth from 3 to
+30. All thirty configurations score 2 of 3, with eight or nine plausible. At K=1
+the similarity half is fully dominant and the outcome does not move. The shipped
+constants stand, now on evidence that can see the thing it was accused of.
+
+**The labels are the reason, and they cannot be satisfied by evidence.**
+`embedded-c-perth` is nine years of embedded C, CAN bus drivers and safety
+interlocks. Its four plausible labels are the embedded role, a Go distributed
+systems role, a Playwright QA role, and a SOAP integration role: three of the
+four share no evidence at all with the candidate.
+`frontend-accessibility-sydney` is the same, with a Swift and Kotlin mobile role
+and a cloud architecture role among its four. Reaching three plausible in a top
+five requires ranking documents by career adjacency a recruiter feels and the
+listings never state.
+
+This is what the design note meant by an invented corpus not substituting for
+real placements, and it is also why the old title-stub harness scored 4 of 5:
+loose title similarity surfaced adjacent-sounding roles, so it passed by
+measuring something closer to intuition than evidence.
+
+**The failure is recorded as a failure and the labels are not being changed.**
+Editing held-out labels so the product passes is the one move this corpus split
+exists to prevent. The gate stands at 3 of 5, and it is not decidable on a
+synthetic corpus: the PRD's acceptance run replaces these with the recruiter's
+real placements, where a plausibility judgement comes with a person who made it.
 
 One caveat on the tuning corpus as an instrument: its plausibility labels are
 invented, and for `search-relevance-invercargill` they call a geospatial analyst
