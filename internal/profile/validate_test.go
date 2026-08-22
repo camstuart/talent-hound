@@ -531,3 +531,28 @@ func TestRepairIsDeterministicWhenAQuoteAppearsTwice(t *testing.T) {
 		}
 	}
 }
+
+// A recruiter supplied aspect still has to say where it came from.
+//
+// It cites a recruiter-authored record rather than document text, and is not
+// asked to resolve against a chunk — "SHALL NOT be required to resolve against
+// document text. It SHALL still be refused if it cites nothing at all."
+//
+// The first half was tested and the second was not. An aspect with no citation
+// is a claim about a person with no provenance of any kind, and matches and
+// drafts may cite it as recruiter-authored evidence.
+func TestARecruiterSuppliedAspectCitingNothingIsRefused(t *testing.T) {
+	a := Aspect{
+		Type: Skill, Wording: "ten years of Go", Origin: RecruiterSupplied,
+		Citations: []Citation{},
+	}
+	if problems := Validate(SubjectCandidate, Proposal{Aspects: []Aspect{a}}, nil); len(problems) == 0 {
+		t.Fatal("an aspect citing nothing at all was accepted")
+	}
+
+	// And a citation naming neither a record nor a chunk is not a citation.
+	a.Citations = []Citation{{}}
+	if problems := Validate(SubjectCandidate, Proposal{Aspects: []Aspect{a}}, nil); len(problems) == 0 {
+		t.Fatal("an empty citation was accepted as provenance")
+	}
+}
