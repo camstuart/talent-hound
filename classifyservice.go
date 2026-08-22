@@ -247,8 +247,19 @@ func (s *ClassifyService) AddRecruiterAspect(
 			return nil, err
 		}
 		aspects = existing
-		identity.Revision = current.ModelRevision
-		modelName = current.ModelName
+		// The model revision and name are deliberately not carried forward.
+		//
+		// "A version produced by a recruiter edit rather than a model SHALL
+		// record no model revision and SHALL still carry a source hash of the
+		// evidence in force when it was made." This version was produced by a
+		// person; naming the model that answered for the version it was built
+		// on attributes their words to it, which is the distinction the whole
+		// provenance scheme exists to keep.
+		//
+		// Nothing is lost by it. Earlier versions remain retrievable and each
+		// still records the model that produced it, and every aspect carries
+		// its own origin — so which model extracted an inherited aspect is
+		// still answerable, from the version that actually ran it.
 	}
 	// Only the new aspect is validated. The stored ones were validated against
 	// the sources of the classification that produced them, and those sources

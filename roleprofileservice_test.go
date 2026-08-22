@@ -526,3 +526,53 @@ func TestRemovingARequirementVersionsTheProfile(t *testing.T) {
 		t.Error("removal mutated the previous version")
 	}
 }
+
+// A recruiter's edit records no model and still records the evidence.
+//
+// "A version produced by a recruiter edit rather than a model SHALL record no
+// model revision and SHALL still carry a source hash of the evidence in force
+// when it was made."
+//
+// Both halves matter and neither was asserted. A model revision on a version a
+// person wrote attributes their words to a model, which is the distinction the
+// whole provenance scheme exists to keep. And the source hash is what makes a
+// profile go Stale when its listing changes — a version without one would stay
+// current forever, so the recruiter's edit would quietly outlive the document
+// it was made against.
+func TestARecruiterEditRecordsNoModelAndStillRecordsTheEvidence(t *testing.T) {
+	e := newRoleEnv(t)
+	roleID, _ := e.withListing(t)
+	e.assignClassify(t, "synthetic-classify")
+	e.model.responses = []string{jsonProposal(t, []profile.Aspect{
+		{Type: profile.Experience, Wording: "five years operating multi-region systems",
+			Priority: profile.MustHave, Citations: e.citing(t, "operating multi-region systems")},
+	})}
+	before, err := e.roles.Profile(roleID)
+	if err != nil {
+		t.Fatalf("profiling: %v", err)
+	}
+	if before.SourceHash == "" {
+		t.Fatal("the model's own version carries no source hash, so this proves nothing")
+	}
+
+	edited, err := e.roles.AddAspect(roleID, profile.Aspect{
+		Type: profile.Skill, Wording: "willing to mentor", Priority: profile.NiceToHave,
+	})
+	if err != nil {
+		t.Fatalf("adding a requirement: %v", err)
+	}
+	if edited.ID == before.ID {
+		t.Fatal("the edit mutated the version instead of making one")
+	}
+	if edited.ModelRevision != 0 {
+		t.Fatalf("a version the recruiter wrote records model revision %d",
+			edited.ModelRevision)
+	}
+	if edited.SourceHash == "" {
+		t.Fatal("a recruiter's version carries no source hash, so it can never go stale")
+	}
+	if edited.SourceHash != before.SourceHash {
+		t.Fatalf("the edit recorded a different evidence hash (%q then %q) without the "+
+			"listing changing", before.SourceHash, edited.SourceHash)
+	}
+}
