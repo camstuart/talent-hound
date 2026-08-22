@@ -571,11 +571,30 @@ func TestAFailureAtAnyCascadeStepChangesNothing(t *testing.T) {
 // function that stops it.
 func (e *deletionEnv) failDeletesOf(t *testing.T, table string) func() {
 	t.Helper()
+	return e.failDeletes(t, table, false)
+}
+
+// failFirstDeleteOf makes only the first DELETE against one table fail, so a
+// batch can be made to fail on one item rather than on all of them.
+func (e *deletionEnv) failFirstDeleteOf(t *testing.T, table string) func() {
+	t.Helper()
+	return e.failDeletes(t, table, true)
+}
+
+// failDeletes registers the failure and returns the function that stops it.
+func (e *deletionEnv) failDeletes(t *testing.T, table string, once bool) func() {
+	t.Helper()
 	const name = "test:fail_delete"
+	fired := false
 	err := e.db.Callback().Delete().Before("gorm:delete").Register(name, func(tx *gorm.DB) {
-		if tx.Statement != nil && tx.Statement.Table == table {
-			_ = tx.AddError(errInjected)
+		if tx.Statement == nil || tx.Statement.Table != table {
+			return
 		}
+		if once && fired {
+			return
+		}
+		fired = true
+		_ = tx.AddError(errInjected)
 	})
 	if err != nil {
 		t.Fatalf("registering the failure: %v", err)
@@ -850,5 +869,53 @@ func TestARecruitersOwnNotesCanBeDetachedFromARole(t *testing.T) {
 	}
 	if n := e.count(t, &models.Artifact{}, "id = ?", notes); n != 1 {
 		t.Fatal("detaching deleted the artifact")
+	}
+}
+
+// One role failing leaves that role whole and purges the others.
+//
+// "Purging all stale roles SHALL apply the same rules independently to each,
+// and SHALL report any role that could not be purged rather than partially
+// deleting it."
+//
+// The existing test covers both succeeding and a role that does not exist,
+// which fails with nothing to undo. The case the clause is about is a purge
+// that fails partway: the danger is a role left half deleted — its profile and
+// matches gone, the role still listed — and a report that says it worked.
+func TestOneFailedPurgeLeavesThatRoleWholeAndPurgesTheRest(t *testing.T) {
+	e := newDeletionEnv(t)
+	first := e.roleWithListing(t, "Platform engineer", "quokkastack engineering at scale.")
+	second := e.roleWithListing(t, "Data engineer", "dbt and Airflow at scale.")
+
+	profilesBefore := e.count(t, &models.Profile{}, "subject_kind = ? AND subject_id = ?",
+		profile.SubjectRole, first)
+	if profilesBefore == 0 {
+		t.Fatal("the first role has no profile, so a partial deletion would leave nothing to see")
+	}
+
+	// The first role's purge fails at its last step; the second is untouched by
+	// the failure.
+	stop := e.failFirstDeleteOf(t, e.tableNameOf(t, &models.Role{}))
+	report := e.deletion.PurgeStale([]uint{first, second})
+	stop()
+
+	if len(report.Failed) != 1 || report.Failed[first] == "" {
+		t.Fatalf("the report does not name the role that failed: %+v", report)
+	}
+	if len(report.Purged) != 1 || report.Purged[0] != second {
+		t.Fatalf("the second role was not purged: %+v", report)
+	}
+
+	// The failed one is whole, not half gone.
+	if n := e.count(t, &models.Role{}, "id = ?", first); n != 1 {
+		t.Fatal("the role that failed to purge is gone anyway")
+	}
+	if n := e.count(t, &models.Profile{}, "subject_kind = ? AND subject_id = ?",
+		profile.SubjectRole, first); n != profilesBefore {
+		t.Fatal("the role survived and its profile did not — it is half purged")
+	}
+	// And the second really went.
+	if n := e.count(t, &models.Role{}, "id = ?", second); n != 0 {
+		t.Fatal("the second role survived")
 	}
 }
