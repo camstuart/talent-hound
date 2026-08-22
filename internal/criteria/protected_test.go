@@ -225,3 +225,51 @@ func TestEveryListedCategoryIsRefusedAndEveryRefusalIsListed(t *testing.T) {
 		}
 	}
 }
+
+// The twelve grounds the spec names are all there, by name.
+//
+// The other test asserts the reported list matches the rules, which is the list
+// agreeing with itself: delete a ground from both and it still passes. This
+// asserts the list against the requirement, which names them — age, sex, gender
+// identity, sexual orientation, race or national origin, religion, disability,
+// family or carer status, pregnancy, marital status, political opinion, and
+// union membership.
+//
+// A missing ground is not a missing feature. It is a criterion on that ground
+// being accepted, in a product whose refusal is deterministic precisely so that
+// nobody has to trust a model with the question.
+func TestEveryGroundTheSpecNamesIsRefused(t *testing.T) {
+	required := []Category{
+		Age, Sex, GenderIdentity, SexualOrientation, RaceOrOrigin, Religion,
+		Disability, FamilyOrCarer, Pregnancy, MaritalStatus, PoliticalOpinion,
+		UnionMembership,
+	}
+	listed := map[Category]bool{}
+	for _, c := range Categories() {
+		listed[c] = true
+	}
+	for _, ground := range required {
+		if !listed[ground] {
+			t.Errorf("%q is named in the requirement and is not refused", ground)
+		}
+	}
+	if len(Categories()) != len(required) {
+		t.Errorf("%d grounds are refused and the requirement names %d — a ground was "+
+			"added without being written down, or the reverse",
+			len(Categories()), len(required))
+	}
+
+	// And each one actually catches something, so a ground cannot be present as
+	// a name with no phrases behind it.
+	for _, ground := range required {
+		matched := false
+		for _, r := range protected {
+			if r.category == ground && len(r.phrases) > 0 {
+				matched = true
+			}
+		}
+		if !matched {
+			t.Errorf("%q is listed with nothing that would match it", ground)
+		}
+	}
+}
