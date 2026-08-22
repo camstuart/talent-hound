@@ -927,3 +927,35 @@ func TestExcludedRolesDoNotShrinkTheTwenty(t *testing.T) {
 		}
 	}
 }
+
+// A shortlist for a candidate nobody approved says so.
+//
+// "A candidate SHALL NOT be used for search or matching while their profile is
+// missing, Proposed, or Failed. The block SHALL be reported with the reason,
+// not as an empty result."
+//
+// It was not blocked and it was not empty either, which is worse than both: the
+// queries fall back to the initiative's criteria alone, so a ranked list comes
+// back that looks like it accounted for the candidate. The recruiter reads a
+// shortlist and cannot tell it was built without them.
+func TestAShortlistForAnUnapprovedCandidateIsRefusedWithItsReason(t *testing.T) {
+	e := newShortlistEnv(t)
+	e.roleWithListing(t, "Firmware engineer",
+		"Must have embedded C for conveyor control units.",
+		profile.Aspect{Type: profile.Skill, Wording: "Embedded C for conveyor control units",
+			Citations: []profile.Citation{{Record: "recruiter"}}})
+	e.add(t, "embedded C", models.CriterionMustHave)
+
+	c, err := e.records.CreateCandidate(models.Candidate{FullName: "Nadia Frost"})
+	if err != nil {
+		t.Fatalf("creating the candidate: %v", err)
+	}
+
+	_, err = e.shortlist.Build(e.initiative, c.ID)
+	if err == nil {
+		t.Fatal("a shortlist was built for a candidate with no approved profile")
+	}
+	if !strings.Contains(err.Error(), "profile") {
+		t.Fatalf("the refusal does not say why: %v", err)
+	}
+}

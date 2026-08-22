@@ -99,6 +99,27 @@ type Shortlist struct {
 func (s *ShortlistService) Build(initiativeID, candidateID uint) (*Shortlist, error) {
 	out := &Shortlist{InitiativeID: initiativeID, CandidateID: candidateID, Entries: []Entry{}}
 
+	// A candidate is not matched on until their profile is approved, and the
+	// refusal says why.
+	//
+	// It used to fall through: the queries drop to the initiative's criteria
+	// alone when there is no approved profile, so a ranked list came back that
+	// looked like it had accounted for the candidate. Not a block and not an
+	// empty result, which is worse than either — the recruiter reads a
+	// shortlist and cannot tell it was built without them.
+	//
+	// Asked through the readiness check rather than by looking at the profile,
+	// because that is the rule's one implementation.
+	if candidateID != 0 {
+		ready, err := s.profiles.Readiness(candidateID)
+		if err != nil {
+			return nil, err
+		}
+		if !ready.Ready {
+			return nil, fmt.Errorf("this candidate is not ready to be matched: %s", ready.Reason)
+		}
+	}
+
 	version, err := s.criteria.Version(initiativeID)
 	if err != nil {
 		return nil, err
