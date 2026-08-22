@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strings"
 	"testing"
+	"time"
 
 	"gorm.io/gorm"
 
@@ -661,5 +662,58 @@ func TestPreviewingChangesNothing(t *testing.T) {
 		if after != n {
 			t.Errorf("previewing changed %s from %d to %d", what, n, after)
 		}
+	}
+}
+
+// Every deletion proves itself, and draft deletion was the one that did not.
+//
+// The PRD asks it of all of them: "a scoped verification query proves the
+// deleted entity and exclusively owned evidence no longer appear in retrieval
+// or matching". Initiative, candidate, artifact and role each had one. A draft
+// is deleted inside a transaction, which makes a partial write unlikely rather
+// than impossible — and what a transaction cannot help with is a table gaining
+// a reference to a draft that nobody remembers to clear, which is the shape the
+// copy events already have.
+func TestDeletingADraftProvesTheDraftAndItsReferencesAreGone(t *testing.T) {
+	e := newDeletionEnv(t)
+	draft := models.Draft{
+		InitiativeID: e.initiative,
+		Kind:         models.DraftPitch, Subject: "A pitch", Body: "Five years of Go.",
+		State: models.DraftActive,
+	}
+	if err := e.db.Create(&draft).Error; err != nil {
+		t.Fatalf("creating the draft: %v", err)
+	}
+	id := e.initiative
+	event := models.DisclosureEvent{
+		OccurredAt: time.Now().UTC(), Provider: "local", Task: models.TaskCopiedOut,
+		Categories: "a draft", InitiativeID: &id, DraftID: &draft.ID,
+	}
+	if err := e.db.Create(&event).Error; err != nil {
+		t.Fatalf("creating the copy event: %v", err)
+	}
+
+	if err := e.deletion.DeleteDraft(draft.ID); err != nil {
+		t.Fatalf("deleting the draft: %v", err)
+	}
+
+	// The draft is gone.
+	var drafts int64
+	if err := e.db.Model(&models.Draft{}).Where("id = ?", draft.ID).Count(&drafts).Error; err != nil {
+		t.Fatalf("counting drafts: %v", err)
+	}
+	if drafts != 0 {
+		t.Fatal("the draft survived its own deletion")
+	}
+	// The copy event survives, as the PRD requires, with its reference cleared.
+	var events []models.DisclosureEvent
+	if err := e.db.Find(&events).Error; err != nil {
+		t.Fatalf("reading events: %v", err)
+	}
+	if len(events) != 1 {
+		t.Fatalf("%d copy events survived, want the one", len(events))
+	}
+	if events[0].DraftID != nil {
+		t.Fatalf("a copy event still points at the deleted draft: %v", *events[0].DraftID)
 	}
 }

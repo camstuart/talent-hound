@@ -686,7 +686,7 @@ func (s *DeletionService) PurgeStale(roleIDs []uint) *PurgeReport {
 // DeleteDraft removes a draft and clears the reference on its surviving copy
 // events.
 func (s *DeletionService) DeleteDraft(id uint) error {
-	return s.db.Transaction(func(tx *gorm.DB) error {
+	err := s.db.Transaction(func(tx *gorm.DB) error {
 		err := tx.Model(&models.DisclosureEvent{}).Where("draft_id = ?", id).
 			Update("draft_id", nil).Error
 		if err != nil {
@@ -697,6 +697,44 @@ func (s *DeletionService) DeleteDraft(id uint) error {
 		}
 		return nil
 	})
+	if err != nil {
+		return err
+	}
+	return s.verifyDraft(id)
+}
+
+// verifyDraft proves the draft is gone and that nothing still points at it.
+//
+// The PRD asks this of every deletion, and this was the one without it: "a
+// scoped verification query proves the deleted entity and exclusively owned
+// evidence no longer appear". A transaction makes a partial write unlikely
+// rather than impossible, and what it cannot make unlikely is a table gaining a
+// reference to a draft that nobody remembers to clear here — which is the shape
+// the audit events already have.
+func (s *DeletionService) verifyDraft(id uint) error {
+	var drafts, references int64
+	if err := s.db.Model(&models.Draft{}).Where("id = ?", id).Count(&drafts).Error; err != nil {
+		return fmt.Errorf("verifying the draft: %w", err)
+	}
+	if err := s.db.Model(&models.DisclosureEvent{}).Where("draft_id = ?", id).
+		Count(&references).Error; err != nil {
+		return fmt.Errorf("verifying copy events: %w", err)
+	}
+	left := []string{}
+	if drafts > 0 {
+		left = append(left, "the draft remained")
+	}
+	if references > 0 {
+		// The event survives — the PRD says so — with its reference cleared.
+		// One still pointing at a deleted draft is a dangling record, not a
+		// surviving one.
+		left = append(left, "a copy event still points at it")
+	}
+	if len(left) > 0 {
+		return fmt.Errorf("the deletion committed but left data behind: %s",
+			strings.Join(left, "; "))
+	}
+	return nil
 }
 
 // Gone reports whether a record is already absent, so a repeated deletion can
