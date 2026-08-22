@@ -91,6 +91,24 @@ modelfile kept the whole line it found. It now keeps the digest, as
 they are: they are what those runs recorded, and rewriting evidence after the
 fact is worse than a wrong field with an explanation beside it.
 
+### Re-measured against the shipped tree
+
+The passing figures above were first measured about twenty commits before the
+tree they now describe, and several of those commits are on the matching path:
+role eligibility, the shortlist's own filter, and the assessment input hash.
+Evidence that is not true of the build it describes is worse than none, so the
+frozen benchmark was run again at `33271cc`.
+
+It passes: capture 99% (178/180), uncited 0, unsupported 0, misreported 0,
+matching 5 of 5, twenty eligible roles, `cloudAssisted: false`, and the same
+corpus hash as every run in this session. The model digest is recorded as
+`sha256:2049f5674b1e…` rather than a path under one machine's home directory,
+which is the first record written since that was fixed.
+
+Timings moved with nothing but the run: a role profile averaged 270.73 s against
+263.81 s before, and twenty took 5414.62 s against 5276.11 s. The magnitude is
+the measurement; the digits are not.
+
 ### What the passing run does not settle
 
 Two runs of the frozen corpus differed on `platform-engineer-melbourne`: one
