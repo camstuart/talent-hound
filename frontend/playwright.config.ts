@@ -14,6 +14,13 @@ export default defineConfig({
   // round-trip failed there and nowhere else, which reads as a flaky suite
   // rather than a loaded one. Said once, here, instead.
   expect: { timeout: 15_000 },
+  // Playwright's per-test default is thirty seconds, and a test here is several
+  // real backend round-trips in sequence: drop a résumé, build a profile,
+  // approve it, drop another, watch it go stale. The slowest takes fifteen
+  // seconds on an idle machine, which leaves no headroom at all — so on a busy
+  // one it fails for having been given half the time it needs rather than for
+  // anything being wrong.
+  timeout: 90_000,
   use: {
     baseURL: `http://localhost:${PORT}`,
   },

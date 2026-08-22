@@ -288,6 +288,21 @@ func (s *CloudService) Preview(in PreviewInput) (*Payload, error) {
 
 	ids := scrub.Identifiers{}
 	if in.CandidateID != 0 {
+		// The same rule every local reader of candidate evidence applies, on
+		// the one path that leaves the machine. Discovery builds a query only
+		// from an approved profile, Q&A answers only from one, drafts refuse
+		// without one, and assessment gathers from one — and this service held
+		// the profile service without ever asking it anything. The disclosure
+		// it writes says "approved profile aspects"; now that is true rather
+		// than intended.
+		ready, err := s.profiles.Readiness(in.CandidateID)
+		if err != nil {
+			return nil, err
+		}
+		if !ready.Ready {
+			return nil, fmt.Errorf(
+				"a cloud request about a candidate goes from approved evidence: %s", ready.Reason)
+		}
 		c, err := s.records.GetCandidate(in.CandidateID)
 		if err != nil {
 			return nil, err

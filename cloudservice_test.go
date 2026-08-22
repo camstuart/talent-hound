@@ -320,6 +320,17 @@ func TestIdentifiersAreReplacedBeforeThePreview(t *testing.T) {
 	if err != nil {
 		t.Fatalf("creating candidate: %v", err)
 	}
+	// An approved profile, because a cloud request about a candidate goes from
+	// approved evidence — the rule discovery, Q&A, drafts and assessment all
+	// apply, now applied on the path that leaves the machine.
+	version, err := e.profiles.AddAspect(c.ID,
+		profile.Aspect{Type: profile.Skill, Wording: "five years of production Go"})
+	if err != nil {
+		t.Fatalf("adding an aspect: %v", err)
+	}
+	if _, err := e.profiles.Approve(version.ID); err != nil {
+		t.Fatalf("approving: %v", err)
+	}
 
 	payload, err := e.cloud.Preview(PreviewInput{
 		InitiativeID: e.initiative, CandidateID: c.ID, Task: string(cloud.Drafting),
@@ -845,5 +856,57 @@ func TestAnApprovedSendWithNoCredentialReachesNobody(t *testing.T) {
 	}
 	if asked {
 		t.Fatal("the provider was contacted without a credential")
+	}
+}
+
+// A cloud request about a candidate goes from approved evidence, like every
+// other reader of it.
+//
+// Discovery builds a query only from an approved profile, Q&A answers only from
+// one, drafts refuse without one, assessment gathers from one. This service was
+// handed the profile service and never asked it anything — the one consumer of
+// candidate evidence that did not require approval was the one that sends it off
+// the machine, while the disclosure it wrote said "approved profile aspects".
+func TestACloudRequestAboutACandidateNeedsAnApprovedProfile(t *testing.T) {
+	e := newCloudEnv(t)
+	e.configure(t, "https://api.example-cloud.invalid/v1")
+	c, err := e.records.CreateCandidate(models.Candidate{FullName: "Nadia Frost"})
+	if err != nil {
+		t.Fatalf("creating the candidate: %v", err)
+	}
+
+	_, err = e.cloud.Preview(PreviewInput{
+		InitiativeID: e.initiative, CandidateID: c.ID, Task: string(cloud.Drafting),
+		Text: "Write a pitch.",
+	})
+	if err == nil {
+		t.Fatal("a cloud request was previewed about a candidate nobody has approved")
+	}
+	if !strings.Contains(err.Error(), "approved evidence") {
+		t.Fatalf("the refusal does not say why: %v", err)
+	}
+
+	// Approved, and it goes through.
+	version, err := e.profiles.AddAspect(c.ID,
+		profile.Aspect{Type: profile.Skill, Wording: "five years of production Go"})
+	if err != nil {
+		t.Fatalf("adding an aspect: %v", err)
+	}
+	if _, err := e.profiles.Approve(version.ID); err != nil {
+		t.Fatalf("approving: %v", err)
+	}
+	if _, err := e.cloud.Preview(PreviewInput{
+		InitiativeID: e.initiative, CandidateID: c.ID, Task: string(cloud.Drafting),
+		Text: "Write a pitch.",
+	}); err != nil {
+		t.Fatalf("previewing with an approved profile: %v", err)
+	}
+
+	// A request naming no candidate is unaffected: there is no profile to
+	// approve, and the task boundary is what governs it.
+	if _, err := e.cloud.Preview(PreviewInput{
+		InitiativeID: e.initiative, Task: string(cloud.Drafting), Text: "Write a pitch.",
+	}); err != nil {
+		t.Fatalf("previewing without a candidate: %v", err)
 	}
 }
