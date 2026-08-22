@@ -41,7 +41,7 @@ Adding a backend capability means: write the Go service method → register it i
 
 - The DB is SQLite via `github.com/glebarez/sqlite` (pure Go, **no CGO**) + GORM. Do not switch to `gorm.io/driver/sqlite` (that one needs CGO).
 - GORM models live in `internal/models/`, one file per model (e.g. `initiative.go`). Register new models in `db.Open`'s `AutoMigrate` call (`internal/db/db.go`).
-- The DB file lives at `os.UserConfigDir()/talent-hound/talent-hound.db`; the `TALENT_HOUND_DB_PATH` env var overrides it. Playwright sets it to `frontend/.e2e-db/e2e.db` (see `playwright.config.ts`) so E2E runs never touch real data — but that file persists across local runs, so E2E specs must use per-run-unique names and scope locators to their own rows.
+- The DB file lives at `os.UserConfigDir()/talent-hound/talent-hound.db`; the `TALENT_HOUND_DB_PATH` env var overrides it. Playwright sets it to `frontend/.e2e-db/e2e.db` (see `playwright.config.ts`) so E2E runs never touch real data. That database is emptied at the start of every run (`e2e/reset-db.ts`); it used to persist, and the accumulation made the suite slow and unreliable. Specs still use per-run-unique names and scope locators to their own rows, because they run in parallel against one shared backend.
 - Go service tests use `db.Open(":memory:")` for an ephemeral database.
 
 Root `Taskfile.yml` dispatches to `build/Taskfile.yml` (common tasks, including server mode) and per-platform Taskfiles in `build/<os>/`. App/product metadata is in `build/config.yml`.

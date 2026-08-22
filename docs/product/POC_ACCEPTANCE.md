@@ -350,7 +350,7 @@ evidence as the ones that did not.
 _For each failure: the gate, what failed, and either the replacement
 implementation choice within the PRD or the explicit PRD reopen request._
 
-### A created record could be absent from the screen — one cause fixed, the suite still intermittent
+### The E2E suite could not certify anything — fixed
 
 Three full E2E runs failed in a row, each in a different spec, all the same
 shape: a record is created and never appears. Candidates once, companies once,
@@ -395,22 +395,34 @@ so every button was disabled for as long as any refresh ran, and a click landing
 in that window was dropped silently. A refresh is not an action and no longer
 takes the controls away.
 
-**This is not closed.** Three consecutive full runs passed after the fix — 55
-specs each — and the fourth failed two specs, in two panels the earlier failures
-had not touched. So the refresh defects were real and are fixed, and something
-else is also wrong.
+**The cause was the suite's own database, and it was not the panels.** The E2E
+database persisted across runs and nothing bounded it. After a session of
+repeated runs it held 6,857 initiatives, 1,270 candidates and 1,084 roles — and
+the sidebar lists every initiative, the records panel lists every candidate, and
+both reload on every workspace change, in four parallel browser contexts.
 
-What is ruled out: the database is not slow, GORM logged no slow query in a
-failing run. What is not ruled out: the server build used for E2E carries every
-browser context over one HTTP server and one WebSocket per client, and a failing
-run logs dropped responses — "connection reset by peer", "broken pipe" — around
-the failures. A binding call whose response is never written never settles, and
-a panel waiting on it never updates, which produces exactly this symptom in an
-arbitrary spec. That transport is the test harness, not the product: the desktop
-application talks to the same services over the native WebView transport.
+So the suite never failed honestly. It failed as one or two arbitrary specs per
+run, always "what I just created is not on screen within fifteen seconds", in
+whichever spec lost the race that time. Every reading of it as a product fault
+was wrong, including the two recorded above before this paragraph was written.
 
-Recorded as an open instability rather than a flake. A suite that fails one or
-two specs a run cannot certify anything, and the laptop gates depend on it.
+Measured, same suite, same machine, same commit:
+
+| Database | Wall time | Result |
+| --- | --- | --- |
+| Accumulated (6,857 initiatives) | 4.3 – 5.8 min | one or two specs failed most runs |
+| Emptied at the start of the run | 28 s | 55 passed, three runs in a row |
+
+It is emptied at the start of every run now, and the count of initiatives left
+behind is the same after each run rather than climbing. Two things about the
+fix, both of which failed loudly first: Playwright starts the web server before
+`globalSetup`, so resetting there empties the database out from under a server
+that already has it open; and Playwright re-loads the config in every worker, so
+an unguarded reset at module scope runs four more times mid-run. Each mistake
+failed thirty-odd specs rather than one, which is the good kind of failure.
+
+The two refresh defects found on the way are real and stay fixed — a unit test
+fails without either — but they were not what the suite was failing on.
 
 ### The gate recipes could not pass on a slow machine — fixed
 

@@ -1,7 +1,16 @@
 import { defineConfig, devices } from "@playwright/test";
 import path from "node:path";
+import { resetDatabase } from "./e2e/reset-db";
 
 const PORT = 8080;
+
+// Before anything else, and in particular before the web server starts.
+//
+// Only in the runner process. Playwright loads this config again in every
+// worker, so an unguarded call here empties the database four more times while
+// the server is serving from it — which leaves an empty file and fails most of
+// the suite. Workers get TEST_WORKER_INDEX; the runner does not.
+if (process.env.TEST_WORKER_INDEX === undefined) resetDatabase();
 
 export default defineConfig({
   testDir: "./e2e",
@@ -41,7 +50,11 @@ export default defineConfig({
       TALENT_HOUND_CONFIG_DIR: path.resolve(".e2e-db/config"),
     },
     url: `http://localhost:${PORT}`,
-    reuseExistingServer: !process.env.CI,
+    // Not reused. The run starts by emptying the database, and a server left
+    // over from a previous run is holding the file that gets emptied — which
+    // fails thirty-five specs rather than one, and does it for a reason that
+    // has nothing to do with the product.
+    reuseExistingServer: false,
     timeout: 120_000,
   },
 });
