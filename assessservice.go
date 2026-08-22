@@ -246,6 +246,10 @@ func (s *AssessService) plan(initiativeID, candidateID, roleID uint) (assess.Inp
 	if err != nil || approved == nil {
 		return inputs, nil, fmt.Errorf("this candidate has no approved profile")
 	}
+	var role models.Role
+	if err := s.db.First(&role, roleID).Error; err != nil {
+		return inputs, nil, fmt.Errorf("reading role %d: %w", roleID, err)
+	}
 	roleStatus, err := s.roles.Status(roleID)
 	if err != nil {
 		return inputs, nil, err
@@ -270,17 +274,22 @@ func (s *AssessService) plan(initiativeID, candidateID, roleID uint) (assess.Inp
 		CandidateProfileVersion: approved.Version,
 		CandidateProfileState:   approved.State,
 		RoleProfileVersion:      profileVersionOf(roleStatus),
-		RoleProfileState:        roleStatus.State,
-		CriteriaVersion:         criteriaVersion,
-		ComparisonVersion:       assess.ComparisonVersion,
-		RankingVersion:          assess.RankingVersion,
-		EndpointRevision:        res.Assignment.Revision,
-		ModelDigest:             res.Assignment.Digest,
-		ModelName:               res.Assignment.Model,
-		PromptVersion:           assess.PromptVersion,
-		SchemaVersion:           assess.SchemaVersion,
-		GenerationParams:        res.Assignment.Params,
-		RoleStale:               roleStatus.State == RoleProfileStale,
+		// RoleProfileState carries whether the profile is stale — it is that
+		// state. RoleStale below is the role's own lifecycle, which the PRD
+		// lists as a separate input and which used to be this same value
+		// again: the hash covered profile staleness twice and role staleness
+		// never.
+		RoleProfileState:  roleStatus.State,
+		CriteriaVersion:   criteriaVersion,
+		ComparisonVersion: assess.ComparisonVersion,
+		RankingVersion:    assess.RankingVersion,
+		EndpointRevision:  res.Assignment.Revision,
+		ModelDigest:       res.Assignment.Digest,
+		ModelName:         res.Assignment.Model,
+		PromptVersion:     assess.PromptVersion,
+		SchemaVersion:     assess.SchemaVersion,
+		GenerationParams:  res.Assignment.Params,
+		RoleStale:         role.LifecycleState == models.RoleStale,
 	}
 
 	plan := []planItem{}

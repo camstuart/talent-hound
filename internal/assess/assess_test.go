@@ -352,3 +352,39 @@ func TestResultAndDirectionEnumerationsAreClosed(t *testing.T) {
 		}
 	}
 }
+
+// The hash covers the role's own staleness, which the PRD lists as an input of
+// its own.
+//
+// It used to carry whether the *profile* was stale, which RoleProfileState
+// already is — the same fact twice, and the role's lifecycle never. Two
+// meanings of one word, the same confusion that let a closed role be
+// shortlisted.
+func TestTheHashSeparatesRoleStalenessFromProfileStaleness(t *testing.T) {
+	base := Inputs{
+		CandidateProfileVersion: 1, CandidateProfileState: "approved",
+		RoleProfileVersion: 1, RoleProfileState: "ready",
+		CriteriaVersion: 1, EvidenceHashes: []string{"a"},
+		ComparisonVersion: ComparisonVersion, RankingVersion: RankingVersion,
+		EndpointRevision: 1, ModelDigest: "sha256:abc", ModelName: "m",
+		PromptVersion: PromptVersion, SchemaVersion: SchemaVersion,
+	}
+
+	staleRole := base
+	staleRole.RoleStale = true
+	if base.Hash() == staleRole.Hash() {
+		t.Fatal("a role going stale does not change the hash")
+	}
+
+	staleProfile := base
+	staleProfile.RoleProfileState = "stale"
+	if base.Hash() == staleProfile.Hash() {
+		t.Fatal("a profile going stale does not change the hash")
+	}
+
+	// And the two are distinguishable: a stale role and a stale profile are
+	// different inputs, so they cannot produce the same assessment identity.
+	if staleRole.Hash() == staleProfile.Hash() {
+		t.Fatal("a stale role and a stale profile hash identically")
+	}
+}

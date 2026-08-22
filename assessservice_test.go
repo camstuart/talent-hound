@@ -713,3 +713,42 @@ func TestAStaleRoleIsNotAssessed(t *testing.T) {
 		t.Fatal("a role that has closed was assessed")
 	}
 }
+
+// The role's lifecycle reaches the assessment hash, not the profile's state
+// under a second name.
+//
+// The PRD lists "role staleness state" as an input of its own. It carried
+// whether the profile was stale, which RoleProfileState already is — so the
+// hash covered one fact twice and the other never, and a role's lifecycle
+// changing left a stored assessment looking valid.
+func TestTheAssessmentHashFollowsTheRolesLifecycle(t *testing.T) {
+	e := newAssessEnv(t)
+	candidateID := e.assessableCandidate(t)
+	roleID := e.roleWithListing(t, "Platform engineer", "Must have five years of production Go.",
+		profile.Aspect{Type: profile.Skill, Wording: "Strong Go", Priority: profile.MustHave})
+	e.generateModel(t)
+	e.model.respond = compliant(assess.Met, "the evidence supports it")
+
+	live, _, err := e.assess.plan(e.initiative, candidateID, roleID)
+	if err != nil {
+		t.Fatalf("planning while live: %v", err)
+	}
+	if live.RoleStale {
+		t.Fatal("a live role is recorded as stale")
+	}
+
+	if err := e.db.Model(&models.Role{}).Where("id = ?", roleID).
+		Update("lifecycle_state", models.RoleStale).Error; err != nil {
+		t.Fatalf("marking the role stale: %v", err)
+	}
+	stale, _, err := e.assess.plan(e.initiative, candidateID, roleID)
+	if err != nil {
+		t.Fatalf("planning while stale: %v", err)
+	}
+	if !stale.RoleStale {
+		t.Fatal("a stale role is not recorded as stale in the assessment inputs")
+	}
+	if live.Hash() == stale.Hash() {
+		t.Fatal("the role's lifecycle changed and the assessment hash did not")
+	}
+}
