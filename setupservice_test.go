@@ -1,6 +1,7 @@
 package main
 
 import (
+	"camstuart/talent-hound/internal/db"
 	"context"
 	"os"
 	"path/filepath"
@@ -530,4 +531,50 @@ func TestTheRecruiterAcknowledgesEverythingThePRDNames(t *testing.T) {
 			t.Errorf("%q does not read as something a person agrees to", term)
 		}
 	}
+}
+
+// Choosing a folder that already holds a database says now whether it can be
+// opened.
+//
+// "Selecting a previously copied data folder SHALL run the integrity and
+// schema-version checks … and open only if every check passes." The checks ran
+// when the database was opened, which is the next launch — so choosing a copy
+// whose file was truncated by whatever interrupted the copy said nothing, and
+// the application then failed to start. That is the worst moment to learn it.
+func TestChoosingACopiedFolderSaysWhetherItCanBeOpened(t *testing.T) {
+	e := newSetupEnv(t)
+
+	t.Run("an empty folder is a new installation", func(t *testing.T) {
+		if err := e.setup.ChooseFolder(t.TempDir()); err != nil {
+			t.Fatalf("an empty folder was refused: %v", err)
+		}
+	})
+
+	t.Run("a folder holding a database is checked", func(t *testing.T) {
+		good := t.TempDir()
+		gdb, err := db.Open(filepath.Join(good, db.FileName))
+		if err != nil {
+			t.Fatalf("creating a data folder: %v", err)
+		}
+		if raw, err := gdb.DB(); err == nil {
+			_ = raw.Close()
+		}
+		if err := e.setup.ChooseFolder(good); err != nil {
+			t.Fatalf("a real data folder was refused: %v", err)
+		}
+	})
+
+	t.Run("a truncated database is refused, by its reason", func(t *testing.T) {
+		broken := t.TempDir()
+		if err := os.WriteFile(filepath.Join(broken, db.FileName), []byte{}, 0o600); err != nil {
+			t.Fatalf("writing the empty file: %v", err)
+		}
+		err := e.setup.ChooseFolder(broken)
+		if err == nil {
+			t.Fatal("a folder holding an empty database file was accepted")
+		}
+		if !strings.Contains(err.Error(), "cannot be opened") {
+			t.Fatalf("the refusal does not say what happened: %v", err)
+		}
+	})
 }

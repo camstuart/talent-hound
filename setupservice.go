@@ -11,6 +11,7 @@ import (
 
 	"gorm.io/gorm"
 
+	"camstuart/talent-hound/internal/db"
 	"camstuart/talent-hound/internal/extract"
 	"camstuart/talent-hound/internal/models"
 	"camstuart/talent-hound/internal/platform"
@@ -344,6 +345,24 @@ func (s *SetupService) ChooseFolder(path string) error {
 	}
 	if err := os.Remove(probe); err != nil {
 		return fmt.Errorf("the folder cannot be written to: %w", err)
+	}
+
+	// A folder that already holds a database is a recovery, and the recruiter
+	// finds out now whether it can be opened.
+	//
+	// The checks used to run only when the database was opened, which is the
+	// next launch: choosing a copy whose file was truncated by whatever
+	// interrupted the copy said nothing, and the application then failed to
+	// start. That is the worst moment to learn it, because the recruiter has
+	// already replaced the working installation in their mind.
+	//
+	// An empty folder is a new installation and stays acceptable — the check
+	// refuses one for holding no database, which is the whole point of a fresh
+	// start.
+	if _, err := os.Stat(filepath.Join(abs, db.FileName)); err == nil {
+		if err := db.CheckFolder(abs); err != nil {
+			return fmt.Errorf("that folder cannot be opened: %w", err)
+		}
 	}
 
 	s.mu.Lock()
