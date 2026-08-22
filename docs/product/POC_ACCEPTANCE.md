@@ -295,6 +295,38 @@ twenty role listings, labelled before any model runs against them.
 
 Cloud-assisted runs are recorded separately and cannot pass any of the above.
 
+## PRD conformance read against the code
+
+Claims the PRD states in prose, checked against the implementation rather than
+against the tests that already existed. Recorded because a laptop run cannot
+re-derive this, and because the ones that passed are as much a part of the
+evidence as the ones that did not.
+
+| Claim | Result |
+| --- | --- |
+| Role identity resolves by source ID, then canonical URL, then content fingerprint | conformant |
+| Deterministic ranking implements its six criteria in order | conformant |
+| Unspecified requirements count as neither must-have nor nice-to-have | conformant |
+| Deletion never removes shared candidates, roles, companies, contacts | conformant |
+| Classify inherits the generate model when unassigned | conformant |
+| The four eligible cloud tasks are exactly those four; candidate extraction, embedding and raw artifacts are refused by name | conformant |
+| Disclosure events carry timestamp, provider, task, categories, initiative, record references — and no payload | conformant |
+| Provider keys are masked at entry, in one place | conformant |
+| Artifact limit 25 MiB; extracted Markdown limit 10 MiB | conformant |
+| Artifacts are not deduplicated even when hashes match | conformant |
+| Chunks record all nine listed fields | conformant |
+| Chunker provenance is on the chunk rather than the artifact | conformant in substance — an artifact can be re-chunked, so the chunk is the more precise place |
+| A startup smoke test creates and queries an FTS5 table | conformant — `db.Open` calls it |
+| Re-extraction produces additions, removals and conflicts | conformant |
+| One repair retry, then Failed and retryable | conformant |
+| The seven first-run steps, in order | conformant |
+| Redacted logs live inside the selected data folder | conformant |
+| Six data-handling acknowledgements | conformant — the only test asserted the list was non-empty, now pinned at six |
+| Every deletion has a scoped verification query | **draft deletion had none** — added |
+| Stale roles are excluded from matching | **defect** — the shortlist and assessment both asked whether the *profile* was stale |
+| The assessment hash covers eleven inputs including role staleness | **defect** — profile staleness was covered twice and role staleness never |
+| Extraction temporary files stay inside the selected data folder | **was false** — staging followed the database, which ignored the chosen folder |
+
 ## Failed gates and consequences
 
 _For each failure: the gate, what failed, and either the replacement
