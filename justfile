@@ -51,6 +51,12 @@ gate-model-classify:
 bench:
     go test -tags livemodel -v -count=1 -timeout 240m -run TestBenchmark .
 
+# The PRD's performance budgets that need no model: hybrid retrieval P95 and
+# database size at the representative corpus. Runs on any machine, so the same
+# command produces the development-machine number and the target-laptop one.
+perf:
+    go test -tags perf -v -count=1 -timeout 60m -run TestRetrievalAtTheRepresentativeCorpus .
+
 # The Windows laptop acceptance run: every automatable gate, then the manual checklist
 laptop-gates:
     #!/usr/bin/env bash
@@ -76,7 +82,10 @@ laptop-gates:
     echo "== 7. one assessment against the 60 second target =="
     just bench-assess
     echo
-    echo "== 8. package the application and its installer =="
+    echo "== 8. retrieval and database size at the representative corpus =="
+    just perf
+    echo
+    echo "== 9. package the application and its installer =="
     wails3 task package
     echo
     echo "Everything above is automatable. What is left needs a person:"

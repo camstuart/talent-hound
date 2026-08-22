@@ -669,16 +669,49 @@ free space or an explicit decision to accept that margin.
 Provisional. A miss is recorded as measured, with an explicit go/no-go decision,
 and is never restated as a pass.
 
-| Measurement | Provisional target | Measured | Conditions | Decision |
+The target column is the PRD's, not a number invented here (PRD "Success
+criteria", performance budgets). Two of these need no model, so they are
+measured by `just perf` on any machine and are no longer waiting on the laptop
+to produce a first number.
+
+| Measurement | PRD target | Measured (development machine) | Conditions | Decision |
 | --- | --- | --- | --- | --- |
-| Cold start to usable window | | NOT RUN | | |
-| Indexing one 20-page document | | NOT RUN | | |
-| Profile decomposition, one resume | | NOT RUN | | |
-| Retrieval P95 | | NOT RUN | | |
-| One assessment | | NOT RUN | | |
-| End to end over twenty roles | | NOT RUN | | |
-| Database size after the acceptance corpus | | NOT RUN | | |
-| Overnight corpus indexing | | NOT RUN | | |
+| Cold start to usable window | below 5 s, excluding Ollama | NOT RUN | needs the packaged build | |
+| Indexing one 20-page document | below 60 s | NOT RUN | needs a live embed model | |
+| Profile decomposition, one resume | below 3 min (indicative) | NOT RUN | needs a live classify model | |
+| Retrieval P95 | below 2 s | **845 ms** | `just perf`: 1,000 roles, 1,000 candidates, 9 aspects per role, 1,024 dimensions, 20 shortlists | go — under budget, with the margin noted below |
+| One assessment | below 60 s | NOT RUN — `just bench-assess` | needs a live generate model | |
+| End to end over twenty roles | role profiling plus assessment below 30 min | NOT RUN | needs live models | |
+| Database size after the acceptance corpus | below 5 GB | **52 MiB** at the same corpus | one chunk per document — see below | go, with a wide margin |
+| Overnight corpus indexing | 1,000 resumes below 8 h | NOT RUN | needs a live embed model | |
+
+Two things about those two numbers, both of which make them weaker than they
+look:
+
+**The retrieval margin is thinner than 845 ms against 2 s suggests.** This
+machine is a development desktop. The target is a laptop, and a laptop being two
+to three times slower on a single-threaded scan is ordinary — which puts the P95
+at roughly 1.7 s to 2.5 s, straddling the budget rather than clearing it. This
+is a go on the measurement and a flag on the platform: the row is not settled
+until `just perf` has run on the laptop, and it may come back a no-go. Most of
+the cost is the semantic half — the same run with similarity retrieval disabled
+finishes in 2.85 s rather than 19 s.
+
+**The database figure is a floor, not the corpus.** The seeded corpus gives each
+document one chunk. A real twenty-page résumé chunks into many, and the
+embedding rows follow the chunks, so the real number is some multiple of this
+one. 52 MiB against a 5 GB budget leaves room for a large multiple, which is why
+this is still recorded as a go — but it is a go on the shape of the number, not
+on a corpus anyone has indexed.
+
+What `just perf` does not measure: the query embedding, which is one call to the
+local model and belongs to the model-dependent rows above; and retrieval
+quality, which is the frozen benchmark's job. The vectors it scans are
+generated, because what a scan costs depends on how many there are and how wide
+they are, not on what they mean. It does assert that both halves of the hybrid
+path contributed to every shortlist it timed — a semantic half that quietly
+returned nothing would otherwise report a comfortable pass for the wrong
+reason.
 
 ## Accessibility walkthrough
 

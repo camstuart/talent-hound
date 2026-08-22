@@ -25,11 +25,18 @@ type shortlistEnv struct {
 
 func newShortlistEnv(t *testing.T) *shortlistEnv {
 	t.Helper()
+	// Small deterministic vectors: the semantic half has to run, and what it
+	// returns matters less than that fusion combines two real lists. The
+	// performance harness asks for a realistic width instead, because the
+	// per-query decode cost is most of what it measures.
+	return newShortlistEnvWithDims(t, 8)
+}
+
+func newShortlistEnvWithDims(t *testing.T, dims int) *shortlistEnv {
+	t.Helper()
 	base := newDiscoveryEnv(t)
 	roles := NewRoleProfileService(base.db, base.classify)
-	// Small deterministic vectors: the semantic half has to run, and what it
-	// returns matters less than that fusion combines two real lists.
-	endpoint := newFakeEmbedder(8)
+	endpoint := newFakeEmbedder(dims)
 	embed := NewEmbedService(base.db, base.jobs, base.registry, endpoint)
 	return &shortlistEnv{
 		discoveryEnv: base,
