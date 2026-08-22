@@ -69,7 +69,7 @@ func newDiscoveryEnv(t *testing.T) *discoveryEnv {
 		clock:       time.Date(2026, 3, 1, 12, 0, 0, 0, time.UTC),
 	}
 	e.discovery = NewDiscoveryService(base.db, exa, base.profiles, base.criteria,
-		base.records, base.artifacts)
+		base.records, base.artifacts, nil)
 	// A clock the test moves, so the thirty-day boundary is an assertion rather
 	// than a wait.
 	e.discovery.now = func() time.Time { return e.clock }
@@ -819,4 +819,106 @@ func TestTheDisclosureRecordNamesWhatWasActuallySent(t *testing.T) {
 			t.Fatalf("the disclosure record quotes the identifier: %q", got)
 		}
 	})
+}
+
+// A search uses the credential the recruiter stored, read when the search is
+// made.
+//
+// The shipped build constructed the search client once at start-up, with an
+// empty key, and never touched it again. Search refuses a blank key before it
+// makes any request — so every search this application could ever make was
+// refused for a missing credential, whatever the recruiter had since entered.
+// A key read at start-up is a key read before there is one.
+//
+// Asserted on the store rather than on the failure. A request with a stored key
+// and a request with none both fail from a test machine, and they can fail the
+// same way: an unreachable provider and a provider rejecting the key are one
+// error apart. What separates the defect from the fix is whether the credential
+// was read at all.
+func TestASearchReadsTheStoredCredentialWhenItSearches(t *testing.T) {
+	e := newDiscoveryEnv(t)
+	store := &countingStore{memoryStore: newMemoryStore()}
+	e.discovery.exa = nil
+	e.discovery.credentials = &CredentialService{store: store}
+
+	// Nothing stored: refused by name, and the store was asked.
+	if _, err := e.discovery.Send(SendInput{
+		InitiativeID: e.initiative, Query: "platform engineer", Limit: 10,
+	}); err == nil {
+		t.Fatal("a search was attempted with no stored credential")
+	}
+	if store.loads == 0 {
+		t.Fatal("the search never asked the credential store for anything")
+	}
+
+	if err := store.Store("exa", []byte("not-a-real-key-EXA-4c19f7")); err != nil {
+		t.Fatalf("storing: %v", err)
+	}
+	before := store.loads
+	// This one goes to the real provider address and will not arrive from a
+	// test. What matters is that it read the key first.
+	_, _ = e.discovery.Send(SendInput{
+		InitiativeID: e.initiative, Query: "platform engineer", Limit: 10,
+	})
+	if store.loads == before {
+		t.Fatal("the search did not read the stored credential — it is using a client built without one")
+	}
+}
+
+// countingStore records how often a credential was read.
+type countingStore struct {
+	*memoryStore
+	loads int
+}
+
+func (c *countingStore) Load(purpose string) ([]byte, error) {
+	c.loads++
+	return c.memoryStore.Load(purpose)
+}
+
+// A search that never left the machine is recorded as an attempt and not as a
+// disclosure.
+//
+// The recruiter pressed send, so the search history has to show what happened —
+// a search that vanishes is worse than one that failed. Nothing was sent, so
+// the disclosure record must not claim otherwise: it is the evidence that every
+// non-local request was what it was meant to be, and an event for a request
+// that never happened is the same lie as a missing one.
+func TestARefusedSearchIsRecordedWithoutADisclosure(t *testing.T) {
+	e := newDiscoveryEnv(t)
+	e.discovery.exa = nil
+	e.discovery.credentials = &CredentialService{store: newMemoryStore()}
+
+	before, err := e.discovery.Disclosures()
+	if err != nil {
+		t.Fatalf("reading disclosures: %v", err)
+	}
+	if _, err := e.discovery.Send(SendInput{
+		InitiativeID: e.initiative, Query: "platform engineer", Limit: 10,
+	}); err == nil {
+		t.Fatal("a search with no stored credential was accepted")
+	}
+
+	searches, err := e.discovery.Searches(e.initiative)
+	if err != nil {
+		t.Fatalf("reading searches: %v", err)
+	}
+	if len(searches) != 1 {
+		t.Fatalf("%d searches recorded, want the attempt", len(searches))
+	}
+	if searches[0].FailureReason == "" {
+		t.Fatal("the attempt was recorded without saying why it failed")
+	}
+	if searches[0].ResultCount != 0 {
+		t.Fatalf("a search that was never sent reports %d results", searches[0].ResultCount)
+	}
+
+	after, err := e.discovery.Disclosures()
+	if err != nil {
+		t.Fatalf("reading disclosures: %v", err)
+	}
+	if len(after) != len(before) {
+		t.Fatalf("a disclosure was recorded for a request that was never made (%d then %d)",
+			len(before), len(after))
+	}
 }

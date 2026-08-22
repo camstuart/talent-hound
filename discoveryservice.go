@@ -35,23 +35,29 @@ type Clock func() time.Time
 // disclosure: it is scrubbed of direct identifiers, organizations are
 // generalized, and the recruiter sees the exact bytes before anything is sent.
 type DiscoveryService struct {
-	db        *gorm.DB
-	exa       Searcher
-	profiles  *CandidateProfileService
-	criteria  *CriteriaService
-	records   *RecordService
-	artifacts *ArtifactService
-	now       Clock
+	db *gorm.DB
+	// exa, when set, is used instead of building a client for the stored
+	// credential. Only tests set it: a real search reads the key at the moment
+	// of the request, because a client built at start-up holds whatever the
+	// credential was then — which, at start-up, is nothing.
+	exa         Searcher
+	credentials *CredentialService
+	profiles    *CandidateProfileService
+	criteria    *CriteriaService
+	records     *RecordService
+	artifacts   *ArtifactService
+	now         Clock
 }
 
 // NewDiscoveryService wires discovery to the profile gate and the criteria.
 func NewDiscoveryService(
 	db *gorm.DB, exa Searcher, profiles *CandidateProfileService,
 	criteria *CriteriaService, records *RecordService, artifacts *ArtifactService,
+	credentials *CredentialService,
 ) *DiscoveryService {
 	return &DiscoveryService{
 		db: db, exa: exa, profiles: profiles, criteria: criteria,
-		records: records, artifacts: artifacts,
+		records: records, artifacts: artifacts, credentials: credentials,
 		now: func() time.Time { return time.Now().UTC() },
 	}
 }
@@ -216,7 +222,24 @@ func (s *DiscoveryService) Send(in SendInput) (*SearchOutcome, error) {
 	defer cancel()
 
 	sentAt := s.now()
-	resp, sendErr := s.exa.Search(ctx, query, in.Limit, "")
+	searcher, err := s.searcher()
+	if err != nil {
+		// Nothing left the machine, so there is no disclosure to record — but
+		// the recruiter pressed send, and a search that vanishes is worse than
+		// one that failed. The attempt is recorded; the disclosure is not.
+		record := models.Search{
+			InitiativeID:  in.InitiativeID,
+			Provider:      models.ProviderExa,
+			Query:         query,
+			SentAt:        sentAt,
+			FailureReason: models.ReasonUnauthorized,
+		}
+		if writeErr := s.db.Create(&record).Error; writeErr != nil {
+			return nil, fmt.Errorf("recording the search: %w", writeErr)
+		}
+		return nil, err
+	}
+	resp, sendErr := searcher.Search(ctx, query, in.Limit, "")
 
 	// The request was transmitted, so the disclosure happened — whether or not
 	// the provider then answered usefully.
@@ -288,6 +311,27 @@ func (s *DiscoveryService) recordDisclosure(at time.Time, in SendInput) error {
 		return fmt.Errorf("recording the disclosure: %w", err)
 	}
 	return nil
+}
+
+// searcher is the client this search will use.
+//
+// Built here, per request, from the credential in the operating system's store.
+// It used to be built once at start-up with an empty key and never touched
+// again — so every search this application could ever make was refused for a
+// missing credential, whatever the recruiter had since stored. A key read at
+// start-up is a key read before the recruiter has entered one.
+func (s *DiscoveryService) searcher() (Searcher, error) {
+	if s.exa != nil {
+		return s.exa, nil
+	}
+	if s.credentials == nil {
+		return nil, fmt.Errorf("no credential store is available for the search provider")
+	}
+	key, err := s.credentials.secret("exa")
+	if err != nil {
+		return nil, fmt.Errorf("no search credential is stored — the provider is disabled")
+	}
+	return platform.NewExa(key), nil
 }
 
 // categories names what kinds of thing this query disclosed.

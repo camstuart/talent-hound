@@ -64,7 +64,6 @@ func main() {
 	criteria := NewCriteriaService(gdb, registry, ollama, profiles)
 	// The Exa key lives in the Windows credential store and is read at call
 	// time; an empty key means searches refuse rather than being unavailable.
-	exa := platform.NewExa("")
 	credentials := NewCredentialService()
 	search := NewSearchService(gdb)
 	embed := NewEmbedService(gdb, jobs, registry, ollama)
@@ -104,7 +103,7 @@ func main() {
 			application.NewService(profiles),
 			application.NewService(roleProfiles),
 			application.NewService(criteria),
-			application.NewService(NewDiscoveryService(gdb, exa, profiles, criteria, records, artifacts)),
+			application.NewService(NewDiscoveryService(gdb, nil, profiles, criteria, records, artifacts, credentials)),
 			application.NewService(shortlist),
 			application.NewService(NewAssessService(gdb, jobs, registry, ollama, embed, criteria, profiles, roleProfiles, shortlist)),
 			application.NewService(NewQAService(gdb, registry, ollama, search, embed, profiles)),

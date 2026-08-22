@@ -99,9 +99,17 @@ test("a search with no provider key fails in the backend's own words", async ({ 
   await expect(panel.getByLabel("Query to send")).toBeVisible({ timeout: 15_000 });
 
   await panel.getByLabel("Send this query").click();
-  // No key is configured here, so the provider rejects it — reported as itself
-  // rather than as an empty result.
-  await expect(panel.getByText(/rejected the key|could not be reached|not answer in time/)).toBeVisible({
+  // No key is stored here, so nothing is sent — reported as itself rather than
+  // as an empty result.
+  //
+  // It used to say the provider rejected the key. It had not: the client was
+  // built at start-up with an empty one and refused before making a request, so
+  // the recruiter was told their credential was wrong when they had not entered
+  // one. Now the search reads the credential when it searches, and says plainly
+  // that there is none.
+  await expect(
+    panel.getByText(/no search credential is stored|could not be reached|not answer in time/),
+  ).toBeVisible({
     timeout: 20_000,
   });
 
