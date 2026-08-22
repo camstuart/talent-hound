@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"strings"
@@ -373,4 +374,46 @@ func assignAll(t *testing.T, e *setupEnv) {
 			t.Fatalf("assigning %q: %v", req.Role, err)
 		}
 	}
+}
+
+// The encryption gate judges the folder the data is in, not the one that was
+// chosen for later.
+//
+// Choosing a folder records a preference the next launch opens the database in.
+// Until then records go where they were already going. The gate used to check
+// the chosen folder, so a recruiter could point the wizard at an encrypted disk,
+// be told real data was allowed, and have every record written to the folder
+// this process had actually opened — which is the thing the gate exists to
+// prevent.
+func TestTheEncryptionGateJudgesTheFolderInUse(t *testing.T) {
+	e := newSetupEnv(t)
+	chosen := t.TempDir()
+	svc := e.setup
+
+	asked := ""
+	svc.checkEncryption = func(_ context.Context, path string) platform.EncryptionStatus {
+		asked = path
+		return platform.StatusEncrypted
+	}
+	if err := svc.ChooseFolder(chosen); err != nil {
+		t.Fatalf("choosing: %v", err)
+	}
+
+	if asked != e.dataDir {
+		t.Fatalf("the gate was asked about %q; the database is in %q", asked, e.dataDir)
+	}
+	if asked == chosen {
+		t.Fatal("the gate judged the folder that was chosen for later, not the one in use")
+	}
+
+	state, err := svc.State()
+	if err != nil {
+		t.Fatalf("reading state: %v", err)
+	}
+	// The choice is recorded and reported, because the recruiter made it.
+	if state.DataFolder != chosen {
+		t.Fatalf("the chosen folder is %q, want %q", state.DataFolder, chosen)
+	}
+	// And the folder the gate was asked about is the one being written to.
+
 }

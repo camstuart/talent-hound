@@ -3,10 +3,13 @@
 package main
 
 import (
+	"camstuart/talent-hound/internal/setup"
 	"embed"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 
@@ -36,11 +39,42 @@ func configDir() string {
 	return filepath.Join(conf, "talent-hound")
 }
 
+// dataPath is where this launch opens the database.
+//
+// The recruiter chooses a data folder in the first-run wizard, and that choice
+// was recorded and never read: the database opened where it always had, so the
+// folder they picked held nothing and the folder holding everything was one
+// they were never shown. Recovery copies "the one folder", diagnostics report
+// it, and the encryption gate decides whether real data may be kept in it — all
+// of a folder that was not the one in use.
+//
+// The choice takes effect at the next launch rather than immediately: moving an
+// open database out from under a running application is a different feature,
+// and a worse one to get wrong.
+func dataPath() (string, error) {
+	settings, err := setup.Load(configDir())
+	if err != nil || strings.TrimSpace(settings.DataFolder) == "" {
+		// No preference, or none readable: where it has always been. A settings
+		// file that cannot be read is not a reason to refuse to start.
+		return db.DefaultPath()
+	}
+	// The environment still wins, because that is what the tests and the
+	// server build point at their own folder with.
+	if p := os.Getenv("TALENT_HOUND_DB_PATH"); p != "" {
+		return db.DefaultPath()
+	}
+	dir := settings.DataFolder
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		return "", fmt.Errorf("creating the chosen data folder: %w", err)
+	}
+	return filepath.Join(dir, "talent-hound.db"), nil
+}
+
 // main function serves as the application's entry point. It initializes the application, creates a window,
 // and runs the application, logging any error that might occur.
 func main() {
 
-	dbPath, err := db.DefaultPath()
+	dbPath, err := dataPath()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -109,7 +143,7 @@ func main() {
 			application.NewService(NewQAService(gdb, registry, ollama, search, embed, profiles)),
 			application.NewService(NewDraftService(gdb, registry, ollama, profiles, roleProfiles)),
 			application.NewService(credentials),
-			application.NewService(NewCloudService(gdb, ollama, records, profiles, credentials)),
+			application.NewService(NewCloudService(gdb, records, profiles, credentials)),
 			application.NewService(NewDeletionService(gdb)),
 			application.NewService(setupSv),
 			application.NewService(NewDiagnosticsService(gdb, setupSv, dataDir)),

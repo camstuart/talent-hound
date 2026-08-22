@@ -31,7 +31,7 @@ func newCloudEnv(t *testing.T) *cloudEnv {
 	base := newQAEnv(t)
 	store := newMemoryStore()
 	credentials := &CredentialService{store: store}
-	svc := NewCloudService(base.db, base.model, base.records, base.profiles, credentials)
+	svc := NewCloudService(base.db, base.records, base.profiles, credentials)
 	// A send builds a transport for the approved endpoint and reads the
 	// credential to authorize it. Neither exists in a test, so the scripted
 	// model stands in — through the same seam a real send would not use.

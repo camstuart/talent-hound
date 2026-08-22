@@ -31,6 +31,12 @@ const checkDeadline = 25 * time.Second
 // The wizard's position is not among them: it is recomputed from what is true
 // every time it is asked for.
 type SetupService struct {
+	// checkEncryption, when set, replaces the platform check. Only tests set
+	// it, and only to see which folder was asked about: two folders on one
+	// volume give the same answer, so the answer cannot show which was
+	// examined, and which was examined is the whole of the rule.
+	checkEncryption func(ctx context.Context, path string) platform.EncryptionStatus
+
 	db      *gorm.DB
 	modelSv *ModelService
 	confDir string
@@ -61,14 +67,29 @@ func NewSetupService(db *gorm.DB, modelSv *ModelService, confDir, dataDir string
 // Recheck runs the volume encryption check again. It runs at startup and
 // whenever the recruiter asks, because a data folder can move to an
 // unencrypted volume long after first run.
+//
+// It checks the folder the data is in, which is not always the folder the
+// recruiter chose. Choosing one records a preference that the next launch
+// opens the database in; until then the records go where they were already
+// going. Checking the chosen folder instead meant a recruiter could point the
+// wizard at an encrypted disk, be told real data was allowed, and have every
+// record written to the folder this process actually opened — which is the
+// gate that exists to stop exactly that.
 func (s *SetupService) Recheck() {
 	s.mu.Lock()
-	folder := s.settings.DataFolder
+	folder := s.dataDir
+	if folder == "" {
+		folder = s.settings.DataFolder
+	}
 	s.mu.Unlock()
 
 	ctx, cancel := context.WithTimeout(context.Background(), checkDeadline)
 	defer cancel()
-	status := platform.VolumeEncryption(ctx, folder)
+	check := s.checkEncryption
+	if check == nil {
+		check = platform.VolumeEncryption
+	}
+	status := check(ctx, folder)
 
 	s.mu.Lock()
 	s.encryption = status

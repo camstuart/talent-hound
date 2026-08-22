@@ -29,7 +29,6 @@ type CloudService struct {
 	transport Classifier
 
 	db       *gorm.DB
-	model    Classifier
 	records  *RecordService
 	profiles *CandidateProfileService
 	// key is read at call time from the credential store; nothing here stores it.
@@ -37,11 +36,15 @@ type CloudService struct {
 }
 
 // NewCloudService wires the cloud override to the evidence it may draw on.
+// It takes no model. It used to take the one the rest of the application
+// classifies with, which points at the local runtime — and then sent cloud
+// payloads to it. A service that holds a local client is a service one line
+// away from using it, so it holds none.
 func NewCloudService(
-	db *gorm.DB, model Classifier, records *RecordService,
+	db *gorm.DB, records *RecordService,
 	profiles *CandidateProfileService, credentials *CredentialService,
 ) *CloudService {
-	return &CloudService{db: db, model: model, records: records,
+	return &CloudService{db: db, records: records,
 		profiles: profiles, credentials: credentials}
 }
 
