@@ -356,6 +356,14 @@ func TestARoleSourceArtifactCannotBeDetachedOrDeleted(t *testing.T) {
 	if err != nil {
 		t.Fatalf("finding the listing: %v", err)
 	}
+	// Marked as discovery stores it. The rule this asserts is about an Exa
+	// source artifact — "role-owned and read-only" — and the fixture used to
+	// leave the source unset, so it passed under a rule broad enough to catch
+	// the recruiter's own notes as well.
+	if err := e.db.Model(&models.Artifact{}).Where("id = ?", artifactID).
+		Update("source", models.ProviderExa).Error; err != nil {
+		t.Fatalf("marking the listing as a source: %v", err)
+	}
 
 	if err := e.deletion.Detach(artifactID, models.LinkRole, roleID); err == nil {
 		t.Fatal("a role's source listing was detached")
@@ -715,5 +723,92 @@ func TestDeletingADraftProvesTheDraftAndItsReferencesAreGone(t *testing.T) {
 	}
 	if events[0].DraftID != nil {
 		t.Fatalf("a copy event still points at the deleted draft: %v", *events[0].DraftID)
+	}
+}
+
+// discoveredRole is a role as discovery would have created it.
+func (e *deletionEnv) discoveredRole(t *testing.T) uint {
+	t.Helper()
+	role, err := e.records.CreateRole(models.Role{
+		Title: "Platform engineer", Origin: models.RoleOriginDiscovered,
+		LifecycleState: models.RoleActive,
+	})
+	if err != nil {
+		t.Fatalf("creating the role: %v", err)
+	}
+	return role.ID
+}
+
+// attachTo links a new artifact to a role, marked with the source that decides
+// whether it is the role's own listing or something the recruiter added.
+func (e *deletionEnv) attachTo(t *testing.T, roleID uint, name, source, body string) uint {
+	t.Helper()
+	a, err := e.artifacts.create(name, name+".md", source, []byte(body), models.LinkRole, roleID)
+	if err != nil {
+		t.Fatalf("attaching %s: %v", name, err)
+	}
+	return a.ID
+}
+
+// Purging a role destroys its source listing and keeps what the recruiter
+// wrote.
+//
+// The invariants distinguish the two. An Exa source artifact is "role-owned and
+// read-only… it cannot be independently detached or globally deleted; purge the
+// role instead". A recruiter-added artifact survives deletions elsewhere, and a
+// purge leaves "recruiter-authored notes… with an unavailable role reference".
+//
+// Nothing distinguished them. Every artifact linked to the role was deleted,
+// bytes and all, so a recruiter who attached their own notes to a discovered
+// role lost them by purging it — and could not detach them first, because
+// detaching refuses anything linked to a role and tells them to purge.
+func TestPurgingARoleKeepsWhatTheRecruiterAttached(t *testing.T) {
+	e := newDeletionEnv(t)
+	roleID := e.discoveredRole(t)
+	// The listing as discovery stores it, and the recruiter's own notes.
+	listing := e.attachTo(t, roleID, "listing", models.ProviderExa,
+		"# Platform engineer\n\nMust have Go.\n")
+	notes := e.attachTo(t, roleID, "my notes", "recruiter",
+		"# Notes\n\nSpoke to the hiring manager on Tuesday.\n")
+
+	if err := e.deletion.PurgeRole(roleID); err != nil {
+		t.Fatalf("purging: %v", err)
+	}
+
+	if n := e.count(t, &models.Artifact{}, "id = ?", listing); n != 0 {
+		t.Fatal("the role's source listing survived the purge")
+	}
+	if n := e.count(t, &models.Artifact{}, "id = ?", notes); n != 1 {
+		t.Fatal("the recruiter's own notes were deleted by purging a role")
+	}
+	// Surviving with an unavailable role reference: the link is gone, the
+	// bytes are not.
+	if n := e.count(t, &models.ArtifactLink{},
+		"artifact_id = ? AND target_type = ?", notes, models.LinkRole); n != 0 {
+		t.Fatal("the notes still point at a role that no longer exists")
+	}
+}
+
+// A recruiter can detach their own notes from a role.
+//
+// Detaching refused anything linked to a role, on the rule that a role's source
+// listing is read-only. Their notes are linked to a role and are not its source,
+// so they were told to purge the role instead — which deleted the notes.
+func TestARecruitersOwnNotesCanBeDetachedFromARole(t *testing.T) {
+	e := newDeletionEnv(t)
+	roleID := e.discoveredRole(t)
+	notes := e.attachTo(t, roleID, "my notes", "recruiter",
+		"# Notes\n\nSpoke to the hiring manager on Tuesday.\n")
+
+	if err := e.deletion.Detach(notes, models.LinkRole, roleID); err != nil {
+		t.Fatalf("detaching the recruiter's own notes: %v", err)
+	}
+	// The link goes and the bytes stay: detaching "removes one link only".
+	if n := e.count(t, &models.ArtifactLink{},
+		"artifact_id = ? AND target_type = ?", notes, models.LinkRole); n != 0 {
+		t.Fatal("the link survived the detach")
+	}
+	if n := e.count(t, &models.Artifact{}, "id = ?", notes); n != 1 {
+		t.Fatal("detaching deleted the artifact")
 	}
 }

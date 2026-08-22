@@ -511,10 +511,16 @@ func (s *DeletionService) verifyArtifact(id uint) error {
 }
 
 // isRoleSource reports whether an artifact belongs to a role.
+// It asks whether the artifact is the role's own listing, not merely whether it
+// is attached to a role. A recruiter's notes about a role are attached to it
+// and are theirs: refusing to detach those told them to purge the role instead,
+// which deleted the notes.
 func (s *DeletionService) isRoleSource(artifactID uint) (bool, error) {
 	var n int64
 	err := s.db.Model(&models.ArtifactLink{}).
-		Where("artifact_id = ? AND target_type = ?", artifactID, models.LinkRole).
+		Joins("JOIN artifacts a ON a.id = artifact_links.artifact_id").
+		Where("artifact_links.artifact_id = ? AND artifact_links.target_type = ? AND a.source = ?",
+			artifactID, models.LinkRole, models.ProviderExa).
 		Count(&n).Error
 	if err != nil {
 		return false, fmt.Errorf("checking artifact ownership: %w", err)
@@ -567,12 +573,29 @@ func (s *DeletionService) PreviewRolePurge(id uint) (*Preview, error) {
 // PurgeRole removes a role and everything derived from it.
 func (s *DeletionService) PurgeRole(id uint) error {
 	err := s.db.Transaction(func(tx *gorm.DB) error {
+		// The role's own sources go; what the recruiter attached does not.
+		//
+		// The invariants separate them: an Exa source artifact is "role-owned
+		// and read-only … purge the role instead", and a purge leaves
+		// "recruiter-authored notes … with an unavailable role reference".
+		// Every artifact linked to the role used to be deleted, bytes and all,
+		// so notes a recruiter wrote about a conversation were destroyed by
+		// purging the listing they were attached to.
 		artifactIDs := []uint{}
 		err := tx.Model(&models.ArtifactLink{}).
-			Where("target_type = ? AND target_id = ?", models.LinkRole, id).
-			Pluck("artifact_id", &artifactIDs).Error
+			Joins("JOIN artifacts a ON a.id = artifact_links.artifact_id").
+			Where("artifact_links.target_type = ? AND artifact_links.target_id = ? AND a.source = ?",
+				models.LinkRole, id, models.ProviderExa).
+			Pluck("artifact_links.artifact_id", &artifactIDs).Error
 		if err != nil {
 			return fmt.Errorf("listing the role's sources: %w", err)
+		}
+		// Everything else linked to the role keeps its bytes and loses the
+		// link, which is what "an unavailable role reference" means.
+		err = tx.Where("target_type = ? AND target_id = ?", models.LinkRole, id).
+			Delete(&models.ArtifactLink{}).Error
+		if err != nil {
+			return fmt.Errorf("unlinking what the recruiter attached: %w", err)
 		}
 		if len(artifactIDs) > 0 {
 			if err := deleteArtifactsWithin(tx, artifactIDs); err != nil {
