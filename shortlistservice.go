@@ -181,7 +181,13 @@ func (s *ShortlistService) Build(initiativeID, candidateID uint) (*Shortlist, er
 func (s *ShortlistService) eligibleRoles(initiativeID uint) ([]models.Role, error) {
 	rows := []models.Role{}
 	err := s.db.
-		Where("lifecycle_state <> ?", models.RolePurged).
+		// Purged is gone; Stale has closed or gone thirty days without being
+		// seen. "Stale roles are visibly labeled and excluded from matching",
+		// and this used to exclude only the first — the eligibility question
+		// below is about the profile still matching its listing, which is a
+		// different meaning of the same word and answers yes for a role that
+		// closed last month.
+		Where("lifecycle_state NOT IN (?)", []models.RoleLifecycle{models.RolePurged, models.RoleStale}).
 		Where("id IN (SELECT target_id FROM artifact_links WHERE target_type = ? "+
 			"AND artifact_id IN (SELECT artifact_id FROM artifact_links WHERE target_type = ? AND target_id = ?))",
 			models.LinkRole, models.LinkInitiative, initiativeID).
@@ -192,8 +198,9 @@ func (s *ShortlistService) eligibleRoles(initiativeID uint) ([]models.Role, erro
 
 	kept := make([]models.Role, 0, len(rows))
 	for _, r := range rows {
-		// Phase 12 already decided a stale role is not assessed; asking it
-		// rather than re-deriving staleness keeps one answer to the question.
+		// And whether the profile is Ready and still matches its listing, which
+		// is what this asks. Both are needed: one is about the role, the other
+		// about what was extracted from it.
 		eligible, err := s.roles.Eligibility(r.ID)
 		if err != nil {
 			return nil, err

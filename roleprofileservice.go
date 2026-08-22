@@ -172,12 +172,37 @@ type RoleEligibility struct {
 }
 
 // Eligibility reports whether this role may be assessed automatically.
+//
+// Two questions, because the word stale means two things here. A profile is
+// stale when the listing changed after it was extracted. A role is Stale when it
+// closed, or when thirty days passed without it being seen — and the PRD says
+// those are "visibly labeled and excluded from matching".
+//
+// Only the first was asked. So a discovered role that closed last month, whose
+// profile still matched the listing perfectly, was eligible: it was shortlisted,
+// and it could be assessed directly. Both callers asked this one function
+// precisely so there would be one answer, which is the right shape — the answer
+// was just incomplete.
 func (s *RoleProfileService) Eligibility(roleID uint) (*RoleEligibility, error) {
 	status, err := s.Status(roleID)
 	if err != nil {
 		return nil, err
 	}
 	out := &RoleEligibility{RoleID: roleID, ProfileID: status.ProfileID}
+
+	var role models.Role
+	if err := s.db.First(&role, roleID).Error; err != nil {
+		return nil, fmt.Errorf("reading role %d: %w", roleID, err)
+	}
+	switch role.LifecycleState {
+	case models.RoleStale:
+		out.Reason = "this role is stale — it closed, or thirty days passed without it being seen"
+		return out, nil
+	case models.RolePurged:
+		out.Reason = "this role has been purged"
+		return out, nil
+	}
+
 	if status.State == RoleProfileReady {
 		out.Eligible = true
 		return out, nil

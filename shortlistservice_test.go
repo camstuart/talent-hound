@@ -840,3 +840,44 @@ func TestASharedCityDoesNotOutrankTheWork(t *testing.T) {
 			list.Entries[0].Title)
 	}
 }
+
+// A stale role is excluded from matching, which the PRD says and the shortlist
+// claims.
+//
+// "A discovered role becomes Stale after 30 days without retrieval or when a
+// stated closing date passes. Stale roles are visibly labeled and excluded from
+// matching." The recruiter would otherwise be shown a role that has closed.
+//
+// eligibleRoles filters purged roles and then asks the profile service whether
+// each remaining one may be assessed. That question is about the profile —
+// whether it is Ready and still matches its listing — and not about the role's
+// lifecycle. Two different meanings of stale.
+func TestAStaleRoleIsNotShortlisted(t *testing.T) {
+	e := newShortlistEnv(t)
+	candidateID := e.candidateWithAspect(t, "Embedded C for conveyor control units")
+	roleID := e.roleWithListing(t, "Firmware engineer",
+		"Must have embedded C for conveyor control units.",
+		profile.Aspect{Type: profile.Skill, Wording: "Embedded C for conveyor control units",
+			Citations: []profile.Citation{{Record: "recruiter"}}})
+
+	// It ranks while it is live.
+	if list := e.build(t, candidateID); len(list.Entries) == 0 {
+		t.Fatal("the role did not rank while it was live, so this proves nothing")
+	}
+
+	// The listing closed, or thirty days passed.
+	if err := e.db.Model(&models.Role{}).Where("id = ?", roleID).
+		Update("lifecycle_state", models.RoleStale).Error; err != nil {
+		t.Fatalf("marking the role stale: %v", err)
+	}
+
+	list := e.build(t, candidateID)
+	for _, entry := range list.Entries {
+		if entry.RoleID == roleID {
+			t.Fatal("a stale role was shortlisted — the recruiter is being shown a role that has closed")
+		}
+	}
+	if list.Eligible != 0 {
+		t.Fatalf("%d roles are eligible with the only one stale", list.Eligible)
+	}
+}

@@ -684,3 +684,32 @@ func TestTheBatchWorkerRefusesUnreadableParams(t *testing.T) {
 		t.Fatal("an item outside the batch was accepted")
 	}
 }
+
+// A stale role is not assessed, on the direct path as well as through the
+// shortlist.
+//
+// The PRD excludes stale roles from matching, and assessment is matching. The
+// shortlist filters them in SQL; assessing one role by name does not go through
+// that filter, and asks the role service instead — which is why the answer
+// belongs there.
+func TestAStaleRoleIsNotAssessed(t *testing.T) {
+	e := newAssessEnv(t)
+	candidateID := e.assessableCandidate(t)
+	roleID := e.roleWithListing(t, "Platform engineer", "Must have five years of production Go.",
+		profile.Aspect{Type: profile.Skill, Wording: "Strong Go", Priority: profile.MustHave})
+	e.generateModel(t)
+	e.model.respond = compliant(assess.Met, "the evidence supports it")
+
+	// It assesses while it is live.
+	if _, err := e.assess.Assess(e.initiative, candidateID, roleID); err != nil {
+		t.Fatalf("assessing a live role: %v", err)
+	}
+
+	if err := e.db.Model(&models.Role{}).Where("id = ?", roleID).
+		Update("lifecycle_state", models.RoleStale).Error; err != nil {
+		t.Fatalf("marking the role stale: %v", err)
+	}
+	if _, err := e.assess.Assess(e.initiative, candidateID, roleID); err == nil {
+		t.Fatal("a role that has closed was assessed")
+	}
+}
