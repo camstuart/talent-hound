@@ -20,12 +20,13 @@ export default function DeletePanel() {
   const { act, reloader, error, busy } = createAction();
 
   const reload = reloader(async (isCurrent) => {
-    const candidates = ((await RecordService.ListCandidates()) ?? []) as Candidate[];
+    const [candidates, roles] = await Promise.all([
+      RecordService.ListCandidates(),
+      RecordService.ListRoles(),
+    ]);
     if (!isCurrent()) return;
-    setCandidates(candidates);
-    const roles = ((await RecordService.ListRoles()) ?? []) as Role[];
-    if (!isCurrent()) return;
-    setRoles(roles);
+    setCandidates((candidates ?? []) as Candidate[]);
+    setRoles((roles ?? []) as Role[]);
   });
 
   createEffect(() => {

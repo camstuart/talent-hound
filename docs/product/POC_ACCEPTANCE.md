@@ -350,6 +350,68 @@ evidence as the ones that did not.
 _For each failure: the gate, what failed, and either the replacement
 implementation choice within the PRD or the explicit PRD reopen request._
 
+### A created record could be absent from the screen — one cause fixed, the suite still intermittent
+
+Three full E2E runs failed in a row, each in a different spec, all the same
+shape: a record is created and never appears. Candidates once, companies once,
+artifacts once, role profiles twice.
+
+The specs passed in isolation, which is the reading that would have been wrong.
+The database was queried afterwards: the company was row 164 and the candidate
+row 1297, both written by the backend and absent from the screen.
+
+That evidence is weaker than it first looked, and the correction belongs here.
+Finding the row afterwards proves the write eventually landed. It does not prove
+it landed inside the fifteen seconds the assertion waited, so it does not by
+itself rule out the backend simply being slow under a parallel run. What can be
+said is narrower: there were two real defects in how a panel refreshes, both
+reproducible without any of this, and neither of them is the whole story.
+
+Two defects, both in how a panel refreshes a list.
+
+**A failed refresh left the list stale and said nothing.** Only the newest reload
+may write, so a slow one cannot put a list back the way it was before the record
+the recruiter just added. But the older reload that would have written was
+discarded the moment the newer one started — so when the newer one failed,
+nothing wrote at all. Under a parallel run a dropped response is ordinary. The
+recruiter is told their entry failed, it did not, and entering it again makes a
+duplicate. Ten of the eleven panels with more than one reason to reload had no
+guard at all; the artifacts list reloads on mount, on the workspace revision and
+on a poll timer, and had none of it.
+
+**A refresh could apply half of itself.** Fixing the first defect by checking
+"am I still the newest" between each fetch introduced this: a panel could set
+the statuses and bail before the titles, leaving rows rendered as "Role 7" —
+present, and not findable by the name the recruiter knows. That is the
+role-profile failure. Fetched together and set together now, except where one
+call genuinely depends on the previous one's result.
+
+Both rules live in `latestOnly`, wired by one `reloader()`, so a new panel gets
+them by construction rather than by remembering.
+
+A third thing fell out of it: panels disable their controls while busy, and a
+background reload was routed through the same helper as a recruiter's action —
+so every button was disabled for as long as any refresh ran, and a click landing
+in that window was dropped silently. A refresh is not an action and no longer
+takes the controls away.
+
+**This is not closed.** Three consecutive full runs passed after the fix — 55
+specs each — and the fourth failed two specs, in two panels the earlier failures
+had not touched. So the refresh defects were real and are fixed, and something
+else is also wrong.
+
+What is ruled out: the database is not slow, GORM logged no slow query in a
+failing run. What is not ruled out: the server build used for E2E carries every
+browser context over one HTTP server and one WebSocket per client, and a failing
+run logs dropped responses — "connection reset by peer", "broken pipe" — around
+the failures. A binding call whose response is never written never settles, and
+a panel waiting on it never updates, which produces exactly this symptom in an
+arbitrary spec. That transport is the test harness, not the product: the desktop
+application talks to the same services over the native WebView transport.
+
+Recorded as an open instability rather than a flake. A suite that fails one or
+two specs a run cannot certify anything, and the laptop gates depend on it.
+
 ### The gate recipes could not pass on a slow machine — fixed
 
 `just gate-model` and `just gate-model-classify` ran `go test` without

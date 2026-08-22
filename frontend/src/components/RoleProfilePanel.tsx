@@ -37,12 +37,13 @@ export default function RoleProfilePanel(props: { initiativeId: number }) {
   // swallows the rejection doing it, so a retry wrapped outside would never see
   // a failure to retry.
   const reload = reloader(async (isCurrent) => {
-    const statuses = ((await RoleProfileService.List()) ?? []) as RoleStatus[];
+    // Fetched together and set together. Setting one and bailing before the
+    // other leaves rows whose title has not arrived, so they render as "Role 7"
+    // — present, and not findable by the name the recruiter knows.
+    const [statuses, roles] = await Promise.all([RoleProfileService.List(), RecordService.ListRoles()]);
     if (!isCurrent()) return;
-    setStatuses(statuses);
-    const roles = ((await RecordService.ListRoles()) ?? []) as Role[];
-    if (!isCurrent()) return;
-    setRoles(roles);
+    setStatuses((statuses ?? []) as RoleStatus[]);
+    setRoles((roles ?? []) as Role[]);
   });
 
   createEffect(() => {

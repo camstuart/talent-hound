@@ -24,12 +24,13 @@ export default function DiscoveryPanel(props: { initiativeId: number }) {
   const { act, reloader, error, busy, setError } = createAction();
 
   const reload = reloader(async (isCurrent) => {
-    const list = ((await RecordService.ListCandidates()) ?? []) as Candidate[];
+    const [list, searches] = await Promise.all([
+      RecordService.ListCandidates(),
+      DiscoveryService.Searches(props.initiativeId),
+    ]);
     if (!isCurrent()) return;
-    setCandidates(list);
-    const searches = ((await DiscoveryService.Searches(props.initiativeId)) ?? []) as Search[];
-    if (!isCurrent()) return;
-    setSearches(searches);
+    setCandidates((list ?? []) as Candidate[]);
+    setSearches((searches ?? []) as Search[]);
   });
 
   createEffect(() => {

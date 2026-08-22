@@ -31,14 +31,16 @@ export default function MatchesPanel(props: { initiativeId: number }) {
   const { act, reloader, error, busy } = createAction();
 
   const reload = reloader(async (isCurrent) => {
+    // Sequential on purpose: which candidate is chosen can be settled by
+    // setting the list, so the second call cannot be issued alongside the first.
     const list = ((await RecordService.ListCandidates()) ?? []) as Candidate[];
     if (!isCurrent()) return;
     setCandidates(list);
-    if (candidate()) {
-      const matches = ((await AssessService.Matches(props.initiativeId, candidate())) ?? []) as Match[];
-      if (!isCurrent()) return;
-      setMatches(matches);
-    }
+    const chosen = candidate();
+    if (!chosen) return;
+    const matches = ((await AssessService.Matches(props.initiativeId, chosen)) ?? []) as Match[];
+    if (!isCurrent()) return;
+    setMatches(matches);
   });
 
   createEffect(() => {

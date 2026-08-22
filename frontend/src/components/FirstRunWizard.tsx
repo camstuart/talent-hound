@@ -28,12 +28,14 @@ export default function FirstRunWizard() {
   const { act, reloader, error, busy } = createAction();
 
   const reload = reloader(async (isCurrent) => {
-    const st = (await SetupService.State()) as SetupStatus | null;
+    const [state, terms] = await Promise.all([
+      SetupService.State(),
+      SetupService.Acknowledgements(),
+    ]);
     if (!isCurrent()) return;
+    const st = state as SetupStatus | null;
     setStatus(st);
-    const terms = (await SetupService.Acknowledgements()) ?? [];
-    if (!isCurrent()) return;
-    setTerms(terms);
+    setTerms(terms ?? []);
     if (st && !folder()) setFolder(st.dataFolder);
   });
 

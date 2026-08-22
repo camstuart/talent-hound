@@ -25,15 +25,15 @@ export default function DraftsPanel(props: { initiativeId: number }) {
   const { act, reloader, error, busy } = createAction();
 
   const reload = reloader(async (isCurrent) => {
-    const answers = ((await QAService.Answers(props.initiativeId)) ?? []) as Answer[];
+    const [answers, drafts, list] = await Promise.all([
+      QAService.Answers(props.initiativeId),
+      DraftService.Drafts(props.initiativeId),
+      RecordService.ListCandidates(),
+    ]);
     if (!isCurrent()) return;
-    setAnswers(answers);
-    const drafts = ((await DraftService.Drafts(props.initiativeId)) ?? []) as Draft[];
-    if (!isCurrent()) return;
-    setDrafts(drafts);
-    const list = ((await RecordService.ListCandidates()) ?? []) as Candidate[];
-    if (!isCurrent()) return;
-    setCandidates(list);
+    setAnswers((answers ?? []) as Answer[]);
+    setDrafts((drafts ?? []) as Draft[]);
+    setCandidates((list ?? []) as Candidate[]);
   });
 
   createEffect(() => {
