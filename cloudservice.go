@@ -444,7 +444,32 @@ func (s *CloudService) Send(initiativeID uint, payload Payload) (string, error) 
 		return "", fmt.Errorf("recording the disclosure: %w", err)
 	}
 	if sendErr != nil {
-		return "", fmt.Errorf("the cloud provider did not answer")
+		return "", cloudFailure(sendErr)
 	}
 	return answer, nil
+}
+
+// cloudFailure says which failure happened, in words that suggest what to do
+// about it, and never in the provider's own.
+//
+// They were one message: "the cloud provider did not answer". A recruiter whose
+// key was refused, whose account is rate limited, and whose network is down
+// were all told the same thing, and only one of those is worth waiting out.
+// The transport distinguishes them; this used to discard that.
+func cloudFailure(err error) error {
+	switch {
+	case errors.Is(err, platform.ErrCloudUnauthorized):
+		return fmt.Errorf("the cloud provider refused the stored credential")
+	case errors.Is(err, platform.ErrCloudRateLimited):
+		return fmt.Errorf("the cloud provider is rate limiting — try again shortly")
+	case errors.Is(err, platform.ErrCloudTimeout):
+		return fmt.Errorf("the cloud provider did not answer in time")
+	case errors.Is(err, platform.ErrCloudOffline):
+		return fmt.Errorf("the cloud endpoint could not be reached")
+	case errors.Is(err, platform.ErrCloudMalformed):
+		return fmt.Errorf("the cloud provider's answer could not be read")
+	}
+	// An unrecognised failure keeps the old wording rather than inventing a
+	// diagnosis, and still carries none of the provider's text.
+	return fmt.Errorf("the cloud provider did not answer")
 }

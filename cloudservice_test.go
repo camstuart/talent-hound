@@ -1,8 +1,10 @@
 package main
 
 import (
+	"camstuart/talent-hound/internal/platform"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -908,5 +910,74 @@ func TestACloudRequestAboutACandidateNeedsAnApprovedProfile(t *testing.T) {
 		InitiativeID: e.initiative, Task: string(cloud.Drafting), Text: "Write a pitch.",
 	}); err != nil {
 		t.Fatalf("previewing without a candidate: %v", err)
+	}
+}
+
+// Each cloud failure is reported as itself, because they are not the same
+// problem.
+//
+// They were one message: "the cloud provider did not answer". A recruiter whose
+// credential was refused, whose account is rate limited, and whose network is
+// down were told the same thing, and only one of those is worth waiting out.
+// The spec asks for an offline endpoint to be "reported as itself rather than
+// reporting an empty result", and the transport already distinguishes five.
+func TestEachCloudFailureIsReportedAsItself(t *testing.T) {
+	for _, c := range []struct {
+		err    error
+		expect string
+	}{
+		{platform.ErrCloudUnauthorized, "refused the stored credential"},
+		{platform.ErrCloudRateLimited, "rate limiting"},
+		{platform.ErrCloudTimeout, "in time"},
+		{platform.ErrCloudOffline, "could not be reached"},
+		{platform.ErrCloudMalformed, "could not be read"},
+	} {
+		got := cloudFailure(c.err)
+		if !strings.Contains(got.Error(), c.expect) {
+			t.Errorf("%v was reported as %q, want it to mention %q", c.err, got, c.expect)
+		}
+	}
+
+	// Two different failures do not read the same, which is the whole point.
+	seen := map[string]bool{}
+	for _, err := range []error{
+		platform.ErrCloudUnauthorized, platform.ErrCloudRateLimited,
+		platform.ErrCloudTimeout, platform.ErrCloudOffline, platform.ErrCloudMalformed,
+	} {
+		message := cloudFailure(err).Error()
+		if seen[message] {
+			t.Fatalf("two failures both read %q", message)
+		}
+		seen[message] = true
+	}
+
+	// And something unrecognised is not given a diagnosis it does not have.
+	if got := cloudFailure(errors.New("something else")); !strings.Contains(got.Error(), "did not answer") {
+		t.Fatalf("an unknown failure was reported as %q", got)
+	}
+}
+
+// An unreachable endpoint is reported as unreachable, through the real service
+// rather than the helper.
+func TestAnUnreachableEndpointIsReportedAsUnreachable(t *testing.T) {
+	provider := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))
+	url := provider.URL
+	provider.Close() // nothing is listening now
+
+	e := newCloudEnv(t)
+	e.cloud.transport = nil
+	e.configure(t, url)
+	e.withKey(t)
+	if err := e.cloud.Approve(e.initiative, string(cloud.Drafting)); err != nil {
+		t.Fatalf("approving: %v", err)
+	}
+	payload := Payload{Task: string(cloud.Drafting), Text: "Write a pitch.", Endpoint: url}
+
+	_, err := e.cloud.Send(e.initiative, payload)
+	if err == nil {
+		t.Fatal("sending to nothing succeeded")
+	}
+	if !strings.Contains(err.Error(), "could not be reached") {
+		t.Fatalf("an unreachable endpoint was reported as %q", err)
 	}
 }
