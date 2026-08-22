@@ -106,6 +106,15 @@ export default function FirstRunWizard() {
                   Use this folder
                 </button>
               </div>
+              {/* Choosing a folder records where the next launch opens the
+                  database. Until then the records go where they are already
+                  going, and the encryption state below is about that folder —
+                  saying so beats showing one folder and another's answer. */}
+              <Show when={st().folderInUse && st().folderInUse !== st().dataFolder}>
+                <p class="muted" aria-label="Folder in use">
+                  Still using {st().folderInUse} until Talent Hound is restarted.
+                </p>
+              </Show>
             </Show>
 
             {/* Real data needs an encrypted volume. Demo is a deliberate

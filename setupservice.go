@@ -154,11 +154,15 @@ type ModelView struct {
 // step's state, the models, and what the recruiter may do with this
 // installation.
 type SetupStatus struct {
-	Next         setup.Step                `json:"next"`
-	Complete     bool                      `json:"complete"`
-	Steps        []StepView                `json:"steps"`
-	Models       []ModelView               `json:"models"`
-	DataFolder   string                    `json:"dataFolder"`
+	Next       setup.Step  `json:"next"`
+	Complete   bool        `json:"complete"`
+	Steps      []StepView  `json:"steps"`
+	Models     []ModelView `json:"models"`
+	DataFolder string      `json:"dataFolder"`
+	// FolderInUse is where this process actually opened the database, which is
+	// not the chosen folder until the application restarts. The encryption
+	// status below is about this one, because this is where the records go.
+	FolderInUse  string                    `json:"folderInUse"`
 	Scope        setup.Scope               `json:"scope"`
 	Encryption   platform.EncryptionStatus `json:"encryption"`
 	RealData     bool                      `json:"realData"`
@@ -210,6 +214,7 @@ func (s *SetupService) State() (*SetupStatus, error) {
 		Steps:        stepViews(checks, next),
 		Models:       modelViews,
 		DataFolder:   settings.DataFolder,
+		FolderInUse:  s.dataDir,
 		Scope:        settings.Scope,
 		Encryption:   status,
 		RealData:     allowed,

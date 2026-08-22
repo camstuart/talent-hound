@@ -578,3 +578,41 @@ func TestChoosingACopiedFolderSaysWhetherItCanBeOpened(t *testing.T) {
 		}
 	})
 }
+
+// The state says which folder the encryption answer is about.
+//
+// Choosing a folder records where the next launch opens the database; until
+// then the records go where they are already going, and the gate judges that
+// one. So between choosing and restarting, the screen would otherwise show the
+// folder they picked beside an encryption result for a different folder — two
+// true things that read as one false one.
+func TestTheStateSaysWhichFolderIsInUse(t *testing.T) {
+	e := newSetupEnv(t)
+
+	before, err := e.setup.State()
+	if err != nil {
+		t.Fatalf("reading state: %v", err)
+	}
+	if before.FolderInUse != e.dataDir {
+		t.Fatalf("the state says %q is in use, and the database is in %q",
+			before.FolderInUse, e.dataDir)
+	}
+	if before.DataFolder != before.FolderInUse {
+		t.Fatal("they differ before anything was chosen")
+	}
+
+	chosen := t.TempDir()
+	if err := e.setup.ChooseFolder(chosen); err != nil {
+		t.Fatalf("choosing: %v", err)
+	}
+	after, err := e.setup.State()
+	if err != nil {
+		t.Fatalf("reading state: %v", err)
+	}
+	if after.DataFolder != chosen {
+		t.Fatalf("the chosen folder is %q, want %q", after.DataFolder, chosen)
+	}
+	if after.FolderInUse != e.dataDir {
+		t.Fatalf("the folder in use changed to %q without a restart", after.FolderInUse)
+	}
+}
