@@ -360,3 +360,43 @@ func TestNothingReachesTheNetworkExceptTheRuntimeAndApprovedRemotes(t *testing.T
 			strings.Join(offenders, "\n  "))
 	}
 }
+
+// A client that carries a credential is built when it is used, not when the
+// application starts.
+//
+// Three defects in a row were this, and all three shipped: the search client
+// was built at start-up with an empty key and refused every search the
+// recruiter's stored key should have made; the cloud service was handed the
+// local runtime's client and answered cloud payloads on this machine; and the
+// sidecar was verified before it was installed and refused every document
+// afterwards. Each was correct when it was constructed and wrong by the time
+// anybody used it.
+//
+// Nothing caught them, because every test builds its own service with its own
+// working dependency. The defect lived only in the wiring, and the wiring had
+// no test.
+//
+// So: start-up may build the local runtime's client, which needs no credential
+// and cannot move. It may not build one that carries a key. Those are
+// constructed per request, from the store, by the service that sends.
+func TestStartUpBuildsNoClientThatCarriesACredential(t *testing.T) {
+	body := string(mustRead("main.go"))
+	if body == "" {
+		t.Fatal("main.go could not be read")
+	}
+
+	// Constructors that take a credential. Building one here means holding a
+	// secret from before the recruiter has entered it.
+	for _, credentialed := range []string{"platform.NewExa(", "platform.NewCloud("} {
+		if strings.Contains(body, credentialed) {
+			t.Errorf("main.go calls %s — a client built at start-up holds whatever the "+
+				"credential was then, which at start-up is nothing", credentialed)
+		}
+	}
+
+	// The local runtime is the exception, and it is allowed to stay one.
+	if !strings.Contains(body, "platform.NewOllama()") {
+		t.Error("main.go no longer builds the local runtime client, and this test " +
+			"is now guarding a wiring that moved")
+	}
+}
