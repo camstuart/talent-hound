@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"time"
 
 	"gorm.io/gorm"
 
@@ -29,6 +30,31 @@ type ExtractService struct {
 // else. Params never hold content.
 type extractParams struct {
 	ArtifactID uint `json:"artifactId"`
+}
+
+// sidecarVerifyTimeout bounds asking the sidecar its version.
+const sidecarVerifyTimeout = 20 * time.Second
+
+// reader is the sidecar this extraction will use.
+//
+// A verified one is kept: verifying spawns the binary to ask its version, and
+// doing that per document would be a subprocess for every résumé. A failed one
+// is checked again, because what it failed on is a file on disk the recruiter
+// can put there — and the setup wizard verifies independently, so a cached
+// failure here means the wizard reports the sidecar present while every
+// extraction refuses. The recruiter would have installed it, been told it was
+// found, and watched the application disagree until they restarted it for
+// reasons nobody gave them.
+func (s *ExtractService) reader() *extract.Sidecar {
+	if s.sidecar.Available() {
+		return s.sidecar
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), sidecarVerifyTimeout)
+	defer cancel()
+	if fresh := extract.Verify(ctx, extract.DefaultSidecarPath()); fresh.Available() {
+		s.sidecar = fresh
+	}
+	return s.sidecar
 }
 
 // NewExtractService verifies the sidecar, sweeps whatever a previous process

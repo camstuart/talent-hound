@@ -574,3 +574,36 @@ func assertNoStagingRoot(t *testing.T, dataDir string) {
 		t.Error("a staging root was created for an extraction that never should have started")
 	}
 }
+
+// A sidecar installed after the application started is used, not refused until
+// the next launch.
+//
+// Verification is cached because it spawns the binary to ask its version, and
+// doing that per document would be a subprocess for every résumé. Caching a
+// failure is different: what failed is a file on disk the recruiter can put
+// there, and the setup wizard verifies independently. So the wizard would
+// report the sidecar present while every extraction refused, and the
+// application would disagree with itself until somebody restarted it for
+// reasons nobody gave them.
+func TestASidecarThatArrivesLaterIsUsed(t *testing.T) {
+	// Started with nothing at the configured path, the way a launch before the
+	// sidecar is installed goes.
+	missing := filepath.Join(t.TempDir(), "not-here")
+	svc, _, _ := newExtractService(t, missing)
+	if svc.sidecar.Available() {
+		t.Fatal("a path with nothing at it verified")
+	}
+
+	// The recruiter installs it.
+	t.Setenv(extract.SidecarPathEnv, buildFakeSidecar(t))
+
+	if !svc.reader().Available() {
+		t.Fatal("the sidecar was installed and the application still refuses it")
+	}
+	// And the working one is kept rather than re-verified per document, which
+	// would spawn the binary for every résumé.
+	first := svc.reader()
+	if second := svc.reader(); first != second {
+		t.Fatal("a verified sidecar was verified again")
+	}
+}
