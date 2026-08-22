@@ -417,3 +417,73 @@ func TestTheEncryptionGateJudgesTheFolderInUse(t *testing.T) {
 	// And the folder the gate was asked about is the one being written to.
 
 }
+
+// Personal-data entry is refused wherever it happens, not only where a record
+// is created.
+//
+// The guard was on creating a candidate and on artifacts. It was not on editing
+// a candidate, and it was not on contacts at all — and a contact is a person:
+// a full name, an email address and a phone number, which is the one record
+// type made entirely of direct identifiers.
+//
+// The gate can also turn on after the records exist. A volume stops being
+// encrypted, or the recruiter moves to demo scope, and every candidate already
+// in the database was an open field for typing a real name into.
+func TestEveryPersonalRecordIsRefusedWhenTheGateIsClosed(t *testing.T) {
+	e := newSetupEnv(t)
+	records := NewRecordService(e.db)
+	records.Guard = e.setup
+
+	// While the gate is open: a candidate and a contact, so there is something
+	// to try to edit afterwards.
+	candidate, err := records.CreateCandidate(models.Candidate{FullName: "Nadia Frost"})
+	if err != nil {
+		t.Fatalf("creating a candidate: %v", err)
+	}
+	company, err := records.CreateCompany(models.Company{Name: "Quokkastack"})
+	if err != nil {
+		t.Fatalf("creating a company: %v", err)
+	}
+	contact, err := records.CreateContact(models.Contact{
+		CompanyID: company.ID, FullName: "Tobias Fenn", Email: "tobias.fenn@example.invalid",
+	})
+	if err != nil {
+		t.Fatalf("creating a contact: %v", err)
+	}
+	// And editing works while it is open, so what follows is the gate closing
+	// rather than the method being broken.
+	contact.Title = "Head of Engineering"
+	updated, err := records.UpdateContact(*contact)
+	if err != nil {
+		t.Fatalf("editing a contact with the gate open: %v", err)
+	}
+	if updated.Title != "Head of Engineering" {
+		t.Fatalf("the edit did not take: %+v", updated)
+	}
+
+	// The gate closes.
+	if err := e.setup.SetScope(setup.ScopeDemo); err != nil {
+		t.Fatalf("choosing demo scope: %v", err)
+	}
+
+	if _, err := records.CreateContact(models.Contact{
+		CompanyID: company.ID, FullName: "Priya Raman", Phone: "+61 400 123 456",
+	}); err == nil {
+		t.Fatal("a contact — a name, an email and a phone number — was accepted with the gate closed")
+	}
+	contact.FullName = "Someone Real"
+	if _, err := records.UpdateContact(*contact); err == nil {
+		t.Fatal("a contact was edited with the gate closed")
+	}
+	candidate.FullName = "Someone Real"
+	if _, err := records.UpdateCandidate(*candidate); err == nil {
+		t.Fatal("a candidate was edited with the gate closed")
+	}
+
+	// A company is an organization rather than a person, and naming one is
+	// ordinary recruiting — the same distinction the search and cloud
+	// boundaries draw. It stays allowed, deliberately.
+	if _, err := records.CreateCompany(models.Company{Name: "Fernway Health"}); err != nil {
+		t.Fatalf("a company was refused with the gate closed: %v", err)
+	}
+}

@@ -62,6 +62,13 @@ func (s *RecordService) CreateCandidate(candidate models.Candidate) (*models.Can
 
 // UpdateCandidate validates and saves an existing candidate.
 func (s *RecordService) UpdateCandidate(candidate models.Candidate) (*models.Candidate, error) {
+	// Editing is entry too. The guard can turn on after the records exist — a
+	// volume stops being encrypted, or the recruiter moves to demo scope — and
+	// guarding only creation would leave every existing candidate an open field
+	// for typing a real name into.
+	if err := guardAllows(s.Guard); err != nil {
+		return nil, err
+	}
 	if err := candidate.Validate(); err != nil {
 		return nil, err
 	}
@@ -196,6 +203,13 @@ func (s *RecordService) ListCompanies() ([]models.Company, error) {
 
 // CreateContact validates and persists a contact at an existing company.
 func (s *RecordService) CreateContact(contact models.Contact) (*models.Contact, error) {
+	// A contact is a person: a full name, an email address and a phone number.
+	// The guard was on candidates and artifacts and not on this, so the one
+	// record type made entirely of direct identifiers was the one that could be
+	// written to an unencrypted disk.
+	if err := guardAllows(s.Guard); err != nil {
+		return nil, err
+	}
 	contact.ID = 0
 	if err := contact.Validate(); err != nil {
 		return nil, err
@@ -211,6 +225,9 @@ func (s *RecordService) CreateContact(contact models.Contact) (*models.Contact, 
 
 // UpdateContact validates and saves an existing contact.
 func (s *RecordService) UpdateContact(contact models.Contact) (*models.Contact, error) {
+	if err := guardAllows(s.Guard); err != nil {
+		return nil, err
+	}
 	if err := contact.Validate(); err != nil {
 		return nil, err
 	}
