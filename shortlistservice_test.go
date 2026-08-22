@@ -881,3 +881,49 @@ func TestAStaleRoleIsNotShortlisted(t *testing.T) {
 		t.Fatalf("%d roles are eligible with the only one stale", list.Eligible)
 	}
 }
+
+// Excluded roles do not eat into the twenty.
+//
+// The spec asks for this exactly: "WHEN more than twenty eligible roles exist
+// alongside excluded ones, THEN exactly twenty eligible roles are returned,
+// rather than twenty minus the excluded ones." Filtering after the ranking
+// rather than before it gives a shorter list, and a recruiter counting
+// candidates would never know the difference.
+func TestExcludedRolesDoNotShrinkTheTwenty(t *testing.T) {
+	e := newShortlistEnv(t)
+	candidateID := e.candidateWithAspect(t, "Embedded C for conveyor control units")
+
+	// Twenty-five that belong on the list.
+	for i := range 25 {
+		e.roleWithListing(t, fmt.Sprintf("Firmware engineer %02d", i),
+			"Must have embedded C for conveyor control units.",
+			profile.Aspect{Type: profile.Skill, Wording: "Embedded C for conveyor control units",
+				Citations: []profile.Citation{{Record: "recruiter"}}})
+	}
+	// And eight that do not: stale ones, which would otherwise rank just as
+	// well because their profiles are perfectly good.
+	for i := range 8 {
+		id := e.roleWithListing(t, fmt.Sprintf("Closed firmware engineer %02d", i),
+			"Must have embedded C for conveyor control units.",
+			profile.Aspect{Type: profile.Skill, Wording: "Embedded C for conveyor control units",
+				Citations: []profile.Citation{{Record: "recruiter"}}})
+		if err := e.db.Model(&models.Role{}).Where("id = ?", id).
+			Update("lifecycle_state", models.RoleStale).Error; err != nil {
+			t.Fatalf("marking stale: %v", err)
+		}
+	}
+
+	out := e.build(t, candidateID)
+	if len(out.Entries) != ShortlistSize {
+		t.Fatalf("%d entries, want exactly %d — the excluded roles took slots",
+			len(out.Entries), ShortlistSize)
+	}
+	if out.Eligible != 25 {
+		t.Fatalf("%d eligible roles, want the 25 that are", out.Eligible)
+	}
+	for _, entry := range out.Entries {
+		if strings.HasPrefix(entry.Title, "Closed ") {
+			t.Fatalf("a stale role reached the shortlist: %q", entry.Title)
+		}
+	}
+}
