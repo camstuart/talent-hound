@@ -400,3 +400,69 @@ func TestStartUpBuildsNoClientThatCarriesACredential(t *testing.T) {
 			"is now guarding a wiring that moved")
 	}
 }
+
+// There is nothing to turn on.
+//
+// The spec asks for two things and the network scan above covers one: no
+// telemetry request leaves. This is the other — "WHEN the service surface and
+// settings are inspected, THEN no telemetry setting, endpoint, or reporter
+// exists to enable". A reporter that is present but disabled is one settings
+// toggle from being present and enabled, and the toggle is what somebody adds
+// when a release is going badly.
+//
+// It reads the dependency manifests and the identifiers, not prose: the tuning
+// corpus contains a marine telemetry engineer, and a scan for the word would
+// find him.
+//
+// telemetry-check-exempt: this file names the vendors to assert their absence
+func TestThereIsNoTelemetryToEnable(t *testing.T) {
+	vendors := []string{
+		"opentelemetry", "go.opentelemetry", "otelhttp", "sentry", "bugsnag",
+		"posthog", "mixpanel", "amplitude", "segment.com/analytics",
+		"datadog", "newrelic", "rollbar", "crashlytics", "app-insights",
+		"applicationinsights", "@vercel/analytics", "google-analytics", "gtag",
+	}
+	for _, manifest := range []string{"go.mod", "go.sum", filepath.Join("frontend", "package.json")} {
+		body := strings.ToLower(string(mustRead(manifest)))
+		if body == "" {
+			t.Fatalf("%s could not be read", manifest)
+		}
+		for _, vendor := range vendors {
+			if strings.Contains(body, vendor) {
+				t.Errorf("%s depends on %s — this application reports on nobody", manifest, vendor)
+			}
+		}
+	}
+
+	// And no identifier offers one: a field, a method, or a setting called
+	// telemetry or analytics is a control whether or not anything reads it.
+	const marker = "telemetry-check-exempt: this file names the vendors to assert their absence"
+	err := filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
+		if err != nil || info.IsDir() {
+			if info != nil && info.IsDir() && skipped[info.Name()] {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		switch filepath.Ext(path) {
+		case ".go", ".ts", ".tsx":
+		default:
+			return nil
+		}
+		body := string(mustRead(path))
+		if strings.Contains(body, marker) {
+			return nil
+		}
+		// Identifiers, capitalised or camel-cased — not the word in a comment
+		// or in somebody's job title.
+		for _, ident := range []string{"Telemetry", "Analytics", "telemetryEnabled", "analyticsEnabled"} {
+			if strings.Contains(body, ident) {
+				t.Errorf("%s declares %q, which is a control somebody can enable", path, ident)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("walking the repository: %v", err)
+	}
+}
