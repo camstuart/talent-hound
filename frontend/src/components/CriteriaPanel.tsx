@@ -1,4 +1,5 @@
 import { createEffect, createSignal, For, Show } from "solid-js";
+import { latestOnly } from "../latestOnly";
 import { CriteriaService, RecordService } from "../../bindings/camstuart/talent-hound";
 import type { Proposal } from "../../bindings/camstuart/talent-hound";
 import type { Candidate, SearchCriterion } from "../../bindings/camstuart/talent-hound/internal/models";
@@ -40,21 +41,32 @@ export default function CriteriaPanel(props: { initiativeId: number }) {
     }
   };
 
-  const reload = () =>
-    act(async () => {
-      // Fetched together and set together: a list showing three criteria beside
-      // a version that has not caught up is a screen saying two contradictory
-      // things, and it is the version the recruiter would be reading.
-      const [rows, current, list] = await Promise.all([
-        CriteriaService.List(props.initiativeId),
-        CriteriaService.Version(props.initiativeId),
-        RecordService.ListCandidates(),
-      ]);
-      setCriteria((rows ?? []) as SearchCriterion[]);
-      setVersion(current);
-      setCandidates((list ?? []) as Candidate[]);
-      if (!candidate() && (list ?? []).length > 0) setCandidate((list ?? [])[0].id);
-    });
+  // A background reload reports a failure the same way and is not an action:
+  // it must not clear a refusal the recruiter is still reading.
+  const refresh = async (run: () => Promise<unknown>) => {
+    try {
+      await run();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
+  };
+
+  const load = latestOnly(async (isCurrent) => {
+    // Fetched together and set together: a list showing three criteria beside
+    // a version that has not caught up is a screen saying two contradictory
+    // things, and it is the version the recruiter would be reading.
+    const [rows, current, list] = await Promise.all([
+      CriteriaService.List(props.initiativeId),
+      CriteriaService.Version(props.initiativeId),
+      RecordService.ListCandidates(),
+    ]);
+    if (!isCurrent()) return;
+    setCriteria((rows ?? []) as SearchCriterion[]);
+    setVersion(current);
+    setCandidates((list ?? []) as Candidate[]);
+    if (!candidate() && (list ?? []).length > 0) setCandidate((list ?? [])[0].id);
+  });
+  const reload = () => refresh(load);
 
   createEffect(() => {
     workspaceRevision();

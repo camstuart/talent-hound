@@ -28,15 +28,18 @@ export default function MatchesPanel(props: { initiativeId: number }) {
   const [shown, setShown] = createSignal<number | null>(null);
   const [evidenceOf, setEvidenceOf] = createSignal<string | null>(null);
   // The backend's own words, verbatim: it knows rules the UI does not.
-  const { act, error, busy } = createAction();
+  const { act, reloader, error, busy } = createAction();
 
-  const reload = () =>
-    act(async () => {
-      setCandidates(((await RecordService.ListCandidates()) ?? []) as Candidate[]);
-      if (candidate()) {
-        setMatches(((await AssessService.Matches(props.initiativeId, candidate())) ?? []) as Match[]);
-      }
-    });
+  const reload = reloader(async (isCurrent) => {
+    const list = ((await RecordService.ListCandidates()) ?? []) as Candidate[];
+    if (!isCurrent()) return;
+    setCandidates(list);
+    if (candidate()) {
+      const matches = ((await AssessService.Matches(props.initiativeId, candidate())) ?? []) as Match[];
+      if (!isCurrent()) return;
+      setMatches(matches);
+    }
+  });
 
   createEffect(() => {
     workspaceRevision();

@@ -1,5 +1,6 @@
 import { createEffect, createSignal, For, Show } from "solid-js";
 import { bumpWorkspace, workspaceRevision } from "../workspaceRevision";
+import { latestOnly } from "../latestOnly";
 import { RecordService } from "../../bindings/camstuart/talent-hound";
 import type { Candidate, Company, Contact, Role } from "../../bindings/camstuart/talent-hound/internal/models";
 import RecordForm, { list, num, type FieldSpec } from "./RecordForm";
@@ -39,23 +40,21 @@ export default function RecordsPanel() {
   const [contactsAt, setContactsAt] = createSignal<{ count: number; contacts: Contact[] } | null>(null);
   const [lookupError, setLookupError] = createSignal("");
 
-  // Two reloads can be in flight at once — the mount and a create both start
-  // one — and the slower of them used to land last, putting a list back the way
-  // it was before the record the recruiter just added. Only the newest reload
-  // is allowed to write.
-  let latest = 0;
-  const reload = async () => {
-    const mine = ++latest;
+  // Only the newest reload may write, and a failed one retries once. Both
+  // rules live in latestOnly, because every panel with more than one reason to
+  // reload needs them and a panel that has only the first still shows a record
+  // the database holds and the screen does not.
+  const reload = latestOnly(async (isCurrent) => {
     const [candidates, companies, roles] = await Promise.all([
       RecordService.ListCandidates(),
       RecordService.ListCompanies(),
       RecordService.ListRoles(),
     ]);
-    if (mine !== latest) return;
+    if (!isCurrent()) return;
     setCandidates(candidates ?? []);
     setCompanies(companies ?? []);
     setRoles(roles ?? []);
-  };
+  });
   // Records are created elsewhere too — a new initiative can create its
   // candidate, and a dropped resume creates one — so this list follows the
   // workspace revision rather than only its own actions.
@@ -131,8 +130,9 @@ export default function RecordsPanel() {
               lastConfirmed: v.lastConfirmed,
             } as unknown as Candidate);
             // Other panels list these records too.
+            // The bump reloads this panel too, and awaiting a second one here
+            // would report a failed refresh as a failed create.
             bumpWorkspace();
-            await reload();
           }}
         />
       </section>
@@ -161,8 +161,9 @@ export default function RecordsPanel() {
               source: v.source,
             } as unknown as Company);
             // Other panels list these records too.
+            // The bump reloads this panel too, and awaiting a second one here
+            // would report a failed refresh as a failed create.
             bumpWorkspace();
-            await reload();
           }}
         />
       </section>
@@ -306,8 +307,9 @@ export default function RecordsPanel() {
               lifecycleState: v.lifecycleState,
             } as unknown as Role);
             // Other panels list these records too.
+            // The bump reloads this panel too, and awaiting a second one here
+            // would report a failed refresh as a failed create.
             bumpWorkspace();
-            await reload();
           }}
         />
       </section>

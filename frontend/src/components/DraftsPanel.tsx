@@ -22,14 +22,19 @@ export default function DraftsPanel(props: { initiativeId: number }) {
   const [draftBody, setDraftBody] = createSignal("");
   const [copied, setCopied] = createSignal<number | null>(null);
   // The backend's own words, verbatim: it knows rules the UI does not.
-  const { act, error, busy } = createAction();
+  const { act, reloader, error, busy } = createAction();
 
-  const reload = () =>
-    act(async () => {
-      setAnswers(((await QAService.Answers(props.initiativeId)) ?? []) as Answer[]);
-      setDrafts(((await DraftService.Drafts(props.initiativeId)) ?? []) as Draft[]);
-      setCandidates(((await RecordService.ListCandidates()) ?? []) as Candidate[]);
-    });
+  const reload = reloader(async (isCurrent) => {
+    const answers = ((await QAService.Answers(props.initiativeId)) ?? []) as Answer[];
+    if (!isCurrent()) return;
+    setAnswers(answers);
+    const drafts = ((await DraftService.Drafts(props.initiativeId)) ?? []) as Draft[];
+    if (!isCurrent()) return;
+    setDrafts(drafts);
+    const list = ((await RecordService.ListCandidates()) ?? []) as Candidate[];
+    if (!isCurrent()) return;
+    setCandidates(list);
+  });
 
   createEffect(() => {
     workspaceRevision();

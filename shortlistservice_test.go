@@ -765,6 +765,78 @@ func TestARoleIsRankedByItsBestAspectNotByHowManyItHas(t *testing.T) {
 	}
 }
 
+// rolesWithAspects creates one role per wording, each profiled Ready with that
+// single aspect, and embeds every aspect under model. Two tests need the same
+// small aspect corpus and differ only in what they ask of it.
+func (e *shortlistEnv) rolesWithAspects(t *testing.T, model string, wordings ...string) {
+	t.Helper()
+	for i, wording := range wordings {
+		e.roleWithListing(t, fmt.Sprintf("Listing %d", i), "Says one thing.",
+			profile.Aspect{Type: profile.Skill, Wording: wording,
+				Citations: []profile.Citation{{Record: "recruiter"}}})
+	}
+	if _, err := e.registry.Assign(AssignInput{Role: models.RoleEmbed, Model: model}); err != nil {
+		t.Fatalf("assigning %s: %v", model, err)
+	}
+	job, err := e.embed.EmbedAspects(e.initiative)
+	if err != nil {
+		t.Fatalf("embedding aspects under %s: %v", model, err)
+	}
+	if done := waitForJob(t, e.jobs, job.ID); done.State != models.JobCompleted {
+		t.Fatalf("embedding under %s is %s (%q)", model, done.State, done.FailureReason)
+	}
+}
+
+// "The application SHALL NOT compute a similarity between vectors belonging to
+// different embedding spaces. Retrieval SHALL restrict candidates to a single
+// space before scoring."
+//
+// That is asserted of the chunk path, and was not asserted of the aspect path —
+// which is the one matching actually runs on. A stranded space is the ordinary
+// state after a model change: the old vectors stay, because they are what a
+// re-index is spared from recomputing, and they are meaningless against a query
+// the new model embedded.
+func TestAspectRetrievalScoresOnlyTheCurrentSpace(t *testing.T) {
+	e := newShortlistEnv(t)
+	wordings := []string{"storage replication", "ledger reconciliation",
+		"firmware for conveyor units"}
+	e.rolesWithAspects(t, "first-embed", wordings...)
+	// The same aspects again under a second model: the first space is stranded,
+	// which is the ordinary state after a model change.
+	e.rolesWithAspects(t, "second-embed")
+
+	current, err := e.embed.CurrentSpace()
+	if err != nil || current == nil {
+		t.Fatalf("current space: %v %v", current, err)
+	}
+	var inSpace, total int64
+	if err := e.db.Model(&models.Embedding{}).
+		Where("owner_kind = ? AND space_id = ?", models.OwnerAspect, current.ID).
+		Count(&inSpace).Error; err != nil {
+		t.Fatalf("counting the current space: %v", err)
+	}
+	if err := e.db.Model(&models.Embedding{}).Where("owner_kind = ?", models.OwnerAspect).
+		Count(&total).Error; err != nil {
+		t.Fatalf("counting every aspect vector: %v", err)
+	}
+	if total <= inSpace {
+		t.Fatalf("both models produced %d aspect vectors in one space — there is no stranded "+
+			"space here, so this test cannot tell the two apart", total)
+	}
+
+	hits, err := e.embed.SearchAspects(e.initiative, "storage replication", allAspects)
+	if err != nil {
+		t.Fatalf("searching aspects: %v", err)
+	}
+	if len(hits) == 0 {
+		t.Fatal("nothing was scored at all")
+	}
+	if int64(len(hits)) > inSpace {
+		t.Fatalf("scored %d aspects against a current space holding %d of the %d that exist — "+
+			"the stranded space was scored too", len(hits), inSpace, total)
+	}
+}
+
 // The batched search exists so a shortlist scans the corpus once instead of
 // once per query. That is only a safe trade if it ranks identically — a faster
 // shortlist that reorders is a different shortlist, and nothing else here would
@@ -785,24 +857,12 @@ func TestABatchedSearchRanksExactlyAsTheQueriesDoSeparately(t *testing.T) {
 	place(queries[1], 0, 1)
 	place(queries[2], 0.7, 0.7)
 
-	for i, wording := range []string{"storage replication", "ledger reconciliation",
-		"firmware for conveyor units", "storage tiering", "payment ledgers"} {
+	wordings := []string{"storage replication", "ledger reconciliation",
+		"firmware for conveyor units", "storage tiering", "payment ledgers"}
+	for i, wording := range wordings {
 		place(wording, float32(i%3)/2, float32((i+1)%3)/2)
-		e.roleWithListing(t, fmt.Sprintf("Listing %d", i), "Says one thing.",
-			profile.Aspect{Type: profile.Skill, Wording: wording,
-				Citations: []profile.Citation{{Record: "recruiter"}}})
 	}
-
-	if _, err := e.registry.Assign(AssignInput{Role: models.RoleEmbed, Model: "nomic-embed-text"}); err != nil {
-		t.Fatalf("assigning the embed role: %v", err)
-	}
-	job, err := e.embed.EmbedAspects(e.initiative)
-	if err != nil {
-		t.Fatalf("embedding aspects: %v", err)
-	}
-	if done := waitForJob(t, e.jobs, job.ID); done.State != models.JobCompleted {
-		t.Fatalf("aspect embedding is %s (%q)", done.State, done.FailureReason)
-	}
+	e.rolesWithAspects(t, "nomic-embed-text", wordings...)
 
 	batched, err := e.embed.SearchRolesBatch(e.initiative, queries, 4)
 	if err != nil {

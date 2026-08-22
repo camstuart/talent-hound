@@ -29,20 +29,22 @@ export default function CloudPanel(props: { initiativeId: number }) {
   const [tasks, setTasks] = createSignal<TaskState[]>([]);
   const [preview, setPreview] = createSignal<Payload | null>(null);
   // The backend's own words, verbatim: it knows rules the UI does not.
-  const { act, error, busy } = createAction();
+  const { act, reloader, error, busy } = createAction();
 
-  const reload = () =>
-    act(async () => {
-      const current = ((await CloudService.Endpoint()) ?? null) as CloudEndpoint | null;
-      setEndpoint(current);
-      // Seeded, not overwritten: a reload triggered by some other action must
-      // not throw away what the recruiter is halfway through typing.
-      if (current && !touched()) {
-        setUrl(current.url);
-        setModel(current.model);
-      }
-      setTasks(((await CloudService.Tasks(props.initiativeId)) ?? []) as TaskState[]);
-    });
+  const reload = reloader(async (isCurrent) => {
+    const current = ((await CloudService.Endpoint()) ?? null) as CloudEndpoint | null;
+    if (!isCurrent()) return;
+    setEndpoint(current);
+    // Seeded, not overwritten: a reload triggered by some other action must
+    // not throw away what the recruiter is halfway through typing.
+    if (current && !touched()) {
+      setUrl(current.url);
+      setModel(current.model);
+    }
+    const tasks = ((await CloudService.Tasks(props.initiativeId)) ?? []) as TaskState[];
+    if (!isCurrent()) return;
+    setTasks(tasks);
+  });
 
   createEffect(() => {
     workspaceRevision();

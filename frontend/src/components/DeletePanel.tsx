@@ -17,13 +17,16 @@ export default function DeletePanel() {
   const [preview, setPreview] = createSignal<Preview | null>(null);
   const [done, setDone] = createSignal("");
   // The backend's own words, verbatim: it knows rules the UI does not.
-  const { act, error, busy } = createAction();
+  const { act, reloader, error, busy } = createAction();
 
-  const reload = () =>
-    act(async () => {
-      setCandidates(((await RecordService.ListCandidates()) ?? []) as Candidate[]);
-      setRoles(((await RecordService.ListRoles()) ?? []) as Role[]);
-    });
+  const reload = reloader(async (isCurrent) => {
+    const candidates = ((await RecordService.ListCandidates()) ?? []) as Candidate[];
+    if (!isCurrent()) return;
+    setCandidates(candidates);
+    const roles = ((await RecordService.ListRoles()) ?? []) as Role[];
+    if (!isCurrent()) return;
+    setRoles(roles);
+  });
 
   createEffect(() => {
     workspaceRevision();

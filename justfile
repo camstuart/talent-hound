@@ -39,11 +39,11 @@ gate:
 # Live local-model proofs against Ollama at http://localhost:11434.
 # Override models with TH_INSTRUCT_MODELS / TH_EMBED_MODELS.
 gate-model:
-    go test -tags livemodel -v -count=1 ./internal/platform/
+    go test -tags livemodel -v -count=1 -timeout 60m ./internal/platform/
 
 # Classifier contract against the selected local model (set TH_CLASSIFY_MODEL)
 gate-model-classify:
-    go test -tags livemodel -v -count=1 -run TestGate .
+    go test -tags livemodel -v -count=1 -timeout 60m -run TestGate .
 
 # The frozen classifier and matching benchmarks against the selected local
 # models. Writes a record to docs/product/benchmarks/.

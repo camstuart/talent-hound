@@ -31,13 +31,19 @@ export default function RoleProfilePanel(props: { initiativeId: number }) {
   const [manual, setManual] = createSignal<Record<number, string>>({});
   const [listing, setListing] = createSignal<Record<number, string>>({});
   // The backend's own words, verbatim: it knows rules the UI does not.
-  const { act, error, busy } = createAction();
+  const { act, reloader, error, busy } = createAction();
 
-  const reload = () =>
-    act(async () => {
-      setStatuses(((await RoleProfileService.List()) ?? []) as RoleStatus[]);
-      setRoles(((await RecordService.ListRoles()) ?? []) as Role[]);
-    });
+  // Guarded inside act, not around it: act reports the backend's own words and
+  // swallows the rejection doing it, so a retry wrapped outside would never see
+  // a failure to retry.
+  const reload = reloader(async (isCurrent) => {
+    const statuses = ((await RoleProfileService.List()) ?? []) as RoleStatus[];
+    if (!isCurrent()) return;
+    setStatuses(statuses);
+    const roles = ((await RecordService.ListRoles()) ?? []) as Role[];
+    if (!isCurrent()) return;
+    setRoles(roles);
+  });
 
   createEffect(() => {
     workspaceRevision();

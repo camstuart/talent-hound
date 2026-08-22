@@ -1,3 +1,4 @@
+import { latestOnly } from "../latestOnly";
 import { createEffect, createSignal, For, onCleanup, Show } from "solid-js";
 import { JobService } from "../../bindings/camstuart/talent-hound";
 import { JobState } from "../../bindings/camstuart/talent-hound/internal/models";
@@ -20,9 +21,14 @@ export default function JobsPanel(props: { initiativeId: number }) {
   const [tab, setTab] = createSignal<"active" | "cancelled">("active");
   const [error, setError] = createSignal("");
 
-  const reload = async () => {
-    setJobs((await JobService.ListForInitiative(props.initiativeId)) ?? []);
-  };
+  // Guarded because this list has three reasons to reload — the mount, the
+  // workspace revision, and the poll timer — and a slow one landing last would
+  // put the list back the way it was before the job the recruiter just started.
+  const reload = latestOnly(async (isCurrent) => {
+    const jobs = (await JobService.ListForInitiative(props.initiativeId)) ?? [];
+    if (!isCurrent()) return;
+    setJobs(jobs);
+  });
 
   // Every action reports the backend's own words: it knows rules the UI does not.
   const act = async (run: () => Promise<unknown>) => {

@@ -25,15 +25,17 @@ export default function FirstRunWizard() {
   const [status, setStatus] = createSignal<SetupStatus | null>(null);
   const [folder, setFolder] = createSignal("");
   const [terms, setTerms] = createSignal<string[]>([]);
-  const { act, error, busy } = createAction();
+  const { act, reloader, error, busy } = createAction();
 
-  const reload = () =>
-    act(async () => {
-      const st = (await SetupService.State()) as SetupStatus | null;
-      setStatus(st);
-      setTerms((await SetupService.Acknowledgements()) ?? []);
-      if (st && !folder()) setFolder(st.dataFolder);
-    });
+  const reload = reloader(async (isCurrent) => {
+    const st = (await SetupService.State()) as SetupStatus | null;
+    if (!isCurrent()) return;
+    setStatus(st);
+    const terms = (await SetupService.Acknowledgements()) ?? [];
+    if (!isCurrent()) return;
+    setTerms(terms);
+    if (st && !folder()) setFolder(st.dataFolder);
+  });
 
   createEffect(() => {
     workspaceRevision();

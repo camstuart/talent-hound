@@ -350,6 +350,29 @@ evidence as the ones that did not.
 _For each failure: the gate, what failed, and either the replacement
 implementation choice within the PRD or the explicit PRD reopen request._
 
+### The gate recipes could not pass on a slow machine — fixed
+
+`just gate-model` and `just gate-model-classify` ran `go test` without
+`-timeout`. Every other live-model recipe sets one; those two did not, so they
+took Go's default of ten minutes and panicked there.
+
+That is not a theoretical bound. One classification against `qwen2.5:14b-instruct`
+on the development machine measured **344 seconds**, and the gate binary runs two
+such tests — so it exceeded the default and died mid-call, with a stack dump and
+no result. The first test had already passed.
+
+It matters because of what it looks like and where it happens. A panicking test
+binary reads as a product fault, not a missing flag, and the machine it will
+happen on is the target laptop — slower than this one, and the one place these
+gates cannot be casually re-run. A gate that fails for its own reasons is worse
+than a gate that has not been run: it produces a result, and the result is
+wrong.
+
+Both recipes now bound their runs, and `TestEveryLiveModelRecipeBoundsItsOwnRun`
+fails if a live-model or perf recipe loses its `-timeout` again. With the flag
+the same gate passes on the same machine and the same model — 316 s and 300 s
+for its two tests, 616 s in total, against the 600 s it used to be killed at.
+
 ### Held-out matching benchmark — resolved, and the reopen request withdrawn
 
 **It passes: 5 of 5.** The entry below is kept in full because it is the record

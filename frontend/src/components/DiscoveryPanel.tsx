@@ -21,14 +21,16 @@ export default function DiscoveryPanel(props: { initiativeId: number }) {
   const [outcome, setOutcome] = createSignal<SearchOutcome | null>(null);
   const [searches, setSearches] = createSignal<Search[]>([]);
   // The backend's own words, verbatim: it knows rules the UI does not.
-  const { act, error, busy, setError } = createAction();
+  const { act, reloader, error, busy, setError } = createAction();
 
-  const reload = () =>
-    act(async () => {
-      const list = ((await RecordService.ListCandidates()) ?? []) as Candidate[];
-      setCandidates(list);
-      setSearches(((await DiscoveryService.Searches(props.initiativeId)) ?? []) as Search[]);
-    });
+  const reload = reloader(async (isCurrent) => {
+    const list = ((await RecordService.ListCandidates()) ?? []) as Candidate[];
+    if (!isCurrent()) return;
+    setCandidates(list);
+    const searches = ((await DiscoveryService.Searches(props.initiativeId)) ?? []) as Search[];
+    if (!isCurrent()) return;
+    setSearches(searches);
+  });
 
   createEffect(() => {
     workspaceRevision();

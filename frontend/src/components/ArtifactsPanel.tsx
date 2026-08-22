@@ -1,5 +1,6 @@
 import { createEffect, createSignal, For, onCleanup, onMount, Show } from "solid-js";
 import { workspaceRevision } from "../workspaceRevision";
+import { latestOnly } from "../latestOnly";
 import { ArtifactService, ExtractService } from "../../bindings/camstuart/talent-hound";
 import { ExtractionState, LinkTarget } from "../../bindings/camstuart/talent-hound/internal/models";
 import type { Artifact } from "../../bindings/camstuart/talent-hound/internal/models";
@@ -44,16 +45,20 @@ export default function ArtifactsPanel(props: { initiativeId: number }) {
   const [extracting, setExtracting] = createSignal<number[]>([]);
   const [viewing, setViewing] = createSignal<{ name: string; markdown: string } | null>(null);
 
-  const reload = async () => {
+  // Three reasons to reload — the mount, the workspace revision, and the
+  // extraction poll — so the same rules the records list needs apply here, and
+  // this list never had either of them.
+  const reload = latestOnly(async (isCurrent) => {
     const attached = (await ArtifactService.ListForTarget(LinkTarget.LinkInitiative, props.initiativeId)) ?? [];
     const unattached = (await ArtifactService.ListOrphans()) ?? [];
+    if (!isCurrent()) return;
     setArtifacts(attached);
     setOrphans(unattached);
     const settled = new Set(
       [...attached, ...unattached].filter((a) => a.extractionState !== ExtractionState.ExtractionPending).map((a) => a.id),
     );
     setExtracting((ids) => ids.filter((id) => !settled.has(id)));
-  };
+  });
   // Another panel may attach an artifact — a dropped resume, for one — so this
   // list follows the workspace revision as well as its own actions.
   createEffect(() => {

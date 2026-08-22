@@ -13,12 +13,13 @@ export default function ShortlistPanel(props: { initiativeId: number }) {
   const [candidate, setCandidate] = createSignal(0);
   const [shortlist, setShortlist] = createSignal<Shortlist | null>(null);
   // The backend's own words, verbatim: it knows rules the UI does not.
-  const { act, error, busy } = createAction();
+  const { act, reloader, error, busy } = createAction();
 
-  const reload = () =>
-    act(async () => {
-      setCandidates(((await RecordService.ListCandidates()) ?? []) as Candidate[]);
-    });
+  const reload = reloader(async (isCurrent) => {
+    const list = ((await RecordService.ListCandidates()) ?? []) as Candidate[];
+    if (!isCurrent()) return;
+    setCandidates(list);
+  });
 
   createEffect(() => {
     workspaceRevision();

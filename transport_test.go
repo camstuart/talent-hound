@@ -466,3 +466,38 @@ func TestThereIsNoTelemetryToEnable(t *testing.T) {
 		t.Fatalf("walking the repository: %v", err)
 	}
 }
+
+// A gate that calls a local model has to be allowed to take as long as the
+// model takes.
+//
+// `go test` gives itself ten minutes by default and panics at that, and one
+// classification against a 14B model measured 344 seconds on the development
+// machine — so two calls in one binary exceed it. The failure looks exactly
+// like a product fault: a stack dump, a timeout, no result. It is a missing
+// flag.
+//
+// This matters most where it cannot be noticed. The target laptop is slower
+// than the machine this was written on, so a recipe that fits here may not fit
+// there, and the laptop gates are the ones nobody can re-run casually.
+func TestEveryLiveModelRecipeBoundsItsOwnRun(t *testing.T) {
+	body, err := os.ReadFile("justfile")
+	if err != nil {
+		t.Fatalf("reading the justfile: %v", err)
+	}
+	for i, line := range strings.Split(string(body), "\n") {
+		trimmed := strings.TrimSpace(line)
+		if !strings.HasPrefix(trimmed, "go test ") {
+			continue
+		}
+		// Only the ones that call a model or seed a large corpus. The ordinary
+		// suite is fast, and the default is a reasonable bound for it.
+		if !strings.Contains(trimmed, "-tags livemodel") && !strings.Contains(trimmed, "-tags perf") {
+			continue
+		}
+		if !strings.Contains(trimmed, "-timeout ") {
+			t.Errorf("justfile line %d runs a model without bounding the run, so it panics at "+
+				"the ten minute default however long the model legitimately takes:\n\t%s",
+				i+1, trimmed)
+		}
+	}
+}
