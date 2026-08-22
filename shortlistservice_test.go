@@ -765,6 +765,76 @@ func TestARoleIsRankedByItsBestAspectNotByHowManyItHas(t *testing.T) {
 	}
 }
 
+// The batched search exists so a shortlist scans the corpus once instead of
+// once per query. That is only a safe trade if it ranks identically — a faster
+// shortlist that reorders is a different shortlist, and nothing else here would
+// notice, because every other test asks one question at a time.
+func TestABatchedSearchRanksExactlyAsTheQueriesDoSeparately(t *testing.T) {
+	e := newShortlistEnv(t)
+
+	queries := []string{"distributed storage", "payment reconciliation", "embedded firmware"}
+	// Vectors placed by hand so the three queries genuinely disagree about the
+	// ordering. A corpus every query ranks the same way would pass whatever the
+	// batch did with it.
+	place := func(text string, a, b float32) {
+		v := make([]float32, 8)
+		v[0], v[1] = a, b
+		e.endpoint.set(text, v)
+	}
+	place(queries[0], 1, 0)
+	place(queries[1], 0, 1)
+	place(queries[2], 0.7, 0.7)
+
+	for i, wording := range []string{"storage replication", "ledger reconciliation",
+		"firmware for conveyor units", "storage tiering", "payment ledgers"} {
+		place(wording, float32(i%3)/2, float32((i+1)%3)/2)
+		e.roleWithListing(t, fmt.Sprintf("Listing %d", i), "Says one thing.",
+			profile.Aspect{Type: profile.Skill, Wording: wording,
+				Citations: []profile.Citation{{Record: "recruiter"}}})
+	}
+
+	if _, err := e.registry.Assign(AssignInput{Role: models.RoleEmbed, Model: "nomic-embed-text"}); err != nil {
+		t.Fatalf("assigning the embed role: %v", err)
+	}
+	job, err := e.embed.EmbedAspects(e.initiative)
+	if err != nil {
+		t.Fatalf("embedding aspects: %v", err)
+	}
+	if done := waitForJob(t, e.jobs, job.ID); done.State != models.JobCompleted {
+		t.Fatalf("aspect embedding is %s (%q)", done.State, done.FailureReason)
+	}
+
+	batched, err := e.embed.SearchRolesBatch(e.initiative, queries, 4)
+	if err != nil {
+		t.Fatalf("batched search: %v", err)
+	}
+	if len(batched) != len(queries) {
+		t.Fatalf("asked %d queries and got %d rankings", len(queries), len(batched))
+	}
+	for i, q := range queries {
+		alone, err := e.embed.SearchRoles(e.initiative, q, 4)
+		if err != nil {
+			t.Fatalf("searching %q: %v", q, err)
+		}
+		if len(alone) == 0 {
+			t.Fatalf("%q ranked nothing, so this compares two empty lists", q)
+		}
+		if len(batched[i]) != len(alone) {
+			t.Fatalf("%q ranked %d roles alone and %d in the batch",
+				q, len(alone), len(batched[i]))
+		}
+		for n := range alone {
+			got, want := batched[i][n], alone[n]
+			if got.RoleID != want.RoleID || got.AspectID != want.AspectID || got.Score != want.Score {
+				t.Errorf("%q at position %d: the batch says role %d aspect %d (%.6f), "+
+					"asking alone says role %d aspect %d (%.6f)",
+					q, n+1, got.RoleID, got.AspectID, got.Score,
+					want.RoleID, want.AspectID, want.Score)
+			}
+		}
+	}
+}
+
 // A candidate's city is evidence, and the full-text half can use it safely.
 //
 // Places are kept out of the similarity half because "Melbourne" and "Sydney"

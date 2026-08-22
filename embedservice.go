@@ -154,47 +154,11 @@ func (s *EmbedService) SearchAspects(initiativeID uint, query string, limit int)
 		return nil, err
 	}
 
-	type candidate struct {
-		AspectID uint
-		RoleID   uint
-		Wording  string
-		Vector   []byte
-	}
-	rows := []candidate{}
-	err = s.db.Raw(`
-		SELECT pa.id AS aspect_id, p.subject_id AS role_id, pa.wording AS wording, e.vector AS vector
-		FROM embeddings e
-		JOIN profile_aspects pa ON pa.id = e.owner_id
-		JOIN profiles p ON p.id = pa.profile_id
-		WHERE e.space_id = ? AND e.owner_kind = ? AND p.subject_kind = ?
-		AND p.subject_id IN (
-			SELECT target_id FROM artifact_links WHERE target_type = ?
-			AND artifact_id IN (
-				SELECT artifact_id FROM artifact_links WHERE target_type = ? AND target_id = ?
-			)
-		)`,
-		space.ID, models.OwnerAspect, profile.SubjectRole,
-		models.LinkRole, models.LinkInitiative, initiativeID).Scan(&rows).Error
+	corpus, err := s.aspectCorpus(initiativeID, space)
 	if err != nil {
-		return nil, fmt.Errorf("scanning aspect vectors: %w", err)
+		return nil, err
 	}
-
-	hits := make([]AspectHit, 0, len(rows))
-	for _, row := range rows {
-		v, err := vector.Decode(row.Vector, space.Dimensions)
-		if err != nil {
-			continue
-		}
-		score, err := vector.Cosine(q, v)
-		if err != nil {
-			continue
-		}
-		hits = append(hits, AspectHit{
-			AspectID: row.AspectID, RoleID: row.RoleID,
-			Wording: row.Wording, Score: score,
-		})
-	}
-	sortHits(hits)
+	hits := corpus.rank(q)
 	if len(hits) > limit {
 		hits = hits[:limit]
 	}
@@ -238,6 +202,13 @@ func (s *EmbedService) SearchRoles(initiativeID uint, query string, limit int) (
 	if err != nil {
 		return nil, err
 	}
+	return collapseToRoles(hits, limit), nil
+}
+
+// collapseToRoles keeps each role once, at its best aspect, then truncates to
+// limit roles. Collapsing before truncating is the whole point: a role is as
+// relevant as its best statement, not as prolific as its listing.
+func collapseToRoles(hits []AspectHit, limit int) []AspectHit {
 	best := []AspectHit{}
 	seen := map[uint]bool{}
 	sortHits(hits)
@@ -251,7 +222,115 @@ func (s *EmbedService) SearchRoles(initiativeID uint, query string, limit int) (
 	if len(best) > limit {
 		best = best[:limit]
 	}
-	return best, nil
+	return best
+}
+
+// aspectVector is one stored aspect vector, decoded once.
+type aspectVector struct {
+	aspectID uint
+	roleID   uint
+	wording  string
+	values   []float32
+}
+
+// aspectCorpus is every role aspect vector in one initiative, decoded.
+type aspectCorpus []aspectVector
+
+// rank scores the whole corpus against one query, highest first.
+func (c aspectCorpus) rank(q []float32) []AspectHit {
+	hits := make([]AspectHit, 0, len(c))
+	for _, a := range c {
+		score, err := vector.Cosine(q, a.values)
+		if err != nil {
+			continue
+		}
+		hits = append(hits, AspectHit{
+			AspectID: a.aspectID, RoleID: a.roleID, Wording: a.wording, Score: score,
+		})
+	}
+	sortHits(hits)
+	return hits
+}
+
+// aspectCorpus fetches and decodes the role aspect vectors of one initiative.
+//
+// Separated from scoring so a caller with several queries can pay for the scan
+// and the decode once. A vector that will not decode is dropped rather than
+// failing the search: it is one aspect out of a corpus, and a search that
+// refuses to run is worse than one missing a statement.
+func (s *EmbedService) aspectCorpus(initiativeID uint, space *models.EmbeddingSpace) (aspectCorpus, error) {
+	type row struct {
+		AspectID uint
+		RoleID   uint
+		Wording  string
+		Vector   []byte
+	}
+	rows := []row{}
+	err := s.db.Raw(`
+		SELECT pa.id AS aspect_id, p.subject_id AS role_id, pa.wording AS wording, e.vector AS vector
+		FROM embeddings e
+		JOIN profile_aspects pa ON pa.id = e.owner_id
+		JOIN profiles p ON p.id = pa.profile_id
+		WHERE e.space_id = ? AND e.owner_kind = ? AND p.subject_kind = ?
+		AND p.subject_id IN (
+			SELECT target_id FROM artifact_links WHERE target_type = ?
+			AND artifact_id IN (
+				SELECT artifact_id FROM artifact_links WHERE target_type = ? AND target_id = ?
+			)
+		)`,
+		space.ID, models.OwnerAspect, profile.SubjectRole,
+		models.LinkRole, models.LinkInitiative, initiativeID).Scan(&rows).Error
+	if err != nil {
+		return nil, fmt.Errorf("scanning aspect vectors: %w", err)
+	}
+	out := make(aspectCorpus, 0, len(rows))
+	for _, r := range rows {
+		v, err := vector.Decode(r.Vector, space.Dimensions)
+		if err != nil {
+			continue
+		}
+		out = append(out, aspectVector{
+			aspectID: r.AspectID, roleID: r.RoleID, wording: r.Wording, values: v,
+		})
+	}
+	return out, nil
+}
+
+// SearchRolesBatch answers several queries against one scan of the corpus,
+// returning one ranking per query in the order they were asked.
+//
+// The same answer as calling SearchRoles for each query. It exists for what it
+// costs: a shortlist issues one query per approved criterion and per candidate
+// aspect, and each one fetched and decoded every aspect vector again. At the
+// PRD's thousand roles that was ten scans of nine thousand vectors to answer
+// one shortlist, and the scan is most of what a shortlist spends.
+func (s *EmbedService) SearchRolesBatch(initiativeID uint, queries []string, limit int) ([][]AspectHit, error) {
+	if limit <= 0 {
+		limit = 20
+	}
+	if len(queries) == 0 {
+		return nil, nil
+	}
+	// Every query is embedded before the scan, so one unusable query fails the
+	// call rather than being silently ranked against nothing.
+	vectors := make([][]float32, len(queries))
+	var space *models.EmbeddingSpace
+	for i, q := range queries {
+		v, sp, err := s.queryVector(q)
+		if err != nil {
+			return nil, err
+		}
+		vectors[i], space = v, sp
+	}
+	corpus, err := s.aspectCorpus(initiativeID, space)
+	if err != nil {
+		return nil, err
+	}
+	out := make([][]AspectHit, len(queries))
+	for i, q := range vectors {
+		out[i] = collapseToRoles(corpus.rank(q), limit)
+	}
+	return out, nil
 }
 
 // queryVector embeds a query and returns it with the space it belongs to.

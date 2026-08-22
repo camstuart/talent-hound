@@ -154,6 +154,10 @@ func (s *ShortlistService) Build(initiativeID, candidateID uint) (*Shortlist, er
 		return out, nil
 	}
 
+	// Every similarity query at once, so the corpus is scanned and decoded once
+	// for the whole shortlist rather than once per query.
+	semantic := s.semanticAll(initiativeID, queries, allowed)
+
 	lists := []fusion.Ranked{}
 	for _, q := range queries {
 		lexical, err := s.lexical(initiativeID, q.text, q.anyTerms, allowed)
@@ -166,8 +170,7 @@ func (s *ShortlistService) Build(initiativeID, candidateID uint) (*Shortlist, er
 			continue
 		}
 		lists = append(lists, fusion.Ranked{
-			Source: q.source, Method: "semantic",
-			Keys: s.semantic(initiativeID, q.text, allowed),
+			Source: q.source, Method: "semantic", Keys: semantic[q.text],
 		})
 	}
 
@@ -350,7 +353,9 @@ func (s *ShortlistService) lexical(
 }
 
 // semantic retrieves role chunks by meaning, grouped to roles in rank order.
-func (s *ShortlistService) semantic(initiativeID uint, text string, allowed map[uint]bool) []uint {
+func (s *ShortlistService) semanticAll(
+	initiativeID uint, queries []query, allowed map[uint]bool,
+) map[string][]uint {
 	// Aspects, not chunks. The PRD asks for exact-cosine aspect KNN, and a
 	// chunk carries a listing's blurb along with its requirements — so a
 	// similarity query matched the sentences every listing shares. An aspect is
@@ -359,24 +364,36 @@ func (s *ShortlistService) semantic(initiativeID uint, text string, allowed map[
 	// Roles, not aspects: the depth is a number of roles to consider, and
 	// limiting aspects instead hides a role whose best aspect fell outside the
 	// page because other listings wrote more of them.
-	hits, err := s.embed.SearchRoles(initiativeID, text, s.depth())
+	texts := []string{}
+	for _, q := range queries {
+		if !q.lexicalOnly {
+			texts = append(texts, q.text)
+		}
+	}
+	out := map[string][]uint{}
+	if len(texts) == 0 {
+		return out
+	}
+	rankings, err := s.embed.SearchRolesBatch(initiativeID, texts, s.depth())
 	if err != nil {
 		// Deliberately swallowed: no embedding space yet is the ordinary state
 		// before anything is embedded, and it is not a failure of the
 		// shortlist.
-		//
-		return nil
+		return out
 	}
-	seen := map[uint]bool{}
-	ids := make([]uint, 0, len(hits))
-	for _, h := range hits {
-		if !allowed[h.RoleID] || seen[h.RoleID] {
-			continue
+	for i, hits := range rankings {
+		seen := map[uint]bool{}
+		ids := make([]uint, 0, len(hits))
+		for _, h := range hits {
+			if !allowed[h.RoleID] || seen[h.RoleID] {
+				continue
+			}
+			seen[h.RoleID] = true
+			ids = append(ids, h.RoleID)
 		}
-		seen[h.RoleID] = true
-		ids = append(ids, h.RoleID)
+		out[texts[i]] = ids
 	}
-	return ids
+	return out
 }
 
 // artifactIDs is the artifacts a lexical result names, in rank order.

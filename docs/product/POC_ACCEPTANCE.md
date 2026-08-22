@@ -679,7 +679,7 @@ to produce a first number.
 | Cold start to usable window | below 5 s, excluding Ollama | NOT RUN | needs the packaged build | |
 | Indexing one 20-page document | below 60 s | NOT RUN | needs a live embed model | |
 | Profile decomposition, one resume | below 3 min (indicative) | NOT RUN | needs a live classify model | |
-| Retrieval P95 | below 2 s | **845 ms** | `just perf`: 1,000 roles, 1,000 candidates, 9 aspects per role, 1,024 dimensions, 20 shortlists | go — under budget, with the margin noted below |
+| Retrieval P95 | below 2 s | **473 ms** | `just perf`: 1,000 roles, 1,000 candidates, 9 aspects per role, 1,024 dimensions, 20 shortlists | go — under budget, with the margin noted below |
 | One assessment | below 60 s | NOT RUN — `just bench-assess` | needs a live generate model | |
 | End to end over twenty roles | role profiling plus assessment below 30 min | NOT RUN | needs live models | |
 | Database size after the acceptance corpus | below 5 GB | **52 MiB** at the same corpus | one chunk per document — see below | go, with a wide margin |
@@ -688,14 +688,19 @@ to produce a first number.
 Two things about those two numbers, both of which make them weaker than they
 look:
 
-**The retrieval margin is thinner than 845 ms against 2 s suggests.** This
-machine is a development desktop. The target is a laptop, and a laptop being two
-to three times slower on a single-threaded scan is ordinary — which puts the P95
-at roughly 1.7 s to 2.5 s, straddling the budget rather than clearing it. This
-is a go on the measurement and a flag on the platform: the row is not settled
-until `just perf` has run on the laptop, and it may come back a no-go. Most of
-the cost is the semantic half — the same run with similarity retrieval disabled
-finishes in 2.85 s rather than 19 s.
+**The first measurement was 845 ms, and that was too close.** A laptop being two
+to three times slower on a single-threaded scan is ordinary, which put the P95
+at roughly 1.7 s to 2.5 s — straddling the budget rather than clearing it. So
+the measurement was used for what it is for. The split showed the semantic half
+spending 611 ms of it across ten separate scans of the same nine thousand
+vectors: a shortlist issues one query per approved criterion and per candidate
+aspect, and each one fetched and decoded the whole corpus again. Scanning once
+per shortlist instead of once per query took the P95 to 473 ms, which leaves the
+same laptop at roughly 0.9 s to 1.4 s.
+
+That is a real margin rather than a hopeful one, but the row is still not
+settled until `just perf` has run on the laptop. What was ruled out is the
+predictable failure, not every failure.
 
 **The database figure is a floor, not the corpus.** The seeded corpus gives each
 document one chunk. A real twenty-page résumé chunks into many, and the
