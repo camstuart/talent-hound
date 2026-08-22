@@ -487,3 +487,47 @@ func TestEveryPersonalRecordIsRefusedWhenTheGateIsClosed(t *testing.T) {
 		t.Fatalf("a company was refused with the gate closed: %v", err)
 	}
 }
+
+// The recruiter acknowledges six things at first run, and the PRD names all
+// six.
+//
+// The existing check is that the list is not empty, which a list of one
+// satisfies. These are the data-handling preconditions the recruiter agrees to
+// before any candidate data is loaded — authority, retention, the use of public
+// information, what a search discloses, what a cloud task discloses, and the
+// prohibited-criteria boundary. One quietly dropped is a thing they were never
+// asked, and nobody would notice from the screen.
+func TestTheRecruiterAcknowledgesEverythingThePRDNames(t *testing.T) {
+	e := newSetupEnv(t)
+	terms := e.setup.Acknowledgements()
+	if len(terms) != 6 {
+		t.Fatalf("%d acknowledgements, and the PRD lists six", len(terms))
+	}
+
+	// One phrase per precondition, in the PRD's own terms.
+	for _, subject := range []string{
+		"authority",     // authority to hold and use the data
+		"deleting",      // retention and deletion responsibilities
+		"republication", // evaluation and outreach, not republication
+		"previewed",     // searches disclose, and are previewed
+		"cloud",         // cloud tasks have separate consent
+		"prohibited",    // the prohibited-criteria boundary
+	} {
+		found := false
+		for _, term := range terms {
+			if strings.Contains(strings.ToLower(term), subject) {
+				found = true
+			}
+		}
+		if !found {
+			t.Errorf("no acknowledgement mentions %q, which the PRD requires", subject)
+		}
+	}
+
+	// And each is a sentence the recruiter can read, not a code.
+	for _, term := range terms {
+		if len(term) < 20 || !strings.HasSuffix(term, ".") {
+			t.Errorf("%q does not read as something a person agrees to", term)
+		}
+	}
+}
