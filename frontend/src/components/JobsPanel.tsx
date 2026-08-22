@@ -52,11 +52,15 @@ export default function JobsPanel(props: { initiativeId: number }) {
       JobService.Enqueue({
         kind: "demo",
         initiativeId: props.initiativeId,
-        // Long enough to watch. This exists so somebody can see a job queue,
-        // run, report counts, be cancelled and be retried — and at four items
-        // of half a second it could finish before this panel's next poll
-        // rendered it, demonstrating none of them on a busy machine.
-        params: JSON.stringify({ delayMs: 1_500, failAt: -1 }),
+        // Long enough to cancel. This exists so somebody can see a job queue,
+        // run, report counts, be cancelled and be retried, and cancellation is
+        // the one that needs time: a request lands at the next item boundary,
+        // so a job that finishes first is correctly refused. At four items of
+        // half a second it could finish before this panel's next poll rendered
+        // it; at a second and a half it could still finish between seeing it
+        // run and the click arriving. Twenty seconds is a demonstration of a
+        // long-running job, which is what it is demonstrating.
+        params: JSON.stringify({ delayMs: 5_000, failAt: -1 }),
         totalItems: 4,
       }),
     );

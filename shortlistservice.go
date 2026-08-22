@@ -181,13 +181,12 @@ func (s *ShortlistService) Build(initiativeID, candidateID uint) (*Shortlist, er
 func (s *ShortlistService) eligibleRoles(initiativeID uint) ([]models.Role, error) {
 	rows := []models.Role{}
 	err := s.db.
-		// Purged is gone; Stale has closed or gone thirty days without being
-		// seen. "Stale roles are visibly labeled and excluded from matching",
-		// and this used to exclude only the first — the eligibility question
-		// below is about the profile still matching its listing, which is a
-		// different meaning of the same word and answers yes for a role that
-		// closed last month.
-		Where("lifecycle_state NOT IN (?)", []models.RoleLifecycle{models.RolePurged, models.RoleStale}).
+		// Scope only: a purged role is gone. Whether a role may be matched is
+		// one call, below — "no consumer shall decide by inspecting a profile's
+		// state directly", and deciding it here as well would be two places to
+		// keep in step. Stale used to be excluded by neither, which is the
+		// defect; it is now excluded by the one call rather than by both.
+		Where("lifecycle_state <> ?", models.RolePurged).
 		Where("id IN (SELECT target_id FROM artifact_links WHERE target_type = ? "+
 			"AND artifact_id IN (SELECT artifact_id FROM artifact_links WHERE target_type = ? AND target_id = ?))",
 			models.LinkRole, models.LinkInitiative, initiativeID).

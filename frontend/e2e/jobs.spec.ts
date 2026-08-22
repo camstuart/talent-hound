@@ -28,7 +28,7 @@ test("runs a demo job to completion, showing its progress", async ({ page }) => 
   // rather than better. What this asserts is that the job appears at all; the
   // line below is where the work is proved, by its count.
   await expect(jobs.getByText(/demo — (queued|running|completed)/)).toBeVisible();
-  await expect(jobs.getByText(/demo — completed, 4\/4/)).toBeVisible({ timeout: 15_000 });
+  await expect(jobs.getByText(/demo — completed, 4\/4/)).toBeVisible({ timeout: 45_000 });
 });
 
 test("cancels a demo job and finds it in the cancelled tab, then retries it", async ({ page }) => {
@@ -57,5 +57,5 @@ test("cancels a demo job and finds it in the cancelled tab, then retries it", as
   await jobs.getByRole("button", { name: /^Retry job/ }).click();
   await expect(jobs.getByRole("tab", { name: "Cancelled (0)" })).toBeVisible();
   await jobs.getByRole("tab", { name: "Current" }).click();
-  await expect(jobs.getByText(/demo — completed, 4\/4/)).toBeVisible({ timeout: 15_000 });
+  await expect(jobs.getByText(/demo — completed, 4\/4/)).toBeVisible({ timeout: 45_000 });
 });
