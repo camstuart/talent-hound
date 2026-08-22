@@ -531,30 +531,70 @@ func TestAFailureAtAnyCascadeStepChangesNothing(t *testing.T) {
 	before := map[string]int64{}
 	for _, table := range tables {
 		before[table.name] = e.count(t, table.model, "")
+		// A count of zero makes the assertion below vacuous: nothing can be
+		// left behind from a table that was empty. The fixture has to actually
+		// populate every table the cascade touches, or this proves nothing
+		// about that step.
+		if before[table.name] == 0 {
+			t.Fatalf("the fixture leaves %s empty, so a rollback of it asserts nothing", table.name)
+		}
 	}
 
-	// The failure: a transaction that does the same work and then returns an
-	// error, which is what any mid-cascade failure looks like to SQLite.
-	err := e.db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Where("subject_kind = ? AND subject_id = ?",
-			profile.SubjectCandidate, candidateID).Delete(&models.Profile{}).Error; err != nil {
-			return err
-		}
-		if err := tx.Delete(&models.Candidate{}, candidateID).Error; err != nil {
-			return err
-		}
-		return errInjected
-	})
-	if err == nil {
-		t.Fatal("the injected failure did not surface")
-	}
-
+	// The failure is injected into the real cascade, once per table it touches,
+	// rather than into a transaction the test writes itself.
+	//
+	// This test used to hand-roll a transaction that deleted two tables and
+	// returned an error. That asserts the database rolls back a transaction,
+	// which it does; it says nothing about DeleteCandidate, which it never
+	// called. A step accidentally outside the service's transaction would have
+	// gone unnoticed — and "failure is injected at each cascade step in turn"
+	// is what the requirement asks for.
 	for _, table := range tables {
-		if after := e.count(t, table.model, ""); after != before[table.name] {
-			t.Errorf("%s changed from %d to %d despite the rollback",
-				table.name, before[table.name], after)
+		t.Run(table.name, func(t *testing.T) {
+			stop := e.failDeletesOf(t, e.tableNameOf(t, table.model))
+			err := e.deletion.DeleteCandidate(candidateID, RetainShared)
+			stop()
+			if err == nil {
+				t.Fatalf("a failure deleting %s did not surface", table.name)
+			}
+			for _, other := range tables {
+				if after := e.count(t, other.model, ""); after != before[other.name] {
+					t.Errorf("%s changed from %d to %d despite the rollback",
+						other.name, before[other.name], after)
+				}
+			}
+		})
+	}
+}
+
+// failDeletesOf makes every DELETE against one table fail, and returns the
+// function that stops it.
+func (e *deletionEnv) failDeletesOf(t *testing.T, table string) func() {
+	t.Helper()
+	const name = "test:fail_delete"
+	err := e.db.Callback().Delete().Before("gorm:delete").Register(name, func(tx *gorm.DB) {
+		if tx.Statement != nil && tx.Statement.Table == table {
+			_ = tx.AddError(errInjected)
+		}
+	})
+	if err != nil {
+		t.Fatalf("registering the failure: %v", err)
+	}
+	return func() {
+		if err := e.db.Callback().Delete().Remove(name); err != nil {
+			t.Fatalf("removing the failure: %v", err)
 		}
 	}
+}
+
+// tableNameOf is what the database calls this model.
+func (e *deletionEnv) tableNameOf(t *testing.T, model any) string {
+	t.Helper()
+	stmt := &gorm.Statement{DB: e.db}
+	if err := stmt.Parse(model); err != nil {
+		t.Fatalf("resolving the table name: %v", err)
+	}
+	return stmt.Schema.Table
 }
 
 // errInjected is the mid-cascade failure the rollback test causes.
