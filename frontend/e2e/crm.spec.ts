@@ -1,18 +1,19 @@
 import { test, expect } from "@playwright/test";
-import { newWorkspace, newCandidate, newRole } from "./support";
 
 // Unique per run: the E2E database persists across local runs. All content is
 // invented — no real candidate information is uploaded.
 const stamp = Date.now();
 
 test("a logged call becomes findable evidence with a visible history", async ({ page }) => {
-  const name = `Casey Quokka ${stamp}`;
-  // A workspace is needed to reach the records form that creates the candidate;
-  // the CRM tab itself only searches, edits, and logs against existing records.
-  await newWorkspace(page, `Call log ${stamp}`);
-  await newCandidate(page, name);
-
+  await page.goto("/");
   await page.getByLabel("CRM", { exact: true }).click();
+
+  // Create the candidate through the CRM's own form.
+  const name = `Casey Quokka ${stamp}`;
+  await page.getByRole("button", { name: "New candidate", exact: true }).click();
+  const createForm = page.getByRole("form", { name: "New candidate" });
+  await createForm.getByLabel("Full name *").fill(name);
+  await createForm.getByRole("button", { name: "Add candidate" }).click();
   await page.getByRole("list", { name: "Records" }).getByText(name, { exact: true }).click();
 
   // Log a call whose wording is unique to this run.
@@ -32,13 +33,27 @@ test("a logged call becomes findable evidence with a visible history", async ({ 
 });
 
 test("an outcome names its role in the timeline", async ({ page }) => {
-  const name = `Robin Wombat ${stamp}`;
-  const roleTitle = `Staff Recruiter ${stamp}`;
-  await newWorkspace(page, `Placement ${stamp}`);
-  await newCandidate(page, name);
-  await newRole(page, roleTitle);
-
+  await page.goto("/");
   await page.getByLabel("CRM", { exact: true }).click();
+
+  // Create the candidate through the CRM's own form.
+  const name = `Robin Wombat ${stamp}`;
+  await page.getByRole("button", { name: "New candidate", exact: true }).click();
+  const candidateForm = page.getByRole("form", { name: "New candidate" });
+  await candidateForm.getByLabel("Full name *").fill(name);
+  await candidateForm.getByRole("button", { name: "Add candidate" }).click();
+
+  // Create the role through the CRM's own Roles tab and form.
+  const roleTitle = `Staff Recruiter ${stamp}`;
+  await page.getByRole("tablist", { name: "Record types" }).getByRole("tab", { name: "Roles" }).click();
+  await page.getByRole("button", { name: "New role", exact: true }).click();
+  const roleForm = page.getByRole("form", { name: "New role" });
+  await roleForm.getByLabel("Title *").fill(roleTitle);
+  await roleForm.getByRole("button", { name: "Add role" }).click();
+  await expect(page.getByRole("list", { name: "Records" }).getByText(roleTitle, { exact: true })).toBeVisible();
+
+  // Back to Candidates to select the candidate and log the placement against it.
+  await page.getByRole("tablist", { name: "Record types" }).getByRole("tab", { name: "Candidates" }).click();
   await page.getByRole("list", { name: "Records" }).getByText(name, { exact: true }).click();
 
   await page.getByLabel("Interaction kind").selectOption("placement");
