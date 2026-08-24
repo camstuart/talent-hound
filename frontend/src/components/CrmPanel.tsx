@@ -1,4 +1,4 @@
-import { createResource, createSignal, For, Show } from "solid-js";
+import { createEffect, createSignal, For, Show } from "solid-js";
 import { RecordService, SearchService } from "../../bindings/camstuart/talent-hound";
 import type { PersonHit } from "../../bindings/camstuart/talent-hound";
 import { createAction } from "../act";
@@ -20,7 +20,14 @@ type Row = { id: number; title: string; subtitle: string };
 const rows = async (kind: CrmKind, text: string): Promise<Row[]> => {
   switch (kind) {
     case "candidate": {
-      const cs = (await RecordService.SearchCandidates({ text, workRights: "", employmentType: "", arrangement: "", availableBy: "" })) ?? [];
+      const cs =
+        (await RecordService.SearchCandidates({
+          text,
+          workRights: "",
+          employmentType: "",
+          arrangement: "",
+          availableBy: "",
+        })) ?? [];
       return cs.map((c) => ({ id: c.id, title: c.fullName, subtitle: c.location ?? "" }));
     }
     case "company": {
@@ -48,12 +55,22 @@ export default function CrmPanel() {
   const [selected, setSelected] = createSignal<{ type: CrmKind; id: number } | null>(null);
   const [people, setPeople] = createSignal<PersonHit[] | null>(null);
   const [talentQuery, setTalentQuery] = createSignal("");
-  const { act, error } = createAction();
+  const [list, setList] = createSignal<Row[]>([]);
+  // The backend's own words, verbatim: it knows rules the UI does not — a
+  // rejected search must land in error() and never throw through render.
+  const { act, reloader, error } = createAction();
 
-  const [list, { refetch }] = createResource(
-    () => ({ kind: kind(), text: applied() }),
-    (q) => rows(q.kind, q.text),
-  );
+  const reload = reloader(async (isCurrent) => {
+    const found = await rows(kind(), applied());
+    if (!isCurrent()) return;
+    setList(found);
+  });
+
+  createEffect(() => {
+    kind();
+    applied();
+    void reload();
+  });
 
   const runTalent = (e: Event) => {
     e.preventDefault();
@@ -90,7 +107,6 @@ export default function CrmPanel() {
           onSubmit={(e) => {
             e.preventDefault();
             setApplied(filter());
-            void refetch();
           }}
         >
           <input
@@ -120,7 +136,7 @@ export default function CrmPanel() {
           when={people()}
           fallback={
             <ul class="record-list" aria-label="Records">
-              <For each={list() ?? []}>
+              <For each={list()}>
                 {(r) => (
                   <li
                     class="search-hit"

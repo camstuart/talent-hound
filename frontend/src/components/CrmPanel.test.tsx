@@ -89,4 +89,13 @@ describe("CrmPanel", () => {
     fireEvent.click(screen.getByRole("tab", { name: "Companies" }));
     await waitFor(() => expect(recordMocks.SearchCompanies).toHaveBeenCalled());
   });
+
+  it("surfaces a rejected search as a verbatim alert", async () => {
+    // reloader retries a failed reload once (see latestOnly), so both the
+    // first attempt and its retry must fail for the error to surface.
+    recordMocks.SearchCandidates.mockRejectedValue(new Error("candidates are unavailable"));
+    render(() => <CrmPanel />);
+    const alert = await screen.findByRole("alert");
+    expect(alert.textContent).toBe("candidates are unavailable");
+  });
 });
