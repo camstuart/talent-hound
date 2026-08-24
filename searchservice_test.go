@@ -348,3 +348,65 @@ func TestRebuildRepairsADamagedIndex(t *testing.T) {
 		t.Fatalf("the rebuild restored %d of %d hits", len(hits), len(before))
 	}
 }
+
+func TestPeopleSearchGroupsHitsByCandidate(t *testing.T) {
+	e := newIndexEnv(t)
+	mkCandidate := func(name string) uint {
+		t.Helper()
+		c := models.Candidate{FullName: name}
+		if err := e.db.Create(&c).Error; err != nil {
+			t.Fatalf("candidate: %v", err)
+		}
+		return c.ID
+	}
+	attach := func(candidate uint, name, markdown string) {
+		t.Helper()
+		a := e.extracted(t, name, markdown)
+		if err := e.db.Create(&models.ArtifactLink{
+			ArtifactID: a.ID, TargetType: models.LinkCandidate, TargetID: candidate,
+		}).Error; err != nil {
+			t.Fatalf("linking: %v", err)
+		}
+		e.chunkAndWait(t, a.ID)
+	}
+
+	alice := mkCandidate("Alice Amber")
+	bob := mkCandidate("Bob Blue")
+	attach(alice, "alice-resume", "# Resume\n\nDeep quokkastack experience across two startups.\n\nAlso quokkastack platform work.")
+	attach(bob, "bob-note", "# Note\n\nSome quokkastack exposure, mostly wombatscale.")
+	// An initiative-only artifact must not appear: it belongs to no candidate.
+	e.chunkAndWait(t, e.extracted(t, "brief", "# Brief\n\nquokkastack quokkastack quokkastack").ID)
+
+	hits, err := e.search.People("quokkastack", 10)
+	if err != nil {
+		t.Fatalf("people search: %v", err)
+	}
+	if len(hits) != 2 {
+		t.Fatalf("want 2 people, got %d: %+v", len(hits), hits)
+	}
+	// One entry per candidate, each with a snippet and a citable chunk.
+	seen := map[uint]bool{}
+	for _, h := range hits {
+		if seen[h.Candidate.ID] {
+			t.Fatalf("candidate %d appears twice", h.Candidate.ID)
+		}
+		seen[h.Candidate.ID] = true
+		if h.Snippet == "" || h.ChunkID == 0 || h.Candidate.FullName == "" {
+			t.Fatalf("incomplete hit: %+v", h)
+		}
+		if _, err := e.search.Cite(h.ChunkID); err != nil {
+			t.Fatalf("citing %d: %v", h.ChunkID, err)
+		}
+	}
+	if !seen[alice] || !seen[bob] {
+		t.Fatalf("missing a candidate: %v", seen)
+	}
+}
+
+func TestPeopleSearchWithNoMatchesIsEmptyNotAnError(t *testing.T) {
+	e := newIndexEnv(t)
+	hits, err := e.search.People("zyzzyva", 10)
+	if err != nil || len(hits) != 0 {
+		t.Fatalf("want empty, got %v / %v", hits, err)
+	}
+}

@@ -218,3 +218,87 @@ func ftsQuery(query string) string {
 	}
 	return strings.Join(quoted, " ")
 }
+
+// PersonHit is one candidate found through their evidence: who, and the best
+// piece of why. Snippet is a slice of a document a stranger may have written,
+// so it is displayed and nothing else.
+type PersonHit struct {
+	Candidate    models.Candidate `json:"candidate"`
+	ChunkID      uint             `json:"chunkId"`
+	ArtifactName string           `json:"artifactName"`
+	Snippet      string           `json:"snippet"`
+}
+
+// People searches the whole talent pool: every chunk whose artifact is linked
+// to a candidate, in any initiative or none. One entry per candidate, ranked by
+// their best chunk, that chunk carried as the "why" and citable through Cite.
+//
+// ponytail: FTS only, best-chunk-wins per person. If ranking disappoints, the
+// upgrade is a per-person index behind this same signature.
+func (s *SearchService) People(query string, limit int) ([]PersonHit, error) {
+	match := ftsAnyQuery(query)
+	if match == "" {
+		return []PersonHit{}, nil
+	}
+	if limit <= 0 || limit > 200 {
+		limit = defaultSearchLimit
+	}
+	type row struct {
+		CandidateID  uint
+		ChunkID      uint
+		ArtifactName string
+		Text         string
+	}
+	rows := []row{}
+	// Over-fetch chunks, then keep each candidate's best: a popular candidate
+	// with many matching chunks must not crowd everyone else out.
+	err := s.db.Raw(`
+		SELECT l.target_id AS candidate_id, c.id AS chunk_id,
+		       a.display_name AS artifact_name, c.text
+		FROM chunks_fts
+		JOIN chunks c ON c.id = chunks_fts.rowid
+		JOIN artifacts a ON a.id = c.artifact_id
+		JOIN artifact_links l ON l.artifact_id = c.artifact_id AND l.target_type = ?
+		WHERE chunks_fts MATCH ?
+		ORDER BY bm25(chunks_fts), c.id
+		LIMIT ?`,
+		models.LinkCandidate, match, limit*10).Scan(&rows).Error
+	if err != nil {
+		return nil, fmt.Errorf("searching people: %w", err)
+	}
+
+	hits := []PersonHit{}
+	seen := map[uint]bool{}
+	ids := []uint{}
+	for _, r := range rows {
+		if seen[r.CandidateID] {
+			continue
+		}
+		seen[r.CandidateID] = true
+		ids = append(ids, r.CandidateID)
+		hits = append(hits, PersonHit{
+			Candidate:    models.Candidate{ID: r.CandidateID},
+			ChunkID:      r.ChunkID,
+			ArtifactName: r.ArtifactName,
+			Snippet:      r.Text,
+		})
+		if len(hits) == limit {
+			break
+		}
+	}
+	if len(ids) == 0 {
+		return hits, nil
+	}
+	people := []models.Candidate{}
+	if err := s.db.Where("id IN ?", ids).Find(&people).Error; err != nil {
+		return nil, fmt.Errorf("loading matched candidates: %w", err)
+	}
+	byID := map[uint]models.Candidate{}
+	for _, p := range people {
+		byID[p.ID] = p
+	}
+	for i := range hits {
+		hits[i].Candidate = byID[hits[i].Candidate.ID]
+	}
+	return hits, nil
+}
