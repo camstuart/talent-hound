@@ -393,7 +393,9 @@ function Detail(props: { sel: () => { type: CrmKind; id: number } }) {
         kind: kind(),
         note: note(),
         occurredAt: occurredAt(),
-        roleId: roleId() ? Number(roleId()) : 0,
+        // A role picked before switching away from an outcome kind is no
+        // longer meaningful: only an outcome kind may submit one.
+        roleId: OUTCOME_KINDS.has(kind()) && roleId() ? Number(roleId()) : 0,
         initiativeId: 0,
       };
       if (editingId() !== null) await InteractionService.Update(input);
@@ -439,13 +441,19 @@ function Detail(props: { sel: () => { type: CrmKind; id: number } }) {
         <p class="modal-error" role="alert">{error()}</p>
       </Show>
 
-      <Show when={record()}>
+      {/* keyed: a plain (non-keyed) Show only re-invokes its child on a
+          falsy<->truthy transition of `record()`, so RecordForm would stay
+          mounted — and frozen on its first initial values — across a change
+          of selected record, or after a save refetches the same record.
+          Keying on the record's own identity forces a fresh RecordForm
+          instance, with fresh `initial` values, every time either happens. */}
+      <Show when={record()} keyed>
         {(rec) => (
           <RecordForm
             legend="Details form"
             fields={fields()}
             submitLabel="Save"
-            initial={initialFor(props.sel().type, rec())}
+            initial={initialFor(props.sel().type, rec)}
             onSubmit={submitDetails}
           />
         )}

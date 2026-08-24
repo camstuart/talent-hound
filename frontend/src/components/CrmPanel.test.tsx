@@ -11,6 +11,7 @@ const { state, recordMocks, searchMocks, interactionMocks, profileMocks, artifac
     ] as Record<string, unknown>[],
     people: [] as Record<string, unknown>[],
     timeline: [] as Record<string, unknown>[],
+    roles: [] as Record<string, unknown>[],
   };
   return {
     state,
@@ -18,14 +19,21 @@ const { state, recordMocks, searchMocks, interactionMocks, profileMocks, artifac
       SearchCandidates: vi.fn(async () => state.candidates),
       SearchCompanies: vi.fn(async () => []),
       SearchContacts: vi.fn(async () => []),
-      ListRoles: vi.fn(async () => []),
+      ListRoles: vi.fn(async () => state.roles),
       ListCompanies: vi.fn(async () => []),
       GetCandidate: vi.fn(async (id: number) => state.candidates.find((c) => c.id === id)),
       GetCompany: vi.fn(async () => null),
       GetContact: vi.fn(async () => null),
       GetRole: vi.fn(async () => null),
       CreateCandidate: vi.fn(async (c: Record<string, unknown>) => ({ id: 9, ...c })),
-      UpdateCandidate: vi.fn(async (c: Record<string, unknown>) => c),
+      // Mutates the fixture so a refetch after saving sees the edit — the real
+      // backend would too, and the whole point of the tests below is to
+      // catch the form showing stale data after that refetch.
+      UpdateCandidate: vi.fn(async (c: Record<string, unknown>) => {
+        const idx = state.candidates.findIndex((existing) => existing.id === c.id);
+        if (idx >= 0) state.candidates[idx] = { ...state.candidates[idx], ...c };
+        return c;
+      }),
       UpdateCompany: vi.fn(async (c: Record<string, unknown>) => c),
       UpdateContact: vi.fn(async (c: Record<string, unknown>) => c),
       UpdateRole: vi.fn(async (c: Record<string, unknown>) => c),
@@ -69,6 +77,13 @@ vi.mock("../../bindings/camstuart/talent-hound", () => ({
 beforeEach(() => {
   state.people = [];
   state.timeline = [];
+  state.roles = [];
+  // UpdateCandidate mutates this fixture in place (see above), so it has to
+  // be restored between tests too.
+  state.candidates = [
+    { id: 1, fullName: "Alice Amber", location: "Sydney", emails: [], phones: [], compensation: {} },
+    { id: 2, fullName: "Bob Blue", location: "Melbourne", emails: [], phones: [], compensation: {} },
+  ];
   vi.clearAllMocks();
   // A prior test's rejection (see "surfaces a rejected search...") would
   // otherwise leak into every test that runs after it, since clearAllMocks
@@ -164,6 +179,48 @@ describe("CrmPanel", () => {
       expect(recordMocks.UpdateCandidate).toHaveBeenCalledWith(
         expect.objectContaining({ id: 1, fullName: "Alice A. Amber" }),
       ),
+    );
+  });
+
+  it("shows the newly selected record's own values, not the previous selection's", async () => {
+    render(() => <CrmPanel />);
+    fireEvent.click(await screen.findByText("Alice Amber"));
+    await waitFor(() => expect(screen.getByLabelText("Full name *")).toHaveValue("Alice Amber"));
+
+    fireEvent.click(screen.getByText("Bob Blue"));
+    await waitFor(() => expect(screen.getByLabelText("Full name *")).toHaveValue("Bob Blue"));
+  });
+
+  it("shows what was just saved, not the pre-edit values, after a submit", async () => {
+    render(() => <CrmPanel />);
+    fireEvent.click(await screen.findByText("Alice Amber"));
+    const name = await screen.findByLabelText("Full name *");
+    fireEvent.input(name, { target: { value: "Alice A. Amber" } });
+    fireEvent.submit(screen.getByLabelText("Details form"));
+
+    await waitFor(() => expect(recordMocks.UpdateCandidate).toHaveBeenCalled());
+    await waitFor(() => expect(screen.getByLabelText("Full name *")).toHaveValue("Alice A. Amber"));
+  });
+
+  it("does not submit a stale role id after switching away from an outcome kind", async () => {
+    state.roles = [{ id: 3, title: "Engineer" }];
+    render(() => <CrmPanel />);
+    fireEvent.click(await screen.findByText("Alice Amber"));
+
+    const kindSelect = await screen.findByLabelText("Interaction kind");
+    fireEvent.change(kindSelect, { target: { value: "placement" } });
+    const roleSelect = await screen.findByLabelText("Interaction role");
+    // The role list loads asynchronously — the option has to exist before a
+    // select's value can be set to it.
+    await screen.findByText("Engineer");
+    fireEvent.change(roleSelect, { target: { value: "3" } });
+    fireEvent.change(kindSelect, { target: { value: "call" } });
+
+    fireEvent.input(screen.getByLabelText("Interaction note"), { target: { value: "Left a voicemail." } });
+    fireEvent.submit(screen.getByLabelText("Log interaction form"));
+
+    await waitFor(() =>
+      expect(interactionMocks.Log).toHaveBeenCalledWith(expect.objectContaining({ kind: "call", roleId: 0 })),
     );
   });
 });
