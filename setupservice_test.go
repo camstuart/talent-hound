@@ -616,3 +616,11 @@ func TestTheStateSaysWhichFolderIsInUse(t *testing.T) {
 		t.Fatalf("the folder in use changed to %q without a restart", after.FolderInUse)
 	}
 }
+
+func TestOllamaReachableNamesTheEndpointInUse(t *testing.T) {
+	views := []ModelView{{State: models.ModelEndpointDown}}
+	_, why := ollamaReachable(views, "http://127.0.0.1:11435")
+	if !strings.Contains(why, "http://127.0.0.1:11435") {
+		t.Fatalf("the message must name the endpoint in use, got %q", why)
+	}
+}

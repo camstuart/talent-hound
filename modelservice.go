@@ -48,6 +48,10 @@ func NewModelService(db *gorm.DB, jobs *JobService, ollama *platform.Ollama) *Mo
 	return s
 }
 
+// Endpoint is the model endpoint this registry talks to, for messages that
+// must name it.
+func (s *ModelService) Endpoint() string { return s.ollama.Endpoint() }
+
 // checkTimeout bounds an availability check. Long enough for a busy endpoint to
 // answer, short enough that a settings screen is not stuck on it.
 const checkTimeout = 10 * time.Second

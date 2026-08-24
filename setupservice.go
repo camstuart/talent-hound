@@ -182,7 +182,7 @@ func (s *SetupService) State() (*SetupStatus, error) {
 	if err != nil {
 		return nil, err
 	}
-	ollamaOK, ollamaWhy := ollamaReachable(modelViews)
+	ollamaOK, ollamaWhy := ollamaReachable(modelViews, s.modelSv.Endpoint())
 
 	var initiatives int64
 	if err := s.db.Model(&models.Initiative{}).Count(&initiatives).Error; err != nil {
@@ -315,13 +315,13 @@ func (s *SetupService) models() ([]ModelView, error) {
 // ollamaReachable reads the endpoint's state out of the model check: one
 // listing already answered the question, and asking again would be a second
 // call that can disagree with the first.
-func ollamaReachable(views []ModelView) (bool, string) {
+func ollamaReachable(views []ModelView, endpoint string) (bool, string) {
 	for _, v := range views {
 		switch v.State {
 		case models.ModelEndpointDown:
-			return false, fmt.Sprintf("Ollama is not reachable at %s", platform.OllamaBaseURL)
+			return false, fmt.Sprintf("Ollama is not reachable at %s", endpoint)
 		case models.ModelTimeout:
-			return false, fmt.Sprintf("Ollama did not answer in time at %s", platform.OllamaBaseURL)
+			return false, fmt.Sprintf("Ollama did not answer in time at %s", endpoint)
 		}
 	}
 	return true, ""
