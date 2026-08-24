@@ -105,6 +105,8 @@ func main() {
 	embed := NewEmbedService(gdb, jobs, registry, ollama)
 	roleProfiles := NewRoleProfileService(gdb, classify)
 	shortlist := NewShortlistService(gdb, search, embed, criteria, profiles, roleProfiles)
+	chunks := NewChunkService(gdb, jobs)
+	interactions := NewInteractionService(gdb, chunks)
 	// The data folder is the folder holding the database: the one folder the
 	// recruiter copies for recovery.
 	dataDir := filepath.Dir(dbPath)
@@ -115,6 +117,7 @@ func main() {
 	// Personal-data entry is refused at the write, not in the interface.
 	records.Guard = setupSv
 	artifacts.Guard = setupSv
+	interactions.Guard = setupSv
 
 	// Create a new Wails application by providing the necessary options.
 	// Variables 'Name' and 'Description' are for application metadata.
@@ -131,7 +134,8 @@ func main() {
 			application.NewService(artifacts),
 			application.NewService(jobs),
 			application.NewService(extraction),
-			application.NewService(NewChunkService(gdb, jobs)),
+			application.NewService(chunks),
+			application.NewService(interactions),
 			application.NewService(search),
 			application.NewService(registry),
 			application.NewService(embed),
