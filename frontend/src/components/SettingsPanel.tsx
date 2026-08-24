@@ -33,6 +33,11 @@ const PROVIDER_LABELS: Record<string, string> = {
 // The three local model roles and the provider keys. Everything here is local
 // configuration: no candidate content passes through this panel.
 export default function SettingsPanel() {
+  // main.tsx renders only after the runtime has answered data-os, so an absent
+  // value means "no runtime" — never assume Windows.
+  const os = document.documentElement.dataset.os ?? "";
+  const credentialStore = os === "windows" ? "Windows Credential Manager" : os === "darwin" ? "macOS Keychain" : "";
+  const osName = os === "darwin" ? "macOS" : os === "linux" ? "Linux" : os === "windows" ? "Windows" : "this platform";
   const [statuses, setStatuses] = createSignal<Status[]>([]);
   const [assignments, setAssignments] = createSignal<Record<string, { model: string; revision: number; validation: string }>>({});
   const [drafts, setDrafts] = createSignal<Record<string, string>>({});
@@ -68,7 +73,7 @@ export default function SettingsPanel() {
     setAssignments(assigned);
     setInherited(inheritedRoles);
     setStatuses(((await ModelService.Check()) ?? []) as Status[]);
-    setCredentials((await CredentialService.List()) ?? {});
+    if (credentialStore) setCredentials((await CredentialService.List()) ?? {});
   };
   onMount(() => void act(reload));
 
@@ -139,8 +144,10 @@ export default function SettingsPanel() {
       <section class="record-section" aria-label="Provider keys">
         <h3>Provider keys</h3>
         <p class="muted">
-          Keys are held by Windows Credential Manager. They are never stored in this application's data, and there is no
-          way to read one back.
+          <Show when={credentialStore} fallback={<>Provider key storage is unavailable on {osName}.</>}>
+            Keys are held by {credentialStore}. They are never stored in this application's data, and there is no way to
+            read one back.
+          </Show>
         </p>
         <ul class="record-list">
           <For each={Object.keys(PROVIDER_LABELS)}>
@@ -148,19 +155,22 @@ export default function SettingsPanel() {
               <li class="setting-row">
                 <span class="artifact-name">
                   {PROVIDER_LABELS[provider]}
-                  <span class="muted"> — {credentials()[provider] ? "key stored" : "no key stored"}</span>
+                  <span class="muted">
+                    {" "}— {credentialStore ? (credentials()[provider] ? "key stored" : "no key stored") : "unavailable"}
+                  </span>
                 </span>
                 <input
                   type="password"
                   aria-label={`${provider} key`}
                   placeholder="Paste the key"
                   value={keys()[provider] ?? ""}
+                  disabled={!credentialStore}
                   onInput={(e) => setKeys((k) => ({ ...k, [provider]: e.currentTarget.value }))}
                 />
-                <button aria-label={`Save ${provider}`} onClick={() => storeKey(provider)}>
+                <button aria-label={`Save ${provider}`} disabled={!credentialStore} onClick={() => storeKey(provider)}>
                   Save
                 </button>
-                <Show when={credentials()[provider]}>
+                <Show when={credentialStore && credentials()[provider]}>
                   <button aria-label={`Remove ${provider}`} onClick={() => act(() => CredentialService.Delete(provider))}>
                     Remove
                   </button>

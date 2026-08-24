@@ -47,6 +47,7 @@ const resolution = (role: string, over: Record<string, unknown> = {}) => ({
 });
 
 beforeEach(() => {
+  document.documentElement.dataset.os = "windows";
   state.registry = [
     resolution("embed"),
     // classify with no row of its own: it resolves to the generate model.
@@ -67,6 +68,21 @@ beforeEach(() => {
 });
 
 describe("SettingsPanel", () => {
+  it("does not claim Windows storage when no runtime has answered", async () => {
+    delete document.documentElement.dataset.os;
+    render(() => <SettingsPanel />);
+    await screen.findByText("Provider key storage is unavailable on this platform.");
+    expect(credentialMocks.List).not.toHaveBeenCalled();
+  });
+
+  it("offers macOS Keychain storage on macOS", async () => {
+    document.documentElement.dataset.os = "darwin";
+    render(() => <SettingsPanel />);
+    await screen.findByText(/Keys are held by macOS Keychain/);
+    expect(screen.getByLabelText("Save exa")).toBeEnabled();
+    await waitFor(() => expect(credentialMocks.List).toHaveBeenCalled());
+  });
+
   it("lists every role with its model, revision, and status", async () => {
     render(() => <SettingsPanel />);
     await screen.findByText(/embed-model/);

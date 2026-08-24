@@ -13,6 +13,9 @@ System.Environment()
   })
   .catch(() => {
     // A plain browser has no runtime to ask. The default layout stands.
+  })
+  .finally(() => {
+    // Render only once the platform question is settled, so no component ever
+    // reads data-os before the runtime has answered it.
+    render(() => <App />, document.getElementById("root")!);
   });
-
-render(() => <App />, document.getElementById("root")!);
