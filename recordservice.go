@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 
 	"gorm.io/gorm"
 
@@ -273,4 +274,77 @@ func (s *RecordService) ContactsAtCompany(companyID uint) (*ContactsAtCompany, e
 		return nil, fmt.Errorf("listing contacts at company %d: %w", companyID, err)
 	}
 	return &ContactsAtCompany{Company: *company, Count: len(contacts), Contacts: contacts}, nil
+}
+
+// CandidateFilter is the structured search over candidates. Text matches
+// names, emails, and location; the rest are exact or range filters. This is a
+// filter and behaves like one — the semantic search over evidence is
+// SearchService.People, deliberately a different box in the UI.
+type CandidateFilter struct {
+	Text           string      `json:"text"`
+	WorkRights     string      `json:"workRights"`
+	EmploymentType string      `json:"employmentType"`
+	Arrangement    string      `json:"arrangement"`
+	AvailableBy    models.Date `json:"availableBy"`
+}
+
+// SearchCandidates returns the candidates matching every given filter, by name.
+func (s *RecordService) SearchCandidates(f CandidateFilter) ([]models.Candidate, error) {
+	q := s.db.Order("full_name asc")
+	if t := strings.TrimSpace(f.Text); t != "" {
+		like := "%" + t + "%"
+		q = q.Where(
+			"full_name LIKE ? COLLATE NOCASE OR preferred_name LIKE ? COLLATE NOCASE"+
+				" OR emails LIKE ? COLLATE NOCASE OR location LIKE ? COLLATE NOCASE",
+			like, like, like, like)
+	}
+	if f.WorkRights != "" {
+		q = q.Where("work_rights = ?", f.WorkRights)
+	}
+	if f.EmploymentType != "" {
+		q = q.Where("desired_employment_type = ?", f.EmploymentType)
+	}
+	if f.Arrangement != "" {
+		q = q.Where("desired_work_arrangement = ?", f.Arrangement)
+	}
+	if f.AvailableBy != "" {
+		if err := f.AvailableBy.Validate("available-by date"); err != nil {
+			return nil, err
+		}
+		// Unknown availability is kept: a filter must not hide people the
+		// recruiter simply has not dated yet.
+		q = q.Where("availability = '' OR availability <= ?", f.AvailableBy)
+	}
+	out := []models.Candidate{}
+	if err := q.Find(&out).Error; err != nil {
+		return nil, fmt.Errorf("searching candidates: %w", err)
+	}
+	return out, nil
+}
+
+// SearchCompanies returns companies whose name matches text, by name.
+func (s *RecordService) SearchCompanies(text string) ([]models.Company, error) {
+	out := []models.Company{}
+	q := s.db.Order("name asc")
+	if t := strings.TrimSpace(text); t != "" {
+		q = q.Where("name LIKE ? COLLATE NOCASE", "%"+t+"%")
+	}
+	if err := q.Find(&out).Error; err != nil {
+		return nil, fmt.Errorf("searching companies: %w", err)
+	}
+	return out, nil
+}
+
+// SearchContacts returns contacts whose name or email matches text, by name.
+func (s *RecordService) SearchContacts(text string) ([]models.Contact, error) {
+	out := []models.Contact{}
+	q := s.db.Order("full_name asc")
+	if t := strings.TrimSpace(text); t != "" {
+		like := "%" + t + "%"
+		q = q.Where("full_name LIKE ? COLLATE NOCASE OR email LIKE ? COLLATE NOCASE", like, like)
+	}
+	if err := q.Find(&out).Error; err != nil {
+		return nil, fmt.Errorf("searching contacts: %w", err)
+	}
+	return out, nil
 }

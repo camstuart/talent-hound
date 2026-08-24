@@ -304,7 +304,7 @@ func TestValidationAcceptsTheAwkwardButValid(t *testing.T) {
 	got, err := r.CreateCandidate(models.Candidate{
 		FullName:   unicode,
 		Location:   "Reykjavík 🇮🇸",
-		SourceNote: "combining marks: é",
+		SourceNote: "combining marks: é",
 		Emails:     models.StringList{"  spaced@example.test  ", "   ", ""},
 	})
 	if err != nil {
@@ -313,7 +313,7 @@ func TestValidationAcceptsTheAwkwardButValid(t *testing.T) {
 	if got.FullName != "Zoë  Ólafsdóttir-李" {
 		t.Errorf("full name was mangled: %q", got.FullName)
 	}
-	if got.Location != "Reykjavík 🇮🇸" || got.SourceNote != "combining marks: é" {
+	if got.Location != "Reykjavík 🇮🇸" || got.SourceNote != "combining marks: é" {
 		t.Errorf("unicode content was rewritten: %+v", got)
 	}
 	if len(got.Emails) != 1 || got.Emails[0] != "spaced@example.test" {
@@ -569,5 +569,81 @@ func TestUpdateRejectsUnknownRecords(t *testing.T) {
 	if _, err := r.UpdateRole(models.Role{ID: 9999, Title: "Ghost",
 		Origin: models.RoleOriginRecruiterEntered, LifecycleState: models.RoleOpen}); err == nil {
 		t.Error("UpdateRole accepted an unknown role")
+	}
+}
+
+func TestSearchCandidatesFiltersByTextAndFields(t *testing.T) {
+	gdb := newTestDB(t)
+	s := NewRecordService(gdb)
+	mk := func(name, location, rights, employment string, available models.Date) {
+		t.Helper()
+		_, err := s.CreateCandidate(models.Candidate{
+			FullName: name, Location: location, WorkRights: rights,
+			DesiredEmploymentType: employment, Availability: available,
+		})
+		if err != nil {
+			t.Fatalf("creating %s: %v", name, err)
+		}
+	}
+	mk("Alice Amber", "Sydney", "citizen", "permanent", "2026-09-01")
+	mk("Bob Blue", "Melbourne", "visa", "contract", "2026-12-01")
+	mk("Cara Crimson", "Sydney", "citizen", "contract", "")
+
+	got, err := s.SearchCandidates(CandidateFilter{Text: "sydney"})
+	if err != nil {
+		t.Fatalf("searching: %v", err)
+	}
+	if len(got) != 2 || got[0].FullName != "Alice Amber" || got[1].FullName != "Cara Crimson" {
+		t.Fatalf("text filter wrong: %+v", names(got))
+	}
+
+	got, _ = s.SearchCandidates(CandidateFilter{WorkRights: "citizen", EmploymentType: "contract"})
+	if len(got) != 1 || got[0].FullName != "Cara Crimson" {
+		t.Fatalf("field filters wrong: %+v", names(got))
+	}
+
+	// AvailableBy keeps people available on or before the date; an empty
+	// availability means unknown and is kept.
+	got, _ = s.SearchCandidates(CandidateFilter{AvailableBy: "2026-10-01"})
+	if len(got) != 2 {
+		t.Fatalf("availability filter wrong: %+v", names(got))
+	}
+
+	// No filters returns everyone, by name.
+	got, _ = s.SearchCandidates(CandidateFilter{})
+	if len(got) != 3 {
+		t.Fatalf("unfiltered wrong: %+v", names(got))
+	}
+}
+
+func names(cs []models.Candidate) []string {
+	out := make([]string, len(cs))
+	for i, c := range cs {
+		out[i] = c.FullName
+	}
+	return out
+}
+
+func TestSearchCompaniesAndContactsMatchByName(t *testing.T) {
+	gdb := newTestDB(t)
+	s := NewRecordService(gdb)
+	co, err := s.CreateCompany(models.Company{Name: "Northwind Industries"})
+	if err != nil {
+		t.Fatalf("company: %v", err)
+	}
+	if _, err := s.CreateCompany(models.Company{Name: "Contoso"}); err != nil {
+		t.Fatalf("company: %v", err)
+	}
+	if _, err := s.CreateContact(models.Contact{CompanyID: co.ID, FullName: "Dana Doe", Email: "dana@northwind.test"}); err != nil {
+		t.Fatalf("contact: %v", err)
+	}
+
+	cos, err := s.SearchCompanies("north")
+	if err != nil || len(cos) != 1 || cos[0].Name != "Northwind Industries" {
+		t.Fatalf("company search wrong: %v %+v", err, cos)
+	}
+	people, err := s.SearchContacts("northwind.test")
+	if err != nil || len(people) != 1 || people[0].FullName != "Dana Doe" {
+		t.Fatalf("contact search wrong: %v %+v", err, people)
 	}
 }
