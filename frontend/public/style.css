@@ -51,6 +51,7 @@ h1 {
 /* The window is frameless, so this strip carries the window controls' space,
    the drag handle, and the application-wide menu items. */
 .titlebar {
+    position: relative;
     flex-shrink: 0;
     display: flex;
     align-items: center;
@@ -73,7 +74,13 @@ html[data-os="linux"] .titlebar {
     padding-right: 140px;
 }
 
+/* Centred on the window rather than tucked beside the traffic lights, which is
+   both where macOS puts a window title and the only place it stays balanced
+   against the buttons on the far side. */
 .titlebar-title {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
     font-size: 0.75rem;
     font-weight: 600;
     text-transform: uppercase;

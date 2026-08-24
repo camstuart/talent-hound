@@ -1,0 +1,40 @@
+[     125ms] [WARNING] 
+%c⚠️ Browser Environment Detected %c
+
+%cOnly UI previews are available in the browser. For full functionality, please run the application in desktop mode.
+More information at: https://v3.wails.io/learn/build/#using-a-browser-for-development
+ background: #ffffff; color: #000000; font-weight: bold; padding: 4px 8px; border-radius: 4px; border: 2px solid #000000; background: transparent; color: #ffffff; font-style: italic; font-weight: bold; @ http://localhost:9245/@vite/client:528
+[     136ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:9245/wails/runtime:0
+[     136ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:9245/wails/runtime:0
+[     136ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:9245/wails/runtime:0
+[     136ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:9245/wails/runtime:0
+[     141ms] Error
+    at runtimeCallWithID (http://localhost:9245/node_modules/.vite/deps/@wailsio_runtime.js?v=4d6ce0b0:156:9)
+[     141ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:9245/wails/runtime:0
+[     147ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:9245/favicon.ico:0
+[   31399ms] [WARNING] 
+%c⚠️ Browser Environment Detected %c
+
+%cOnly UI previews are available in the browser. For full functionality, please run the application in desktop mode.
+More information at: https://v3.wails.io/learn/build/#using-a-browser-for-development
+ background: #ffffff; color: #000000; font-weight: bold; padding: 4px 8px; border-radius: 4px; border: 2px solid #000000; background: transparent; color: #ffffff; font-style: italic; font-weight: bold; @ http://localhost:9245/@vite/client:528
+[   31404ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:9245/wails/runtime:0
+[   31404ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:9245/wails/runtime:0
+[   31404ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:9245/wails/runtime:0
+[   31404ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:9245/wails/runtime:0
+[   31411ms] Error
+    at runtimeCallWithID (http://localhost:9245/node_modules/.vite/deps/@wailsio_runtime.js?v=4d6ce0b0:156:9)
+[   31409ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:9245/wails/runtime:0
+[   32708ms] [WARNING] 
+%c⚠️ Browser Environment Detected %c
+
+%cOnly UI previews are available in the browser. For full functionality, please run the application in desktop mode.
+More information at: https://v3.wails.io/learn/build/#using-a-browser-for-development
+ background: #ffffff; color: #000000; font-weight: bold; padding: 4px 8px; border-radius: 4px; border: 2px solid #000000; background: transparent; color: #ffffff; font-style: italic; font-weight: bold; @ http://localhost:9245/@vite/client:528
+[   32711ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:9245/wails/runtime:0
+[   32711ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:9245/wails/runtime:0
+[   32711ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:9245/wails/runtime:0
+[   32711ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:9245/wails/runtime:0
+[   32712ms] Error
+    at runtimeCallWithID (http://localhost:9245/node_modules/.vite/deps/@wailsio_runtime.js?v=4d6ce0b0:156:9)
+[   32712ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:9245/wails/runtime:0
