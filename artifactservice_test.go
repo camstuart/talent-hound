@@ -124,14 +124,15 @@ func TestArtifactCreateThroughTheBase64Boundary(t *testing.T) {
 }
 
 func TestIdenticalBytesCreateTwoArtifacts(t *testing.T) {
-	s := newArtifactService(t)
+	gdb := newTestDB(t)
+	s := NewArtifactService(gdb)
 	data := []byte("the very same bytes")
 
-	first, err := s.create("", "from-email.txt", "Emailed by the candidate", data, "", 0)
+	first, err := s.create("", "from-email.txt", "Emailed by the candidate", data, models.LinkInitiative, anInitiative(t, gdb, "One"))
 	if err != nil {
 		t.Fatalf("create: %v", err)
 	}
-	second, err := s.create("", "from-portal.txt", "Downloaded from the portal", data, "", 0)
+	second, err := s.create("", "from-portal.txt", "Downloaded from the portal", data, models.LinkInitiative, anInitiative(t, gdb, "Two"))
 	if err != nil {
 		t.Fatalf("create: %v", err)
 	}
@@ -213,7 +214,7 @@ func TestArtifactMetadataIsHandledSafely(t *testing.T) {
 	// A path-like filename is provenance, not an instruction: stored verbatim,
 	// never used to open anything.
 	pathLike := "../../etc/passwd"
-	traversal, err := s.create("", pathLike, "", []byte("x"), "", 0)
+	traversal, err := s.create("", pathLike, "", []byte("x traversal"), "", 0)
 	if err != nil {
 		t.Fatalf("create: %v", err)
 	}
@@ -222,7 +223,7 @@ func TestArtifactMetadataIsHandledSafely(t *testing.T) {
 	}
 
 	unicodeName := "履歴書 – Zoë.txt"
-	unicode, err := s.create("", unicodeName, "", []byte("x"), "", 0)
+	unicode, err := s.create("", unicodeName, "", []byte("x unicode"), "", 0)
 	if err != nil {
 		t.Fatalf("create: %v", err)
 	}
@@ -231,10 +232,10 @@ func TestArtifactMetadataIsHandledSafely(t *testing.T) {
 	}
 
 	// No filename at all — pasted text — needs a display name instead.
-	if _, err := s.create("", "", "pasted", []byte("x"), "", 0); err == nil {
+	if _, err := s.create("", "", "pasted", []byte("x unnamed"), "", 0); err == nil {
 		t.Error("an artifact with neither filename nor display name was accepted")
 	}
-	pasted, err := s.create("  Pasted from an email  ", "", "pasted", []byte("x"), "", 0)
+	pasted, err := s.create("  Pasted from an email  ", "", "pasted", []byte("x pasted"), "", 0)
 	if err != nil {
 		t.Fatalf("create: %v", err)
 	}
@@ -242,9 +243,9 @@ func TestArtifactMetadataIsHandledSafely(t *testing.T) {
 		t.Errorf("pasted artifact is %+v", pasted)
 	}
 
-	// Display names are labels: duplicates are fine.
-	for range 2 {
-		if _, err := s.create("Same label", "a.txt", "", []byte("x"), "", 0); err != nil {
+	// Display names are labels: duplicates are fine when the bytes differ.
+	for i := range 2 {
+		if _, err := s.create("Same label", "a.txt", "", []byte{'x', byte('0' + i)}, "", 0); err != nil {
 			t.Fatalf("duplicate display name was refused: %v", err)
 		}
 	}
@@ -503,5 +504,32 @@ func TestArtifactsAreSharedNotOwnedByAnInitiative(t *testing.T) {
 	linked, err := s.ListForTarget(models.LinkCandidate, candidate.ID)
 	if err != nil || len(linked) != 1 {
 		t.Errorf("the candidate's link did not survive: %v, %+v", err, linked)
+	}
+}
+
+func TestDuplicateBytesOnTheSameTargetAreRefused(t *testing.T) {
+	gdb := newTestDB(t)
+	s := NewArtifactService(gdb)
+	initiative := anInitiative(t, gdb, "Dedup")
+	data := []byte("the very same bytes")
+
+	if _, err := s.create("Resume 4.0.pdf", "resume.pdf", "", data, models.LinkInitiative, initiative); err != nil {
+		t.Fatalf("create: %v", err)
+	}
+	_, err := s.create("Resume 4.0 again.pdf", "resume.pdf", "", data, models.LinkInitiative, initiative)
+	if err == nil {
+		t.Fatal("identical bytes were attached to the same target twice")
+	}
+	// The refusal names the artifact already there, so the user can find it.
+	if !strings.Contains(err.Error(), "Resume 4.0.pdf") || !strings.Contains(err.Error(), "already attached") {
+		t.Errorf("refusal does not name the existing artifact: %v", err)
+	}
+
+	// An orphan ingestion is checked against other orphans the same way.
+	if _, err := s.create("Loose copy", "resume.pdf", "", data, "", 0); err != nil {
+		t.Fatalf("orphan create: %v", err)
+	}
+	if _, err := s.create("Loose copy 2", "resume.pdf", "", data, "", 0); err == nil {
+		t.Fatal("identical orphan bytes were ingested twice")
 	}
 }

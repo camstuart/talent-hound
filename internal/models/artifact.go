@@ -28,8 +28,9 @@ func (t LinkTarget) Valid() bool {
 }
 
 // Artifact is one ingestion occurrence: the original bytes plus the provenance
-// that makes them evidence. Two ingestions of identical bytes are two
-// artifacts, deliberately — filename, source, and capture time differ.
+// that makes them evidence. Two ingestions of identical bytes onto different
+// records are two artifacts, deliberately — filename, source, and capture time
+// differ. The same bytes onto the same record are refused as a repeat upload.
 //
 // Everything but DisplayName is immutable, enforced by there being no code path
 // that writes it after creation.

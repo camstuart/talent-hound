@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"net/http"
 	"path"
@@ -69,6 +70,9 @@ func (s *ArtifactService) create(
 	if int64(len(data)) > models.MaxArtifactBytes {
 		return nil, fmt.Errorf("artifact is %d bytes, over the %d byte limit", len(data), models.MaxArtifactBytes)
 	}
+	if data == nil {
+		data = []byte{}
+	}
 
 	filename = strings.TrimSpace(filename)
 	displayName = strings.TrimSpace(displayName)
@@ -90,6 +94,26 @@ func (s *ArtifactService) create(
 		// Set here, never by the caller: capture time is provenance.
 		CapturedAt: time.Now().UTC(),
 		Bytes:      data,
+	}
+
+	// The same bytes on the same target is a repeat upload, not new evidence.
+	// Identical bytes on a different target keep their own provenance.
+	var dup models.Artifact
+	q := s.db.Select("display_name").Where("sha256 = ?", artifact.SHA256)
+	if targetType == "" {
+		q = q.Where("id NOT IN (?)", s.db.Model(&models.ArtifactLink{}).Select("artifact_id"))
+	} else {
+		q = q.Where("id IN (?)", s.db.Model(&models.ArtifactLink{}).Select("artifact_id").
+			Where("target_type = ? AND target_id = ?", targetType, targetID))
+	}
+	if err := q.First(&dup).Error; err == nil {
+		where := "here"
+		if targetType == "" {
+			where = "in the library"
+		}
+		return nil, fmt.Errorf("this file is already attached %s as %q — the content is identical", where, dup.DisplayName)
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, fmt.Errorf("checking for a duplicate artifact: %w", err)
 	}
 
 	// The artifact and its first link commit together or not at all: a failed

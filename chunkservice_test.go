@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"path/filepath"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -58,9 +60,14 @@ func newIndexEnvAt(t *testing.T, path string) *indexEnv {
 // extracted ingests a text artifact, links it to the initiative, and records it
 // as already extracted — this suite is about what happens to Markdown, not
 // about producing it.
+var ingestCounter atomic.Int64
+
 func (e *indexEnv) extracted(t *testing.T, name, markdown string) *models.Artifact {
 	t.Helper()
-	a, err := e.artifacts.create(name, name+".md", "test", []byte(markdown),
+	// The raw bytes get a unique tail so identical markdown fixtures do not
+	// trip the same-target duplicate refusal; the markdown below is verbatim.
+	raw := fmt.Sprintf("%s\n<!-- ingest %d -->", markdown, ingestCounter.Add(1))
+	a, err := e.artifacts.create(name, name+".md", "test", []byte(raw),
 		models.LinkInitiative, e.initiative)
 	if err != nil {
 		t.Fatalf("ingesting %s: %v", name, err)

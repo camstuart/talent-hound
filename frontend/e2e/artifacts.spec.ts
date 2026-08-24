@@ -66,22 +66,25 @@ test("ingests pasted text as an artifact with no filename", async ({ page }) => 
   await expect(artifacts.getByText(/text\/plain/)).toBeVisible();
 });
 
-test("two uploads of identical bytes are two artifacts", async ({ page }) => {
+test("a second upload of identical bytes to the same place is refused", async ({ page }) => {
   const workspace = `Duplicates ${stamp}`;
-  const bytes = Buffer.from("identical bytes, two ingestions\n");
+  const bytes = Buffer.from(`identical bytes ${stamp}, two ingestions\n`);
   await openWorkspace(page, workspace);
 
   const artifacts = page.getByRole("region", { name: "Artifacts", exact: true });
-  for (const suffix of ["a", "b"]) {
-    await page.getByLabel("Attach a file").setInputFiles({
-      name: `same-${stamp}-${suffix}.txt`,
-      mimeType: "text/plain",
-      buffer: bytes,
-    });
-    await expect(artifacts.getByText(`same-${stamp}-${suffix}.txt`)).toBeVisible();
-  }
-
-  // Neither replaced the other: both are listed, with their own provenance.
+  await page.getByLabel("Attach a file").setInputFiles({
+    name: `same-${stamp}-a.txt`,
+    mimeType: "text/plain",
+    buffer: bytes,
+  });
   await expect(artifacts.getByText(`same-${stamp}-a.txt`)).toBeVisible();
-  await expect(artifacts.getByText(`same-${stamp}-b.txt`)).toBeVisible();
+
+  await page.getByLabel("Attach a file").setInputFiles({
+    name: `same-${stamp}-b.txt`,
+    mimeType: "text/plain",
+    buffer: bytes,
+  });
+  // The refusal names the artifact already there; no second row appears.
+  await expect(artifacts.getByRole("alert")).toContainText(`already attached here as "same-${stamp}-a.txt"`);
+  await expect(artifacts.getByText(`same-${stamp}-b.txt`)).not.toBeVisible();
 });
