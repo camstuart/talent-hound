@@ -1,9 +1,11 @@
 import { createAction } from "../act";
-import { createEffect, createSignal, For, Show } from "solid-js";
-import { SetupService } from "../../bindings/camstuart/talent-hound";
+import { createEffect, createSignal, For, onCleanup, onMount, Show } from "solid-js";
+import { ModelService, SetupService } from "../../bindings/camstuart/talent-hound";
 import type { SetupStatus } from "../../bindings/camstuart/talent-hound";
 import { Scope } from "../../bindings/camstuart/talent-hound/internal/setup";
 import { bumpWorkspace, workspaceRevision } from "../workspaceRevision";
+import ModelPicker, { gb } from "./ModelPicker";
+import type { PickerOption } from "./ModelPicker";
 
 // Setup is ordered, and each step blocks the ones after it. The position is not
 // stored anywhere: the backend recomputes it, so cancelling is simply not
@@ -19,20 +21,23 @@ const STEP_TITLES: Record<string, string> = {
   first_initiative: "Create the first initiative",
 };
 
-const gb = (bytes: number) => `${(bytes / 1024 / 1024 / 1024).toFixed(1)} GB`;
-
 export default function FirstRunWizard() {
   const [status, setStatus] = createSignal<SetupStatus | null>(null);
+  const [options, setOptions] = createSignal<PickerOption[]>([]);
+  const [freeDisk, setFreeDisk] = createSignal(0);
   const [folder, setFolder] = createSignal("");
   const [terms, setTerms] = createSignal<string[]>([]);
   const { act, reloader, error, busy } = createAction();
 
   const reload = reloader(async (isCurrent) => {
-    const [state, terms] = await Promise.all([
+    const [state, terms, opts] = await Promise.all([
       SetupService.State(),
       SetupService.Acknowledgements(),
+      ModelService.Options(),
     ]);
     if (!isCurrent()) return;
+    setOptions((opts?.models ?? []) as PickerOption[]);
+    setFreeDisk(opts?.freeDiskBytes ?? 0);
     const st = state as SetupStatus | null;
     setStatus(st);
     setTerms(terms ?? []);
@@ -52,6 +57,14 @@ export default function FirstRunWizard() {
     });
 
   const current = () => status()?.next ?? "";
+  const pulling = () => (status()?.models ?? []).some((m) => m.state === "pulling");
+  // While a download runs, keep asking so the step unlocks when it finishes.
+  onMount(() => {
+    const poll = setInterval(() => {
+      if (pulling()) void reload();
+    }, 3000);
+    onCleanup(() => clearInterval(poll));
+  });
 
   return (
     <section class="record-section" aria-label="Setup">
@@ -158,6 +171,9 @@ export default function FirstRunWizard() {
               </button>
             </div>
 
+            <Show when={freeDisk() > 0}>
+              <p class="muted">{gb(freeDisk())} free on this disk.</p>
+            </Show>
             <ul class="record-list" aria-label="Required models">
               <For each={st().models}>
                 {(model) => (
@@ -168,17 +184,25 @@ export default function FirstRunWizard() {
                     <span class="muted">
                       {gb(model.approxBytes)} — {model.installed ? "installed" : model.state || "missing"}
                     </span>
+                    <ModelPicker
+                      role={model.role}
+                      options={options().filter((o) => o.role === model.role)}
+                      current={model.model}
+                      freeDiskBytes={freeDisk()}
+                      busy={busy() || pulling()}
+                      onAssign={(name) => run(() => ModelService.Assign({ role: model.role, endpoint: "", model: name, digest: "", params: "" }))}
+                    />
                     <Show when={!model.installed}>
                       <button
                         aria-label={`Download the ${model.role} model`}
-                        disabled={busy()}
+                        disabled={busy() || pulling()}
                         onClick={() => run(() => SetupService.PullModel(model.role))}
                       >
                         Download
                       </button>
                       <button
                         aria-label={`Skip the ${model.role} model for now`}
-                        disabled={busy()}
+                        disabled={busy() || pulling()}
                         onClick={() => run(() => SetupService.DeclineModel(model.role))}
                       >
                         Not now

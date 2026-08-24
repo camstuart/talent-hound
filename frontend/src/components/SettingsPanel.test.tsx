@@ -12,6 +12,7 @@ const { state, modelMocks, credentialMocks } = vi.hoisted(() => {
     statuses: [] as Record<string, unknown>[],
     credentials: {} as Record<string, boolean>,
     assignError: "",
+    options: { models: [] as Record<string, unknown>[], freeDiskBytes: 0 } as Record<string, unknown>,
   };
   return {
     state,
@@ -24,6 +25,7 @@ const { state, modelMocks, credentialMocks } = vi.hoisted(() => {
       }),
       Pull: vi.fn(async () => ({ id: 4, kind: "pull", state: "queued" })),
       Decline: vi.fn(async () => undefined),
+      Options: vi.fn(async () => state.options),
     },
     credentialMocks: {
       List: vi.fn(async () => state.credentials),
@@ -62,6 +64,15 @@ beforeEach(() => {
     { role: "classify", model: "generate-model", inherited: true, state: "ready" },
     { role: "generate", model: "generate-model", inherited: false, state: "ready" },
   ];
+  state.options = {
+    models: [
+      { role: "embed", model: "nomic-embed-text", purpose: "Turns documents into searchable evidence", power: "recommended", approxBytes: 274 * 1024 ** 2, installed: true },
+      { role: "classify", model: "qwen2.5:7b-instruct", purpose: "Reads profiles", power: "recommended", approxBytes: 4.7 * 1024 ** 3, installed: false },
+      { role: "generate", model: "qwen2.5:7b-instruct", purpose: "Writes things", power: "recommended", approxBytes: 4.7 * 1024 ** 3, installed: false },
+      { role: "generate", model: "qwen3:8b", purpose: "Writes things", power: "most capable", approxBytes: 5.2 * 1024 ** 3, installed: false },
+    ],
+    freeDiskBytes: 40 * 1024 ** 3,
+  };
   state.credentials = { exa: false, cloud: false };
   state.assignError = "";
   vi.clearAllMocks();
@@ -95,10 +106,11 @@ describe("SettingsPanel", () => {
     await screen.findByText(/inherited from generate/);
   });
 
-  it("assigns a model to a role", async () => {
+  it("assigns a model chosen from the curated list", async () => {
     render(() => <SettingsPanel />);
-    const input = await screen.findByLabelText("Model for embed");
-    fireEvent.input(input, { target: { value: "nomic-embed-text" } });
+    const select = (await screen.findByLabelText("Model for embed")) as HTMLSelectElement;
+    await waitFor(() => expect(select.options.length).toBeGreaterThan(2));
+    fireEvent.change(select, { target: { value: "nomic-embed-text" } });
     fireEvent.click(screen.getByLabelText("Assign a model to embed"));
     await waitFor(() =>
       expect(modelMocks.Assign).toHaveBeenCalledWith({
@@ -109,6 +121,32 @@ describe("SettingsPanel", () => {
         params: "",
       }),
     );
+  });
+
+
+  it("shows how much disk space is free", async () => {
+    render(() => <SettingsPanel />);
+    await screen.findByText(/40\.0 GB free on this disk/);
+  });
+
+  it("marks already-downloaded models in the list", async () => {
+    render(() => <SettingsPanel />);
+    const select = (await screen.findByLabelText("Model for embed")) as HTMLSelectElement;
+    await waitFor(() => expect(select.options.length).toBeGreaterThan(2));
+    const label = Array.from(select.options).find((o) => o.value === "nomic-embed-text")?.text ?? "";
+    expect(label).toContain("installed");
+  });
+
+  it("disables every picker while a download is in progress", async () => {
+    state.statuses = [
+      { role: "embed", model: "embed-model", inherited: false, state: "pulling" },
+      { role: "classify", model: "generate-model", inherited: true, state: "ready" },
+      { role: "generate", model: "generate-model", inherited: false, state: "ready" },
+    ];
+    render(() => <SettingsPanel />);
+    await screen.findByText(/downloading now/);
+    expect(screen.getByLabelText("Model for generate")).toBeDisabled();
+    expect(screen.getByLabelText("Assign a model to generate")).toBeDisabled();
   });
 
   it("offers a download only when the model is missing, and declining is its own action", async () => {

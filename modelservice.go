@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"os"
 	"slices"
 	"strings"
 	"sync"
@@ -15,6 +16,7 @@ import (
 
 	"camstuart/talent-hound/internal/models"
 	"camstuart/talent-hound/internal/platform"
+	"camstuart/talent-hound/internal/setup"
 )
 
 // ModelService is the registry: which model answers for each role, at which
@@ -246,6 +248,7 @@ func (s *ModelService) Check() ([]Status, error) {
 	// an availability check must never be a reason candidate text leaves the
 	// database.
 	installed, listErr := s.ollama.Tags(ctx)
+	pulling := s.activePulls()
 
 	out := make([]Status, 0, len(registry))
 	for _, res := range registry {
@@ -257,6 +260,8 @@ func (s *ModelService) Check() ([]Status, error) {
 		}
 		status.Model = res.Assignment.Model
 		switch {
+		case pulling[res.Role]:
+			status.State = models.ModelPulling
 		case listErr != nil:
 			status.State = endpointState(listErr)
 		case platform.HasModel(installed, res.Assignment.Model):
@@ -406,4 +411,72 @@ func checkLocalEndpoint(endpoint string) error {
 		return fmt.Errorf("a required model role must use the local endpoint, got %q", endpoint)
 	}
 	return nil
+}
+
+// ModelOption is one catalog entry as the picker shows it: the catalog fact
+// plus whether the endpoint already holds the model.
+type ModelOption struct {
+	Role        models.ModelRole `json:"role"`
+	Model       string           `json:"model"`
+	Purpose     string           `json:"purpose"`
+	Power       string           `json:"power"`
+	ApproxBytes int64            `json:"approxBytes"`
+	Installed   bool             `json:"installed"`
+}
+
+// OptionsView is everything the model picker needs in one answer: the catalog
+// with installed flags, and how much disk there is for a download to land on.
+type OptionsView struct {
+	Models        []ModelOption `json:"models"`
+	FreeDiskBytes int64         `json:"freeDiskBytes"`
+}
+
+// Options lists the curated models a recruiter may choose from. An endpoint
+// that cannot be asked leaves every model un-flagged rather than failing the
+// whole answer: the picker is still usable, only the "already available"
+// highlights go missing.
+func (s *ModelService) Options() (*OptionsView, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), checkTimeout)
+	defer cancel()
+	installed, listErr := s.ollama.Tags(ctx)
+
+	view := &OptionsView{Models: make([]ModelOption, 0, len(setup.Catalog))}
+	for _, c := range setup.Catalog {
+		view.Models = append(view.Models, ModelOption{
+			Role:        c.Role,
+			Model:       c.Model,
+			Purpose:     c.Purpose,
+			Power:       c.Power,
+			ApproxBytes: c.ApproxBytes,
+			Installed:   listErr == nil && platform.HasModel(installed, c.Model),
+		})
+	}
+	// Downloads land on the user's own volume wherever Ollama keeps its store,
+	// so that volume's free space is the one that decides whether a download
+	// fits. A home folder that cannot be asked leaves the count at zero, which
+	// the picker shows as unknown rather than as room to spare.
+	if home, err := os.UserHomeDir(); err == nil {
+		if free, err := platform.FreeDiskBytes(home); err == nil {
+			view.FreeDiskBytes = free
+		}
+	}
+	return view, nil
+}
+
+// activePulls reports the roles whose model download is underway right now,
+// read from the job queue so any window of any session sees the same answer.
+func (s *ModelService) activePulls() map[models.ModelRole]bool {
+	var jobs []models.Job
+	if err := s.db.Where("kind = ? AND state IN ?", "pull",
+		[]models.JobState{models.JobQueued, models.JobRunning}).Find(&jobs).Error; err != nil {
+		return nil
+	}
+	out := map[models.ModelRole]bool{}
+	for _, job := range jobs {
+		var p pullParams
+		if json.Unmarshal([]byte(job.Params), &p) == nil {
+			out[p.Role] = true
+		}
+	}
+	return out
 }

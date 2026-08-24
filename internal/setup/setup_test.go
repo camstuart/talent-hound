@@ -184,3 +184,29 @@ func TestTheSettingsFileIsNotInsideTheDataFolder(t *testing.T) {
 		t.Fatalf("the settings file is not in the config folder: %v", err)
 	}
 }
+
+func TestCatalogCoversEveryRoleAndTheRequiredSet(t *testing.T) {
+	byRole := map[models.ModelRole][]CatalogModel{}
+	for _, c := range Catalog {
+		if c.Model == "" || c.Purpose == "" || c.Power == "" || c.ApproxBytes <= 0 {
+			t.Fatalf("catalog entry %+v is missing a field the picker shows", c)
+		}
+		byRole[c.Role] = append(byRole[c.Role], c)
+	}
+	for _, role := range models.ModelRoles {
+		if len(byRole[role]) == 0 {
+			t.Fatalf("no catalog entries for role %s", role)
+		}
+	}
+	for _, req := range Required {
+		found := false
+		for _, c := range byRole[req.Role] {
+			if c.Model == req.Model && c.ApproxBytes == req.ApproxBytes {
+				found = true
+			}
+		}
+		if !found {
+			t.Fatalf("required model %s for %s is not in the catalog with the same size", req.Model, req.Role)
+		}
+	}
+}

@@ -1,8 +1,10 @@
-import { createSignal, For, onMount, Show } from "solid-js";
+import { createSignal, For, onCleanup, onMount, Show } from "solid-js";
 import { CredentialService, ModelService } from "../../bindings/camstuart/talent-hound";
 import { ModelRole } from "../../bindings/camstuart/talent-hound/internal/models";
 import type { Status } from "../../bindings/camstuart/talent-hound";
 import FirstRunWizard from "./FirstRunWizard";
+import ModelPicker, { gb } from "./ModelPicker";
+import type { PickerOption } from "./ModelPicker";
 import DiagnosticsPanel from "./DiagnosticsPanel";
 
 // What each availability state means, in the recruiter's terms. They are
@@ -12,6 +14,7 @@ const STATE_LABELS: Record<string, string> = {
   unassigned: "no model chosen",
   endpoint_unavailable: "Ollama is not running",
   model_missing: "not installed",
+  pulling: "downloading now",
   pull_declined: "download declined",
   pull_failed: "download failed",
   timeout: "no answer in time",
@@ -39,8 +42,9 @@ export default function SettingsPanel() {
   const credentialStore = os === "windows" ? "Windows Credential Manager" : os === "darwin" ? "macOS Keychain" : "";
   const osName = os === "darwin" ? "macOS" : os === "linux" ? "Linux" : os === "windows" ? "Windows" : "this platform";
   const [statuses, setStatuses] = createSignal<Status[]>([]);
+  const [options, setOptions] = createSignal<PickerOption[]>([]);
+  const [freeDisk, setFreeDisk] = createSignal(0);
   const [assignments, setAssignments] = createSignal<Record<string, { model: string; revision: number; validation: string }>>({});
-  const [drafts, setDrafts] = createSignal<Record<string, string>>({});
   const [inherited, setInherited] = createSignal<Record<string, boolean>>({});
   const [credentials, setCredentials] = createSignal<Record<string, boolean | undefined>>({});
   const [keys, setKeys] = createSignal<Record<string, string>>({});
@@ -73,20 +77,27 @@ export default function SettingsPanel() {
     setAssignments(assigned);
     setInherited(inheritedRoles);
     setStatuses(((await ModelService.Check()) ?? []) as Status[]);
+    const opts = await ModelService.Options();
+    setOptions((opts?.models ?? []) as PickerOption[]);
+    setFreeDisk(opts?.freeDiskBytes ?? 0);
     if (credentialStore) setCredentials((await CredentialService.List()) ?? {});
   };
   onMount(() => void act(reload));
+  // A download underway in any window shows up in the statuses; while one is,
+  // keep asking so the picker unlocks the moment it finishes.
+  onMount(() => {
+    const poll = setInterval(() => {
+      if (pulling()) void reload();
+    }, 3000);
+    onCleanup(() => clearInterval(poll));
+  });
 
   const statusOf = (role: ModelRole) => statuses().find((s) => s.role === role);
+  const pulling = () => statuses().some((s) => s.state === "pulling");
   const label = (state: string | undefined) => (state ? (STATE_LABELS[state] ?? state) : "unknown");
 
-  const assign = (role: ModelRole) =>
-    act(async () => {
-      const model = (drafts()[role] ?? "").trim();
-      const assigned = await ModelService.Assign({ role, endpoint: "", model, digest: "", params: "" });
-      setDrafts((d) => ({ ...d, [role]: "" }));
-      return assigned;
-    });
+  const assign = (role: ModelRole, model: string) =>
+    act(() => ModelService.Assign({ role, endpoint: "", model: model.trim(), digest: "", params: "" }));
 
   const storeKey = (provider: string) =>
     act(async () => {
@@ -101,6 +112,9 @@ export default function SettingsPanel() {
       <section class="record-section" aria-label="Model roles">
         <h3>Model roles</h3>
         <p class="muted">All three roles run locally. Candidate content is never sent anywhere else.</p>
+        <Show when={freeDisk() > 0}>
+          <p class="muted">{gb(freeDisk())} free on this disk.</p>
+        </Show>
         <ul class="record-list">
           <For each={Object.values(ModelRole)}>
             {(role) => (
@@ -118,15 +132,14 @@ export default function SettingsPanel() {
                   </span>
                 </span>
                 <span class="muted setting-blurb">{ROLE_BLURBS[role]}</span>
-                <input
-                  aria-label={`Model for ${role}`}
-                  placeholder="Model name, e.g. qwen3:8b"
-                  value={drafts()[role] ?? ""}
-                  onInput={(e) => setDrafts((d) => ({ ...d, [role]: e.currentTarget.value }))}
+                <ModelPicker
+                  role={role}
+                  options={options().filter((o) => o.role === role)}
+                  current={assignments()[role]?.model ?? ""}
+                  freeDiskBytes={freeDisk()}
+                  busy={pulling()}
+                  onAssign={(model) => assign(role, model)}
                 />
-                <button aria-label={`Assign a model to ${role}`} onClick={() => assign(role)}>
-                  Assign
-                </button>
                 <Show when={statusOf(role)?.state === "model_missing" || statusOf(role)?.state === "pull_failed"}>
                   <button aria-label={`Download the ${role} model`} onClick={() => act(() => ModelService.Pull(role))}>
                     Download

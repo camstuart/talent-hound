@@ -16,6 +16,7 @@ import (
 	"camstuart/talent-hound/internal/db"
 	"camstuart/talent-hound/internal/models"
 	"camstuart/talent-hound/internal/platform"
+	"camstuart/talent-hound/internal/setup"
 )
 
 // Every fixture here is invented. No real candidate information and no real
@@ -502,5 +503,66 @@ func TestPullNeedsAnAssignedModel(t *testing.T) {
 	e := newModelEnv(t)
 	if _, err := e.models.Pull(models.RoleEmbed); err == nil {
 		t.Fatal("a role with no assignment was pulled")
+	}
+}
+
+func TestOptionsFlagInstalledModelsAndReportDiskSpace(t *testing.T) {
+	env := newModelEnv(t, "nomic-embed-text:latest")
+	view, err := env.models.Options()
+	if err != nil {
+		t.Fatalf("options: %v", err)
+	}
+	if view.FreeDiskBytes <= 0 {
+		t.Fatalf("free disk bytes should be positive, got %d", view.FreeDiskBytes)
+	}
+	if len(view.Models) != len(setup.Catalog) {
+		t.Fatalf("options should carry the whole catalog: got %d, want %d", len(view.Models), len(setup.Catalog))
+	}
+	sawInstalled := false
+	for _, m := range view.Models {
+		if m.Model == "nomic-embed-text" && !m.Installed {
+			t.Fatalf("nomic-embed-text is installed at the endpoint and should be flagged")
+		}
+		if m.Model != "nomic-embed-text" && m.Installed {
+			t.Fatalf("%s is not installed and should not be flagged", m.Model)
+		}
+		sawInstalled = sawInstalled || m.Installed
+	}
+	if !sawInstalled {
+		t.Fatal("the installed model never appeared in the options")
+	}
+}
+
+func TestOptionsStillAnswerWhenTheEndpointIsDown(t *testing.T) {
+	env := newModelEnv(t)
+	env.fake.server.Close()
+	view, err := env.models.Options()
+	if err != nil {
+		t.Fatalf("options with a dead endpoint: %v", err)
+	}
+	for _, m := range view.Models {
+		if m.Installed {
+			t.Fatalf("%s cannot be known installed with the endpoint down", m.Model)
+		}
+	}
+}
+
+func TestCheckSaysPullingWhileADownloadJobIsActive(t *testing.T) {
+	env := newModelEnv(t)
+	if _, err := env.models.Assign(AssignInput{Role: models.RoleGenerate, Model: "big-model"}); err != nil {
+		t.Fatalf("assign: %v", err)
+	}
+	job := models.Job{Kind: "pull", State: models.JobQueued, Params: `{"role":"generate","model":"big-model"}`}
+	if err := env.db.Create(&job).Error; err != nil {
+		t.Fatalf("staging a pull job: %v", err)
+	}
+	statuses, err := env.models.Check()
+	if err != nil {
+		t.Fatalf("check: %v", err)
+	}
+	for _, st := range statuses {
+		if st.Role == models.RoleGenerate && st.State != models.ModelPulling {
+			t.Fatalf("generate is downloading and should say so, got %q", st.State)
+		}
 	}
 }

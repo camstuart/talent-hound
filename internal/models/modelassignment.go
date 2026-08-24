@@ -91,6 +91,8 @@ const (
 	ModelPullDeclined = "pull_declined"
 	// ModelPullFailed is a pull that was attempted and did not finish.
 	ModelPullFailed = "pull_failed"
+	// ModelPulling is a download underway right now.
+	ModelPulling = "pulling"
 	// ModelTimeout is an endpoint that accepted the connection and went quiet.
 	ModelTimeout = "timeout"
 	// ModelMalformed is an answer that was not the shape the contract says.

@@ -3,10 +3,21 @@ import { render, screen, fireEvent, waitFor } from "@solidjs/testing-library";
 import FirstRunWizard from "./FirstRunWizard";
 
 // The Go backend is not running: bindings are mocked. Every fixture is invented.
-const { state, setupMocks } = vi.hoisted(() => {
+const { state, setupMocks, modelMocks } = vi.hoisted(() => {
   const state = { status: null as Record<string, unknown> | null, chooseError: "" };
   return {
     state,
+    modelMocks: {
+      Options: vi.fn(async () => ({
+        models: [
+          { role: "embed", model: "nomic-embed-text", purpose: "Turns documents into evidence", power: "recommended", approxBytes: 274 * 1024 ** 2, installed: true },
+          { role: "generate", model: "qwen2.5:7b-instruct", purpose: "Writes things", power: "recommended", approxBytes: 4.7 * 1024 ** 3, installed: false },
+          { role: "generate", model: "qwen3:8b", purpose: "Writes things", power: "most capable", approxBytes: 5.2 * 1024 ** 3, installed: false },
+        ],
+        freeDiskBytes: 40 * 1024 ** 3,
+      })),
+      Assign: vi.fn(async (input: Record<string, unknown>) => ({ id: 1, revision: 1, ...input })),
+    },
     setupMocks: {
       State: vi.fn(async () => state.status),
       Acknowledgements: vi.fn(async () => ["I have the authority to hold this data."]),
@@ -22,7 +33,7 @@ const { state, setupMocks } = vi.hoisted(() => {
   };
 });
 
-vi.mock("../../bindings/camstuart/talent-hound", () => ({ SetupService: setupMocks }));
+vi.mock("../../bindings/camstuart/talent-hound", () => ({ SetupService: setupMocks, ModelService: modelMocks }));
 
 const ORDER = [
   "data_folder",
@@ -107,6 +118,27 @@ describe("FirstRunWizard", () => {
     await waitFor(() => expect(setupMocks.DeclineModel).toHaveBeenCalledWith("generate"));
     await clickWhenReady("Download the generate model");
     await waitFor(() => expect(setupMocks.PullModel).toHaveBeenCalledWith("generate"));
+  });
+
+  it("offers a curated model choice with the free disk space shown", async () => {
+    render(() => <FirstRunWizard />);
+    await screen.findByText(/40\.0 GB free on this disk/);
+    const select = (await screen.findByLabelText("Model for generate")) as HTMLSelectElement;
+    await waitFor(() => expect(select.options.length).toBeGreaterThan(2));
+    fireEvent.change(select, { target: { value: "qwen3:8b" } });
+    fireEvent.click(screen.getByLabelText("Assign a model to generate"));
+    await waitFor(() =>
+      expect(modelMocks.Assign).toHaveBeenCalledWith({ role: "generate", endpoint: "", model: "qwen3:8b", digest: "", params: "" }),
+    );
+  });
+
+  it("locks the model choices while a download runs", async () => {
+    state.status = aStatus("models", {
+      models: [{ role: "generate", model: "qwen2.5:7b-instruct", approxBytes: 4700 * 1024 * 1024, installed: false, state: "pulling" }],
+    });
+    render(() => <FirstRunWizard />);
+    const select = (await screen.findByLabelText("Model for generate")) as HTMLSelectElement;
+    expect(select).toBeDisabled();
   });
 
   it("says why real data is blocked, and does not switch scope on its own", async () => {

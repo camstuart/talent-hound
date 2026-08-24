@@ -203,3 +203,28 @@ func Save(dir string, s Settings) error {
 	}
 	return nil
 }
+
+// CatalogModel is one choice the model picker offers: what it is for, how
+// capable it is in the recruiter's terms, and what downloading it costs.
+type CatalogModel struct {
+	Role        models.ModelRole `json:"role"`
+	Model       string           `json:"model"`
+	Purpose     string           `json:"purpose"`
+	Power       string           `json:"power"`
+	ApproxBytes int64            `json:"approxBytes"`
+}
+
+// Catalog is every model the picker offers, a few per role. Sizes are
+// approximate for the same reason Required's are: the point is telling the
+// recruiter what a download costs before it starts, not accounting for it
+// afterwards. Every Required entry appears here so the recommended set is
+// always choosable.
+var Catalog = []CatalogModel{
+	{Role: models.RoleEmbed, Model: "all-minilm", Purpose: "Turns documents into searchable evidence", Power: "fastest, smallest", ApproxBytes: 46 << 20},
+	{Role: models.RoleEmbed, Model: "nomic-embed-text", Purpose: "Turns documents into searchable evidence", Power: "recommended", ApproxBytes: 274 << 20},
+	{Role: models.RoleClassify, Model: "qwen2.5:3b-instruct", Purpose: "Reads profiles and flags prohibited criteria", Power: "fastest, less thorough", ApproxBytes: 1900 << 20},
+	{Role: models.RoleClassify, Model: "qwen2.5:7b-instruct", Purpose: "Reads profiles and flags prohibited criteria", Power: "recommended", ApproxBytes: 4700 << 20},
+	{Role: models.RoleGenerate, Model: "llama3.2:3b", Purpose: "Writes assessments, summaries, drafts, and chat", Power: "fastest, simpler writing", ApproxBytes: 2000 << 20},
+	{Role: models.RoleGenerate, Model: "qwen2.5:7b-instruct", Purpose: "Writes assessments, summaries, drafts, and chat", Power: "recommended", ApproxBytes: 4700 << 20},
+	{Role: models.RoleGenerate, Model: "qwen3:8b", Purpose: "Writes assessments, summaries, drafts, and chat", Power: "most capable, slowest", ApproxBytes: 5200 << 20},
+}
