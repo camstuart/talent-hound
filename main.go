@@ -4,6 +4,7 @@ package main
 
 import (
 	"camstuart/talent-hound/internal/setup"
+	"context"
 	"embed"
 	"fmt"
 	"log"
@@ -87,9 +88,10 @@ func main() {
 	// Extraction stages temporary plaintext beside the database, because that
 	// is the folder the PRD says is encrypted.
 	extraction := NewExtractService(gdb, jobs, filepath.Dir(dbPath))
-	// One Ollama client for the registry and for embedding: they talk to the
-	// same local endpoint, and the registry is what says which model answers.
-	ollama := platform.NewOllama()
+	// One Ollama client for everything. Resolution prefers an endpoint that is
+	// already answering; only when none is does it launch the bundled copy,
+	// and only a copy launched here is stopped on exit.
+	ollama, stopOllama := platform.ResolveOllama(context.Background())
 	registry := NewModelService(gdb, jobs, ollama)
 	records := NewRecordService(gdb)
 	classify := NewClassifyService(gdb, registry, ollama)
@@ -183,6 +185,9 @@ func main() {
 
 	// Run the application. This blocks until the application has been exited.
 	err = app.Run()
+
+	// The managed Ollama (if one was launched) must not outlive the window.
+	stopOllama()
 
 	// If an error occurred while running the application, log it and exit.
 	if err != nil {
