@@ -175,6 +175,67 @@ const detailFields = (kind: CrmKind): FieldSpec[] => {
   }
 };
 
+const CREATE_LABELS: Record<CrmKind, string> = {
+  candidate: "Add candidate",
+  company: "Add company",
+  contact: "Add contact",
+  role: "Add role",
+};
+
+const createRecord = (type: CrmKind, v: Record<string, string>) => {
+  switch (type) {
+    case "candidate":
+      return RecordService.CreateCandidate({
+        fullName: v.fullName,
+        preferredName: v.preferredName,
+        emails: list(v.emails),
+        phones: list(v.phones),
+        location: v.location,
+        workRights: v.workRights,
+        availability: v.availability,
+        desiredEmploymentType: v.desiredEmploymentType,
+        desiredWorkArrangement: v.desiredWorkArrangement,
+        compensation: compensation(v),
+        sourceNote: v.sourceNote,
+        lastConfirmed: v.lastConfirmed,
+      } as unknown as Candidate);
+    case "company":
+      return RecordService.CreateCompany({
+        name: v.name,
+        website: v.website,
+        location: v.location,
+        source: v.source,
+      } as unknown as Company);
+    case "contact":
+      return RecordService.CreateContact({
+        companyId: v.companyId ? Number(v.companyId) : 0,
+        fullName: v.fullName,
+        title: v.title,
+        email: v.email,
+        phone: v.phone,
+        source: v.source,
+      } as unknown as Contact);
+    case "role":
+      return RecordService.CreateRole({
+        title: v.title,
+        companyName: v.companyName,
+        companyId: v.companyId ? Number(v.companyId) : null,
+        location: v.location,
+        workArrangement: v.workArrangement,
+        employmentType: v.employmentType,
+        compensation: compensation(v),
+        publishedOn: v.publishedOn,
+        closingOn: v.closingOn,
+        retrievedOn: v.retrievedOn,
+        sourceId: v.sourceId,
+        canonicalUrl: v.canonicalUrl,
+        source: v.source,
+        origin: v.origin,
+        lifecycleState: v.lifecycleState,
+      } as unknown as Role);
+  }
+};
+
 const getRecord = async (type: CrmKind, id: number) => {
   switch (type) {
     case "candidate":
@@ -556,6 +617,8 @@ export default function CrmPanel() {
   const [people, setPeople] = createSignal<PersonHit[] | null>(null);
   const [talentQuery, setTalentQuery] = createSignal("");
   const [list, setList] = createSignal<Row[]>([]);
+  const [creating, setCreating] = createSignal(false);
+  const [companies, setCompanies] = createSignal<Company[]>([]);
   // The backend's own words, verbatim: it knows rules the UI does not — a
   // rejected search must land in error() and never throw through render.
   const { act, reloader, error } = createAction();
@@ -572,11 +635,38 @@ export default function CrmPanel() {
     void reload();
   });
 
+  onMount(() => {
+    void RecordService.ListCompanies().then((cs) => setCompanies((cs ?? []) as Company[]));
+  });
+
   const runTalent = (e: Event) => {
     e.preventDefault();
     void act(async () => {
       setPeople(((await SearchService.People(talentQuery(), 20)) ?? []) as PersonHit[]);
     });
+  };
+
+  const companyOptions = () => [
+    { value: "", label: "— none —" },
+    ...companies().map((c) => ({ value: String(c.id), label: c.name })),
+  ];
+
+  const createFields = () => {
+    const specs = detailFields(kind());
+    if (kind() === "contact" || kind() === "role") {
+      return specs.map((f) => (f.key === "companyId" ? { ...f, options: companyOptions() } : f));
+    }
+    return specs;
+  };
+
+  // Not wrapped in act: RecordForm already catches a rejected onSubmit and
+  // shows the backend's message itself — inline under the field its `match`
+  // names, or as its own role="alert" otherwise — the same way Detail's
+  // submitDetails leaves record edits to RecordForm.
+  const submitCreate = async (v: Record<string, string>) => {
+    await createRecord(kind(), v);
+    setCreating(false);
+    await reload();
   };
 
   return (
@@ -594,6 +684,7 @@ export default function CrmPanel() {
                   setKind(k.kind);
                   setSelected(null);
                   setPeople(null);
+                  setCreating(false);
                 }}
               >
                 {k.label}
@@ -601,6 +692,22 @@ export default function CrmPanel() {
             )}
           </For>
         </div>
+
+        <button aria-label={`New ${kind()}`} onClick={() => setCreating(true)}>
+          New {kind()}
+        </button>
+
+        <Show when={creating()}>
+          <RecordForm
+            legend={`New ${kind()}`}
+            fields={createFields()}
+            submitLabel={CREATE_LABELS[kind()]}
+            onSubmit={submitCreate}
+          />
+          <button class="muted" onClick={() => setCreating(false)}>
+            Cancel
+          </button>
+        </Show>
 
         <form
           aria-label="Filter form"

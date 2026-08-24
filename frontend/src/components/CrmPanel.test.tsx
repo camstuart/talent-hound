@@ -134,6 +134,22 @@ describe("CrmPanel", () => {
     await waitFor(() => expect(recordMocks.SearchCompanies).toHaveBeenCalled());
   });
 
+  it("creates a new candidate from the left pane and reloads the list", async () => {
+    render(() => <CrmPanel />);
+    await screen.findByText("Alice Amber");
+
+    fireEvent.click(screen.getByRole("button", { name: "New candidate" }));
+    fireEvent.input(await screen.findByLabelText("Full name *"), { target: { value: "Cara Cyan" } });
+    fireEvent.click(screen.getByRole("button", { name: "Add candidate" }));
+
+    await waitFor(() =>
+      expect(recordMocks.CreateCandidate).toHaveBeenCalledWith(
+        expect.objectContaining({ fullName: "Cara Cyan" }),
+      ),
+    );
+    await waitFor(() => expect(recordMocks.SearchCandidates).toHaveBeenCalledTimes(2));
+  });
+
   it("surfaces a rejected search as a verbatim alert", async () => {
     // reloader retries a failed reload once (see latestOnly), so both the
     // first attempt and its retry must fail for the error to surface.
