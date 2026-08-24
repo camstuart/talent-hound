@@ -260,7 +260,7 @@ func (s *ModelService) Check() ([]Status, error) {
 		}
 		status.Model = res.Assignment.Model
 		switch {
-		case pulling[res.Role]:
+		case pulling[res.Assignment.Model]:
 			status.State = models.ModelPulling
 		case listErr != nil:
 			status.State = endpointState(listErr)
@@ -348,6 +348,20 @@ func (s *ModelService) Pull(role models.ModelRole) (*models.Job, error) {
 	return s.jobs.Enqueue(JobInput{Kind: "pull", Params: string(params), TotalItems: 1})
 }
 
+// PullModel downloads a model by name for the library, tied to no role. Any
+// role assigned to it sees "pulling" through the shared job queue.
+func (s *ModelService) PullModel(model string) (*models.Job, error) {
+	model = strings.TrimSpace(model)
+	if model == "" {
+		return nil, fmt.Errorf("a model name is required")
+	}
+	params, err := json.Marshal(pullParams{Model: model})
+	if err != nil {
+		return nil, fmt.Errorf("encoding pull params: %w", err)
+	}
+	return s.jobs.Enqueue(JobInput{Kind: "pull", Params: string(params), TotalItems: 1})
+}
+
 // pullWorker runs one model download. It writes nothing, so it has no commit
 // half: what changed is at the endpoint, and the next check sees it.
 func (s *ModelService) pullWorker(ctx context.Context, job models.Job, _ int) (JobCommit, error) {
@@ -361,7 +375,9 @@ func (s *ModelService) pullWorker(ctx context.Context, job models.Job, _ int) (J
 		}
 		// The endpoint's own words stay at the endpoint; the job stores a code,
 		// and the role remembers that a pull was tried.
-		s.setPullState(p.Role, models.ModelPullFailed)
+		if p.Role != "" {
+			s.setPullState(p.Role, models.ModelPullFailed)
+		}
 		return nil, FailReason(models.ModelPullFailed)
 	}
 	return nil, nil
@@ -422,6 +438,7 @@ type ModelOption struct {
 	Power       string           `json:"power"`
 	ApproxBytes int64            `json:"approxBytes"`
 	Installed   bool             `json:"installed"`
+	Pulling     bool             `json:"pulling"`
 }
 
 // OptionsView is everything the model picker needs in one answer: the catalog
@@ -439,9 +456,12 @@ func (s *ModelService) Options() (*OptionsView, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), checkTimeout)
 	defer cancel()
 	installed, listErr := s.ollama.Tags(ctx)
+	pulling := s.activePulls()
 
 	view := &OptionsView{Models: make([]ModelOption, 0, len(setup.Catalog))}
+	listed := map[string]bool{}
 	for _, c := range setup.Catalog {
+		listed[c.Model] = true
 		view.Models = append(view.Models, ModelOption{
 			Role:        c.Role,
 			Model:       c.Model,
@@ -449,7 +469,26 @@ func (s *ModelService) Options() (*OptionsView, error) {
 			Power:       c.Power,
 			ApproxBytes: c.ApproxBytes,
 			Installed:   listErr == nil && platform.HasModel(installed, c.Model),
+			Pulling:     pulling[c.Model],
 		})
+	}
+	// Models the recruiter brought in themselves belong in the library too:
+	// anything installed at the endpoint or mid-download that the catalog does
+	// not know. No role means "offered everywhere".
+	if listErr == nil {
+		for _, tag := range installed {
+			name := strings.TrimSuffix(tag, ":latest")
+			if listed[name] || listed[tag] {
+				continue
+			}
+			listed[name] = true
+			view.Models = append(view.Models, ModelOption{Model: name, Installed: true, Pulling: pulling[name] || pulling[tag]})
+		}
+	}
+	for name := range pulling {
+		if !listed[name] && !listed[strings.TrimSuffix(name, ":latest")] {
+			view.Models = append(view.Models, ModelOption{Model: name, Pulling: true})
+		}
 	}
 	// Downloads land on the user's own volume wherever Ollama keeps its store,
 	// so that volume's free space is the one that decides whether a download
@@ -465,17 +504,17 @@ func (s *ModelService) Options() (*OptionsView, error) {
 
 // activePulls reports the roles whose model download is underway right now,
 // read from the job queue so any window of any session sees the same answer.
-func (s *ModelService) activePulls() map[models.ModelRole]bool {
+func (s *ModelService) activePulls() map[string]bool {
 	var jobs []models.Job
 	if err := s.db.Where("kind = ? AND state IN ?", "pull",
 		[]models.JobState{models.JobQueued, models.JobRunning}).Find(&jobs).Error; err != nil {
 		return nil
 	}
-	out := map[models.ModelRole]bool{}
+	out := map[string]bool{}
 	for _, job := range jobs {
 		var p pullParams
 		if json.Unmarshal([]byte(job.Params), &p) == nil {
-			out[p.Role] = true
+			out[p.Model] = true
 		}
 	}
 	return out

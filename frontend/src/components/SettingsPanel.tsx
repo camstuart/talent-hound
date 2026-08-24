@@ -3,8 +3,9 @@ import { CredentialService, ModelService } from "../../bindings/camstuart/talent
 import { ModelRole } from "../../bindings/camstuart/talent-hound/internal/models";
 import type { Status } from "../../bindings/camstuart/talent-hound";
 import FirstRunWizard from "./FirstRunWizard";
-import ModelPicker, { gb } from "./ModelPicker";
-import type { PickerOption } from "./ModelPicker";
+import RolePicker from "./RolePicker";
+import type { PickerOption } from "./RolePicker";
+import ModelLibrary from "./ModelLibrary";
 import DiagnosticsPanel from "./DiagnosticsPanel";
 
 // What each availability state means, in the recruiter's terms. They are
@@ -93,7 +94,7 @@ export default function SettingsPanel() {
   });
 
   const statusOf = (role: ModelRole) => statuses().find((s) => s.role === role);
-  const pulling = () => statuses().some((s) => s.state === "pulling");
+  const pulling = () => options().some((o) => o.pulling) || statuses().some((s) => s.state === "pulling");
   const label = (state: string | undefined) => (state ? (STATE_LABELS[state] ?? state) : "unknown");
 
   const assign = (role: ModelRole, model: string) =>
@@ -112,11 +113,8 @@ export default function SettingsPanel() {
       <section class="record-section" aria-label="Model roles">
         <h3>Model roles</h3>
         <p class="muted">All three roles run locally. Candidate content is never sent anywhere else.</p>
-        <Show when={freeDisk() > 0}>
-          <p class="muted">{gb(freeDisk())} free on this disk.</p>
-        </Show>
         <ul class="record-list">
-          <For each={Object.values(ModelRole)}>
+          <For each={Object.values(ModelRole).filter((r) => r !== ModelRole.$zero)}>
             {(role) => (
               <li class="setting-row">
                 <span class="artifact-name">
@@ -132,13 +130,11 @@ export default function SettingsPanel() {
                   </span>
                 </span>
                 <span class="muted setting-blurb">{ROLE_BLURBS[role]}</span>
-                <ModelPicker
+                <RolePicker
                   role={role}
-                  options={options().filter((o) => o.role === role)}
+                  options={options()}
                   current={assignments()[role]?.model ?? ""}
-                  freeDiskBytes={freeDisk()}
-                  busy={pulling()}
-                  onAssign={(model) => assign(role, model)}
+                  onSelect={(model) => assign(role, model)}
                 />
                 <Show when={statusOf(role)?.state === "model_missing" || statusOf(role)?.state === "pull_failed"}>
                   <button aria-label={`Download the ${role} model`} onClick={() => act(() => ModelService.Pull(role))}>
@@ -153,6 +149,12 @@ export default function SettingsPanel() {
           </For>
         </ul>
       </section>
+
+      <ModelLibrary
+        models={options()}
+        freeDiskBytes={freeDisk()}
+        onPull={(model) => act(() => ModelService.PullModel(model))}
+      />
 
       <section class="record-section" aria-label="Provider keys">
         <h3>Provider keys</h3>

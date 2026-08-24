@@ -4,8 +4,8 @@ import { ModelService, SetupService } from "../../bindings/camstuart/talent-houn
 import type { SetupStatus } from "../../bindings/camstuart/talent-hound";
 import { Scope } from "../../bindings/camstuart/talent-hound/internal/setup";
 import { bumpWorkspace, workspaceRevision } from "../workspaceRevision";
-import ModelPicker, { gb } from "./ModelPicker";
-import type { PickerOption } from "./ModelPicker";
+import RolePicker, { gb } from "./RolePicker";
+import type { PickerOption } from "./RolePicker";
 
 // Setup is ordered, and each step blocks the ones after it. The position is not
 // stored anywhere: the backend recomputes it, so cancelling is simply not
@@ -184,13 +184,11 @@ export default function FirstRunWizard() {
                     <span class="muted">
                       {gb(model.approxBytes)} — {model.installed ? "installed" : model.state || "missing"}
                     </span>
-                    <ModelPicker
+                    <RolePicker
                       role={model.role}
-                      options={options().filter((o) => o.role === model.role)}
+                      options={options()}
                       current={model.model}
-                      freeDiskBytes={freeDisk()}
-                      busy={busy() || pulling()}
-                      onAssign={(name) => run(() => ModelService.Assign({ role: model.role, endpoint: "", model: name, digest: "", params: "" }))}
+                      onSelect={(name) => run(() => ModelService.Assign({ role: model.role, endpoint: "", model: name, digest: "", params: "" }))}
                     />
                     <Show when={!model.installed}>
                       <button

@@ -566,3 +566,51 @@ func TestCheckSaysPullingWhileADownloadJobIsActive(t *testing.T) {
 		}
 	}
 }
+
+func TestPullModelDownloadsByNameWithoutARole(t *testing.T) {
+	env := newModelEnv(t)
+	job, err := env.models.PullModel("mistral:7b")
+	if err != nil {
+		t.Fatalf("pull by name: %v", err)
+	}
+	if job == nil || job.Kind != "pull" {
+		t.Fatalf("a pull job should be enqueued, got %+v", job)
+	}
+	var p pullParams
+	if err := json.Unmarshal([]byte(job.Params), &p); err != nil {
+		t.Fatalf("decoding params: %v", err)
+	}
+	if p.Model != "mistral:7b" || p.Role != "" {
+		t.Fatalf("the job should carry the model and no role, got %+v", p)
+	}
+	if _, err := env.models.PullModel("  "); err == nil {
+		t.Fatal("an empty model name should be refused")
+	}
+}
+
+func TestOptionsIncludeCustomInstalledModelsAndActiveDownloads(t *testing.T) {
+	env := newModelEnv(t, "my-custom:latest")
+	job := models.Job{Kind: "pull", State: models.JobQueued, Params: `{"model":"another-model"}`}
+	if err := env.db.Create(&job).Error; err != nil {
+		t.Fatalf("staging a pull job: %v", err)
+	}
+	view, err := env.models.Options()
+	if err != nil {
+		t.Fatalf("options: %v", err)
+	}
+	byName := map[string]ModelOption{}
+	for _, m := range view.Models {
+		byName[m.Model] = m
+	}
+	custom, ok := byName["my-custom"]
+	if !ok || !custom.Installed || custom.Role != "" {
+		t.Fatalf("an installed model outside the catalog should be listed as installed with no role, got %+v", custom)
+	}
+	downloading, ok := byName["another-model"]
+	if !ok || !downloading.Pulling {
+		t.Fatalf("a model mid-download should be listed as pulling, got %+v", downloading)
+	}
+	if byName["all-minilm"].Pulling {
+		t.Fatal("a model with no active job must not be flagged pulling")
+	}
+}

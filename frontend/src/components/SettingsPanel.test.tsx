@@ -26,6 +26,7 @@ const { state, modelMocks, credentialMocks } = vi.hoisted(() => {
       Pull: vi.fn(async () => ({ id: 4, kind: "pull", state: "queued" })),
       Decline: vi.fn(async () => undefined),
       Options: vi.fn(async () => state.options),
+      PullModel: vi.fn(async () => ({ id: 5, kind: "pull", state: "queued" })),
     },
     credentialMocks: {
       List: vi.fn(async () => state.credentials),
@@ -66,10 +67,10 @@ beforeEach(() => {
   ];
   state.options = {
     models: [
-      { role: "embed", model: "nomic-embed-text", purpose: "Turns documents into searchable evidence", power: "recommended", approxBytes: 274 * 1024 ** 2, installed: true },
-      { role: "classify", model: "qwen2.5:7b-instruct", purpose: "Reads profiles", power: "recommended", approxBytes: 4.7 * 1024 ** 3, installed: false },
-      { role: "generate", model: "qwen2.5:7b-instruct", purpose: "Writes things", power: "recommended", approxBytes: 4.7 * 1024 ** 3, installed: false },
-      { role: "generate", model: "qwen3:8b", purpose: "Writes things", power: "most capable", approxBytes: 5.2 * 1024 ** 3, installed: false },
+      { role: "embed", model: "nomic-embed-text", purpose: "Turns documents into searchable evidence", power: "recommended", approxBytes: 274 * 1024 ** 2, installed: true, pulling: false },
+      { role: "classify", model: "qwen2.5:7b-instruct", purpose: "Reads profiles", power: "recommended", approxBytes: 4.7 * 1024 ** 3, installed: true, pulling: false },
+      { role: "generate", model: "qwen2.5:7b-instruct", purpose: "Writes things", power: "recommended", approxBytes: 4.7 * 1024 ** 3, installed: true, pulling: false },
+      { role: "generate", model: "qwen3:8b", purpose: "Writes things", power: "most capable", approxBytes: 5.2 * 1024 ** 3, installed: false, pulling: false },
     ],
     freeDiskBytes: 40 * 1024 ** 3,
   };
@@ -96,7 +97,7 @@ describe("SettingsPanel", () => {
 
   it("lists every role with its model, revision, and status", async () => {
     render(() => <SettingsPanel />);
-    await screen.findByText(/embed-model/);
+    await screen.findAllByText(/embed-model/);
     expect(screen.getAllByText(/revision 1, unvalidated/)).toHaveLength(3);
     expect(screen.getAllByText(/ready/)).toHaveLength(3);
   });
@@ -106,12 +107,11 @@ describe("SettingsPanel", () => {
     await screen.findByText(/inherited from generate/);
   });
 
-  it("assigns a model chosen from the curated list", async () => {
+  it("assigns the moment a model is chosen, with no extra button", async () => {
     render(() => <SettingsPanel />);
     const select = (await screen.findByLabelText("Model for embed")) as HTMLSelectElement;
-    await waitFor(() => expect(select.options.length).toBeGreaterThan(2));
+    await waitFor(() => expect(select.options.length).toBeGreaterThan(1));
     fireEvent.change(select, { target: { value: "nomic-embed-text" } });
-    fireEvent.click(screen.getByLabelText("Assign a model to embed"));
     await waitFor(() =>
       expect(modelMocks.Assign).toHaveBeenCalledWith({
         role: "embed",
@@ -121,6 +121,45 @@ describe("SettingsPanel", () => {
         params: "",
       }),
     );
+    expect(screen.queryByText("Assign")).not.toBeInTheDocument();
+  });
+
+  it("shows exactly the three real roles, never the enum zero value", async () => {
+    render(() => <SettingsPanel />);
+    await screen.findByLabelText("Model for embed");
+    const selects = screen.getAllByLabelText(/^Model for /);
+    expect(selects.map((s) => s.getAttribute("aria-label"))).toEqual([
+      "Model for embed",
+      "Model for classify",
+      "Model for generate",
+    ]);
+  });
+
+  it("keeps showing the persisted assignment after it is made", async () => {
+    render(() => <SettingsPanel />);
+    const select = (await screen.findByLabelText("Model for embed")) as HTMLSelectElement;
+    await waitFor(() => expect(select.options.length).toBeGreaterThan(1));
+    fireEvent.change(select, { target: { value: "nomic-embed-text" } });
+    await waitFor(() => expect(modelMocks.Assign).toHaveBeenCalled());
+    state.registry = [
+      resolution("embed", {
+        assignment: { id: 9, role: "embed", revision: 2, endpoint: "http://localhost:11434", model: "nomic-embed-text", digest: "", params: "{}", validation: "unvalidated" },
+      }),
+      state.registry[1],
+      state.registry[2],
+    ];
+    await waitFor(() =>
+      expect((screen.getByLabelText("Model for embed") as HTMLSelectElement).value).toBe("nomic-embed-text"),
+    );
+  });
+
+  it("lists the library with installed models and starts a download from Add model", async () => {
+    render(() => <SettingsPanel />);
+    const library = await screen.findByRole("region", { name: "Model library" });
+    await waitFor(() => expect(library).toHaveTextContent(/nomic-embed-text.*installed/));
+    fireEvent.click(screen.getByLabelText("Add model"));
+    fireEvent.click(screen.getByLabelText("Download qwen3:8b"));
+    await waitFor(() => expect(modelMocks.PullModel).toHaveBeenCalledWith("qwen3:8b"));
   });
 
 
@@ -129,24 +168,26 @@ describe("SettingsPanel", () => {
     await screen.findByText(/40\.0 GB free on this disk/);
   });
 
-  it("marks already-downloaded models in the list", async () => {
+  it("offers only installed models in a role picker", async () => {
     render(() => <SettingsPanel />);
-    const select = (await screen.findByLabelText("Model for embed")) as HTMLSelectElement;
-    await waitFor(() => expect(select.options.length).toBeGreaterThan(2));
-    const label = Array.from(select.options).find((o) => o.value === "nomic-embed-text")?.text ?? "";
-    expect(label).toContain("installed");
+    const select = (await screen.findByLabelText("Model for generate")) as HTMLSelectElement;
+    await waitFor(() => expect(select.options.length).toBeGreaterThan(1));
+    const values = Array.from(select.options).map((o) => o.value);
+    expect(values).toContain("qwen2.5:7b-instruct");
+    expect(values).not.toContain("qwen3:8b");
   });
 
-  it("disables every picker while a download is in progress", async () => {
-    state.statuses = [
-      { role: "embed", model: "embed-model", inherited: false, state: "pulling" },
-      { role: "classify", model: "generate-model", inherited: true, state: "ready" },
-      { role: "generate", model: "generate-model", inherited: false, state: "ready" },
-    ];
+  it("shows a downloading model in the library while roles stay usable", async () => {
+    state.options = {
+      ...state.options,
+      models: (state.options.models as Record<string, unknown>[]).map((m) =>
+        m.model === "qwen3:8b" ? { ...m, pulling: true } : m,
+      ),
+    };
     render(() => <SettingsPanel />);
-    await screen.findByText(/downloading now/);
-    expect(screen.getByLabelText("Model for generate")).toBeDisabled();
-    expect(screen.getByLabelText("Assign a model to generate")).toBeDisabled();
+    const library = await screen.findByRole("region", { name: "Model library" });
+    await waitFor(() => expect(library).toHaveTextContent(/qwen3:8b.*downloading now/));
+    expect(screen.getByLabelText("Model for generate")).toBeEnabled();
   });
 
   it("offers a download only when the model is missing, and declining is its own action", async () => {
@@ -204,7 +245,9 @@ describe("SettingsPanel", () => {
   it("shows the backend's own words when an assignment is refused", async () => {
     state.assignError = "a required model role must use the local endpoint";
     render(() => <SettingsPanel />);
-    fireEvent.click(await screen.findByLabelText("Assign a model to embed"));
+    const select = (await screen.findByLabelText("Model for embed")) as HTMLSelectElement;
+    await waitFor(() => expect(select.options.length).toBeGreaterThan(1));
+    fireEvent.change(select, { target: { value: "nomic-embed-text" } });
     await screen.findByText("a required model role must use the local endpoint");
   });
 });

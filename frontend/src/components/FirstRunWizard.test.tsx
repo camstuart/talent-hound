@@ -10,9 +10,9 @@ const { state, setupMocks, modelMocks } = vi.hoisted(() => {
     modelMocks: {
       Options: vi.fn(async () => ({
         models: [
-          { role: "embed", model: "nomic-embed-text", purpose: "Turns documents into evidence", power: "recommended", approxBytes: 274 * 1024 ** 2, installed: true },
-          { role: "generate", model: "qwen2.5:7b-instruct", purpose: "Writes things", power: "recommended", approxBytes: 4.7 * 1024 ** 3, installed: false },
-          { role: "generate", model: "qwen3:8b", purpose: "Writes things", power: "most capable", approxBytes: 5.2 * 1024 ** 3, installed: false },
+          { role: "embed", model: "nomic-embed-text", purpose: "Turns documents into evidence", power: "recommended", approxBytes: 274 * 1024 ** 2, installed: true, pulling: false },
+          { role: "generate", model: "qwen2.5:7b-instruct", purpose: "Writes things", power: "recommended", approxBytes: 4.7 * 1024 ** 3, installed: false, pulling: false },
+          { role: "generate", model: "qwen3:8b", purpose: "Writes things", power: "most capable", approxBytes: 5.2 * 1024 ** 3, installed: true, pulling: false },
         ],
         freeDiskBytes: 40 * 1024 ** 3,
       })),
@@ -120,25 +120,17 @@ describe("FirstRunWizard", () => {
     await waitFor(() => expect(setupMocks.PullModel).toHaveBeenCalledWith("generate"));
   });
 
-  it("offers a curated model choice with the free disk space shown", async () => {
+  it("assigns an installed model the moment it is chosen, showing free disk space", async () => {
     render(() => <FirstRunWizard />);
     await screen.findByText(/40\.0 GB free on this disk/);
     const select = (await screen.findByLabelText("Model for generate")) as HTMLSelectElement;
-    await waitFor(() => expect(select.options.length).toBeGreaterThan(2));
+    await waitFor(() => expect(select.options.length).toBeGreaterThan(1));
+    // The persisted assignment shows even though it is not installed yet.
+    expect(select.value).toBe("qwen2.5:7b-instruct");
     fireEvent.change(select, { target: { value: "qwen3:8b" } });
-    fireEvent.click(screen.getByLabelText("Assign a model to generate"));
     await waitFor(() =>
       expect(modelMocks.Assign).toHaveBeenCalledWith({ role: "generate", endpoint: "", model: "qwen3:8b", digest: "", params: "" }),
     );
-  });
-
-  it("locks the model choices while a download runs", async () => {
-    state.status = aStatus("models", {
-      models: [{ role: "generate", model: "qwen2.5:7b-instruct", approxBytes: 4700 * 1024 * 1024, installed: false, state: "pulling" }],
-    });
-    render(() => <FirstRunWizard />);
-    const select = (await screen.findByLabelText("Model for generate")) as HTMLSelectElement;
-    expect(select).toBeDisabled();
   });
 
   it("says why real data is blocked, and does not switch scope on its own", async () => {
