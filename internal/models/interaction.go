@@ -20,8 +20,8 @@ type Interaction struct {
 	// The recruiter's words. Free text: displayed, never rendered.
 	Note string `gorm:"not null" json:"note"`
 	// When it happened — distinct from CreatedAt, which is when it was logged.
-	OccurredAt Date  `gorm:"not null" json:"occurredAt"`
-	RoleID     *uint `json:"roleId"`
+	OccurredAt   Date  `gorm:"not null" json:"occurredAt"`
+	RoleID       *uint `json:"roleId"`
 	InitiativeID *uint `json:"initiativeId"`
 	// The evidence copy of the note. Owned by this row: replaced on edit,
 	// deleted with it, never detached or renamed on its own.
