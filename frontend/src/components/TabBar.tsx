@@ -1,38 +1,48 @@
 import { For, Show } from "solid-js";
-import { InitiativeStatus } from "../../bindings/camstuart/talent-hound/internal/models";
-import type { Initiative } from "../../bindings/camstuart/talent-hound/internal/models";
+import type { InitiativeType } from "../../bindings/camstuart/talent-hound/internal/models";
 import { InitiativeIcon } from "./InitiativeIcon";
 
+// One open tab: an initiative by id, or a utility screen by name.
+export type TabId = number | "settings" | "help";
+
+export interface Tab {
+  id: TabId;
+  title: string;
+  // Present only for initiative tabs; utility tabs have no type icon.
+  type?: InitiativeType;
+  archived?: boolean;
+}
+
 interface Props {
-  tabs: Initiative[];
-  activeId: number | null;
-  onActivate: (id: number) => void;
-  onClose: (id: number) => void;
+  tabs: Tab[];
+  activeId: TabId | null;
+  onActivate: (id: TabId) => void;
+  onClose: (id: TabId) => void;
 }
 
 export default function TabBar(props: Props) {
   return (
-    <div class="tabbar" role="tablist" aria-label="Open initiatives">
+    <div class="tabbar" role="tablist" aria-label="Open tabs">
       <For each={props.tabs}>
-        {(initiative) => (
+        {(tab) => (
           <div
             class="tab"
-            classList={{ active: props.activeId === initiative.id }}
+            classList={{ active: props.activeId === tab.id }}
             role="tab"
-            aria-selected={props.activeId === initiative.id}
-            onClick={() => props.onActivate(initiative.id)}
+            aria-selected={props.activeId === tab.id}
+            onClick={() => props.onActivate(tab.id)}
           >
-            <InitiativeIcon type={initiative.type} />
-            <span class="tab-title">{initiative.name}</span>
-            <Show when={initiative.status === InitiativeStatus.InitiativeArchived}>
+            <Show when={tab.type}>{(type) => <InitiativeIcon type={type()} />}</Show>
+            <span class="tab-title">{tab.title}</span>
+            <Show when={tab.archived}>
               <span class="archived-badge">Archived</span>
             </Show>
             <button
               class="tab-close"
-              aria-label={`Close ${initiative.name}`}
+              aria-label={`Close ${tab.title}`}
               onClick={(e) => {
                 e.stopPropagation();
-                props.onClose(initiative.id);
+                props.onClose(tab.id);
               }}
             >
               ×

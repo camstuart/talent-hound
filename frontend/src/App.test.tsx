@@ -76,8 +76,22 @@ vi.mock("../bindings/camstuart/talent-hound", () => ({
     State: vi.fn(async () => ({ next: "complete", scope: "real", realData: true })),
     Scope: vi.fn(async () => ({ scope: "real", realData: true })),
   },
-  ModelService: { Check: vi.fn(async () => []) },
+  ModelService: {
+    Check: vi.fn(async () => []),
+    Registry: vi.fn(async () => []),
+    Options: vi.fn(async () => ({ models: [], freeDiskBytes: 0 })),
+  },
   CloudService: { Tasks: vi.fn(async () => []) },
+  CredentialService: { List: vi.fn(async () => ({})) },
+  DiagnosticsService: {
+    Diagnostics: vi.fn(async () => null),
+    RecoveryProcedure: vi.fn(async () => null),
+    LogsFolder: vi.fn(async () => ""),
+  },
+  HelpService: {
+    Topics: vi.fn(async () => []),
+    Article: vi.fn(async () => null),
+  },
 }));
 
 beforeEach(() => {
@@ -228,6 +242,54 @@ describe("App", () => {
     fireEvent.click(screen.getByText("Archive"));
 
     await waitFor(() => expect(screen.getByText("initiative 1 is already archived")).toBeInTheDocument());
+  });
+
+  it("opens Settings as a tab beside the initiative, which stays reachable", async () => {
+    render(() => <App />);
+    await createInitiative("Hire Go devs", "talent_search");
+
+    fireEvent.click(screen.getByLabelText("Settings"));
+
+    const settingsTab = screen.getByRole("tab", { name: /Settings/ });
+    expect(settingsTab).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByText("Model roles")).toBeInTheDocument();
+
+    // The initiative tab is still there; clicking it brings the workspace back.
+    fireEvent.click(screen.getByRole("tab", { name: /Hire Go devs/ }));
+    expect(screen.getByRole("tablist", { name: "Initiative areas" })).toBeInTheDocument();
+    expect(screen.queryByText("Model roles")).not.toBeInTheDocument();
+  });
+
+  it("closing the Settings tab returns to the neighbouring tab", async () => {
+    render(() => <App />);
+    await createInitiative("Hire Go devs", "talent_search");
+    fireEvent.click(screen.getByLabelText("Settings"));
+
+    fireEvent.click(screen.getByLabelText("Close Settings"));
+
+    expect(screen.queryByRole("tab", { name: /Settings/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: /Hire Go devs/ })).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("clicking Settings again focuses the existing tab instead of duplicating it", async () => {
+    render(() => <App />);
+    await createInitiative("Hire Go devs", "talent_search");
+    fireEvent.click(screen.getByLabelText("Settings"));
+    fireEvent.click(screen.getByRole("tab", { name: /Hire Go devs/ }));
+
+    fireEvent.click(screen.getByLabelText("Settings"));
+
+    const tabs = screen.getAllByRole("tab", { name: /Settings/ });
+    expect(tabs).toHaveLength(1);
+    expect(tabs[0]).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("opens Help as its own tab too", async () => {
+    render(() => <App />);
+
+    fireEvent.click(screen.getByLabelText("Help"));
+
+    expect(screen.getByRole("tab", { name: /Help/ })).toHaveAttribute("aria-selected", "true");
   });
 
   it("asks the backend for archived initiatives only when the filter is on", async () => {

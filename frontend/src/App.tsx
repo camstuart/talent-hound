@@ -5,6 +5,7 @@ import { InitiativeStatus } from "../bindings/camstuart/talent-hound/internal/mo
 import type { Initiative, InitiativeType } from "../bindings/camstuart/talent-hound/internal/models";
 import Sidebar from "./components/Sidebar";
 import TabBar from "./components/TabBar";
+import type { Tab, TabId } from "./components/TabBar";
 import NewInitiativeModal from "./components/NewInitiativeModal";
 import WorkspaceAreas from "./components/WorkspaceAreas";
 import SettingsPanel from "./components/SettingsPanel";
@@ -16,13 +17,11 @@ import { InitiativeIcon, INITIATIVE_TYPE_LABELS } from "./components/InitiativeI
 
 export default function App() {
   const [initiatives, setInitiatives] = createSignal<Initiative[]>([]);
-  const [openTabIds, setOpenTabIds] = createSignal<number[]>([]);
-  const [activeId, setActiveId] = createSignal<number | null>(null);
+  const [openTabIds, setOpenTabIds] = createSignal<TabId[]>([]);
+  const [activeId, setActiveId] = createSignal<TabId | null>(null);
   const [showModal, setShowModal] = createSignal(false);
   const [showArchived, setShowArchived] = createSignal(false);
   const [renaming, setRenaming] = createSignal(false);
-  const [showSettings, setShowSettings] = createSignal(false);
-  const [showHelp, setShowHelp] = createSignal(false);
   const [error, setError] = createSignal("");
   // Setup is only in the way while there is no data folder: with nowhere to put
   // anything, every other screen is a screen that cannot save what it collects.
@@ -33,7 +32,9 @@ export default function App() {
   // open, which stays on screen with its new label rather than vanishing.
   const reload = async (includeArchived = showArchived()) => {
     const listed = (await InitiativeService.List(includeArchived)) ?? [];
-    const missing = openTabIds().filter((id) => !listed.some((i) => i.id === id));
+    const missing = openTabIds().filter(
+      (id): id is number => typeof id === "number" && !listed.some((i) => i.id === id),
+    );
     const stillOpen = await Promise.all(missing.map((id) => InitiativeService.Get(id).catch(() => null)));
     setInitiatives([...listed, ...stillOpen.filter((i): i is Initiative => i !== null)]);
   };
@@ -44,17 +45,31 @@ export default function App() {
   });
 
   const byId = (id: number) => initiatives().find((i) => i.id === id);
-  const openTabs = () => openTabIds().map(byId).filter((i): i is Initiative => i !== undefined);
-  const activeInitiative = () => (activeId() !== null ? byId(activeId()!) : undefined);
+  const UTILITY_TITLES = { settings: "Settings", help: "Help" } as const;
+  const openTabs = (): Tab[] =>
+    openTabIds()
+      .map((id): Tab | undefined => {
+        if (typeof id !== "number") return { id, title: UTILITY_TITLES[id] };
+        const initiative = byId(id);
+        if (!initiative) return undefined;
+        return {
+          id,
+          title: initiative.name,
+          type: initiative.type,
+          archived: initiative.status === InitiativeStatus.InitiativeArchived,
+        };
+      })
+      .filter((t): t is Tab => t !== undefined);
+  const activeInitiative = () => (typeof activeId() === "number" ? byId(activeId() as number) : undefined);
 
-  const openInitiative = (id: number) => {
+  const openInitiative = (id: TabId) => {
     if (!openTabIds().includes(id)) setOpenTabIds([...openTabIds(), id]);
     setActiveId(id);
     setRenaming(false);
     setError("");
   };
 
-  const closeTab = (id: number) => {
+  const closeTab = (id: TabId) => {
     const ids = openTabIds();
     const idx = ids.indexOf(id);
     const remaining = ids.filter((tabId) => tabId !== id);
@@ -107,23 +122,13 @@ export default function App() {
       <header class="titlebar">
         <span class="titlebar-title">Talent Hound</span>
         <div class="titlebar-actions">
-          <button
-            aria-label="Help"
-            aria-pressed={showHelp()}
-            onClick={() => {
-              setShowSettings(false);
-              setShowHelp((on) => !on);
-            }}
-          >
+          <button aria-label="Help" aria-pressed={activeId() === "help"} onClick={() => openInitiative("help")}>
             Help
           </button>
           <button
             aria-label="Settings"
-            aria-pressed={showSettings()}
-            onClick={() => {
-              setShowHelp(false);
-              setShowSettings((on) => !on);
-            }}
+            aria-pressed={activeId() === "settings"}
+            onClick={() => openInitiative("settings")}
           >
             Settings
           </button>
@@ -132,7 +137,7 @@ export default function App() {
       <div class="app-body">
         <Sidebar
           initiatives={initiatives()}
-          activeId={activeId()}
+          activeId={activeInitiative()?.id ?? null}
           showArchived={showArchived()}
           onSelect={openInitiative}
           onNew={() => setShowModal(true)}
@@ -143,20 +148,20 @@ export default function App() {
             <TabBar tabs={openTabs()} activeId={activeId()} onActivate={setActiveId} onClose={closeTab} />
           </Show>
           <div class="content">
-            <Show when={showHelp()}>
-              <HelpPanel />
-            </Show>
-            <Show when={!showHelp() && needsSetup()}>
+            <Show when={needsSetup()}>
               <div class="container">
                 <h1>Welcome to Talent Hound</h1>
                 <p class="muted">Choose where this installation keeps its data before anything else.</p>
                 <FirstRunWizard />
               </div>
             </Show>
-            <Show when={!showHelp() && !needsSetup() && showSettings()}>
+            <Show when={!needsSetup() && activeId() === "help"}>
+              <HelpPanel />
+            </Show>
+            <Show when={!needsSetup() && activeId() === "settings"}>
               <SettingsPanel />
             </Show>
-            <Show when={!showHelp() && !needsSetup() && !showSettings()}>
+            <Show when={!needsSetup() && typeof activeId() !== "string"}>
             <Show when={activeInitiative()} fallback={<Welcome />}>
               {(initiative) => (
                 <section class="initiative-panel">
