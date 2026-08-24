@@ -290,10 +290,10 @@ func TestNothingReachesTheNetworkExceptTheRuntimeAndApprovedRemotes(t *testing.T
 	// task, credentialed, and checked to be the one that was approved; the
 	// runtime is local. A fourth file here is a fourth way out.
 	allowed := map[string]bool{
-		filepath.Join("internal", "platform", "exa.go"):           true,
-		filepath.Join("internal", "platform", "ollama.go"):        true,
-		filepath.Join("internal", "platform", "ollamamanage.go"):  true,
-		filepath.Join("internal", "platform", "cloudchat.go"):     true,
+		filepath.Join("internal", "platform", "exa.go"):          true,
+		filepath.Join("internal", "platform", "ollama.go"):       true,
+		filepath.Join("internal", "platform", "ollamamanage.go"): true,
+		filepath.Join("internal", "platform", "cloudchat.go"):    true,
 	}
 	// Destinations that may appear anywhere: the local runtime, and the remotes
 	// the PRD names as gated.
