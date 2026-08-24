@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@solidjs/testing-library";
 import ArtifactsPanel from "./ArtifactsPanel";
+import { LinkTarget } from "../../bindings/camstuart/talent-hound/internal/models";
 
 // The Go backend is not running: bindings are mocked. Fixtures are invented.
 const { state, mocks, extractMocks } = vi.hoisted(() => {
@@ -195,5 +196,12 @@ describe("ArtifactsPanel", () => {
     fireEvent.click(screen.getByLabelText("Extract resume.pdf"));
 
     expect(await screen.findByText(state.extractError)).toBeInTheDocument();
+  });
+
+  it("scopes to an explicit target when one is given", async () => {
+    render(() => <ArtifactsPanel target={{ type: LinkTarget.LinkCandidate, id: 7 }} />);
+    await waitFor(() =>
+      expect(mocks.ListForTarget).toHaveBeenCalledWith(LinkTarget.LinkCandidate, 7),
+    );
   });
 });

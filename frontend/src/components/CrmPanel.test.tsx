@@ -3,7 +3,7 @@ import { render, screen, fireEvent, waitFor } from "@solidjs/testing-library";
 import CrmPanel from "./CrmPanel";
 
 // The Go backend is not running: bindings are mocked. Every fixture is invented.
-const { state, recordMocks, searchMocks, interactionMocks } = vi.hoisted(() => {
+const { state, recordMocks, searchMocks, interactionMocks, profileMocks, artifactMocks, extractMocks } = vi.hoisted(() => {
   const state = {
     candidates: [
       { id: 1, fullName: "Alice Amber", location: "Sydney", emails: [], phones: [], compensation: {} },
@@ -19,9 +19,16 @@ const { state, recordMocks, searchMocks, interactionMocks } = vi.hoisted(() => {
       SearchCompanies: vi.fn(async () => []),
       SearchContacts: vi.fn(async () => []),
       ListRoles: vi.fn(async () => []),
+      ListCompanies: vi.fn(async () => []),
       GetCandidate: vi.fn(async (id: number) => state.candidates.find((c) => c.id === id)),
+      GetCompany: vi.fn(async () => null),
+      GetContact: vi.fn(async () => null),
+      GetRole: vi.fn(async () => null),
       CreateCandidate: vi.fn(async (c: Record<string, unknown>) => ({ id: 9, ...c })),
       UpdateCandidate: vi.fn(async (c: Record<string, unknown>) => c),
+      UpdateCompany: vi.fn(async (c: Record<string, unknown>) => c),
+      UpdateContact: vi.fn(async (c: Record<string, unknown>) => c),
+      UpdateRole: vi.fn(async (c: Record<string, unknown>) => c),
     },
     searchMocks: {
       People: vi.fn(async () => state.people),
@@ -32,6 +39,21 @@ const { state, recordMocks, searchMocks, interactionMocks } = vi.hoisted(() => {
       Update: vi.fn(async (i: Record<string, unknown>) => i),
       Delete: vi.fn(async () => undefined),
     },
+    profileMocks: {
+      InUse: vi.fn(async () => null),
+    },
+    artifactMocks: {
+      ListForTarget: vi.fn(async () => []),
+      ListOrphans: vi.fn(async () => []),
+      Create: vi.fn(async (input: Record<string, unknown>) => ({ id: 1, ...input })),
+      Rename: vi.fn(async () => ({ id: 1 })),
+      Detach: vi.fn(async () => undefined),
+      Link: vi.fn(async () => undefined),
+    },
+    extractMocks: {
+      Extract: vi.fn(async () => ({ id: 5 })),
+      Markdown: vi.fn(async () => ""),
+    },
   };
 });
 
@@ -39,12 +61,19 @@ vi.mock("../../bindings/camstuart/talent-hound", () => ({
   RecordService: recordMocks,
   SearchService: searchMocks,
   InteractionService: interactionMocks,
+  CandidateProfileService: profileMocks,
+  ArtifactService: artifactMocks,
+  ExtractService: extractMocks,
 }));
 
 beforeEach(() => {
   state.people = [];
   state.timeline = [];
   vi.clearAllMocks();
+  // A prior test's rejection (see "surfaces a rejected search...") would
+  // otherwise leak into every test that runs after it, since clearAllMocks
+  // wipes call history but not a mock's configured implementation.
+  recordMocks.SearchCandidates.mockResolvedValue(state.candidates);
 });
 
 describe("CrmPanel", () => {
@@ -97,5 +126,44 @@ describe("CrmPanel", () => {
     render(() => <CrmPanel />);
     const alert = await screen.findByRole("alert");
     expect(alert.textContent).toBe("candidates are unavailable");
+  });
+
+  it("shows the timeline for the selected record and logs a new interaction", async () => {
+    state.timeline = [
+      { id: 4, kind: "call", note: "Talked availability.", occurredAt: "2026-08-20", roleTitle: "", initiativeName: "" },
+    ];
+    render(() => <CrmPanel />);
+    fireEvent.click(await screen.findByText("Alice Amber"));
+    await screen.findByText(/Talked availability/);
+
+    fireEvent.input(screen.getByLabelText("Interaction note"), { target: { value: "Sent the brief." } });
+    fireEvent.submit(screen.getByLabelText("Log interaction form"));
+    await waitFor(() =>
+      expect(interactionMocks.Log).toHaveBeenCalledWith(
+        expect.objectContaining({ targetType: "candidate", targetId: 1, note: "Sent the brief." }),
+      ),
+    );
+    await waitFor(() => expect(interactionMocks.Timeline).toHaveBeenCalledTimes(2));
+  });
+
+  it("an outcome kind requires picking a role in the form", async () => {
+    render(() => <CrmPanel />);
+    fireEvent.click(await screen.findByText("Alice Amber"));
+    await screen.findByLabelText("Interaction kind");
+    fireEvent.change(screen.getByLabelText("Interaction kind"), { target: { value: "placement" } });
+    await screen.findByLabelText("Interaction role");
+  });
+
+  it("edits the selected record through the details form", async () => {
+    render(() => <CrmPanel />);
+    fireEvent.click(await screen.findByText("Alice Amber"));
+    const name = await screen.findByLabelText("Full name *");
+    fireEvent.input(name, { target: { value: "Alice A. Amber" } });
+    fireEvent.submit(screen.getByLabelText("Details form"));
+    await waitFor(() =>
+      expect(recordMocks.UpdateCandidate).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 1, fullName: "Alice A. Amber" }),
+      ),
+    );
   });
 });

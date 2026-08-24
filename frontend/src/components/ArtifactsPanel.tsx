@@ -30,9 +30,11 @@ const base64OfText = (text: string) => {
 const sizeLabel = (bytes: number) =>
   bytes < 1024 ? `${bytes} B` : bytes < 1024 * 1024 ? `${Math.round(bytes / 1024)} KB` : `${(bytes / 1048576).toFixed(1)} MB`;
 
-// Artifacts attached to one initiative, plus the orphan library. Attaching and
-// detaching move links only: the bytes are stored once and never copied.
-export default function ArtifactsPanel(props: { initiativeId: number }) {
+// Artifacts attached to one initiative — or, when a CRM record is given
+// instead, to that record. Attaching and detaching move links only: the bytes
+// are stored once and never copied.
+export default function ArtifactsPanel(props: { initiativeId?: number; target?: { type: LinkTarget; id: number } }) {
+  const target = () => props.target ?? { type: LinkTarget.LinkInitiative, id: props.initiativeId! };
   const [artifacts, setArtifacts] = createSignal<Artifact[]>([]);
   const [orphans, setOrphans] = createSignal<Artifact[]>([]);
   const [renamingId, setRenamingId] = createSignal<number | null>(null);
@@ -49,7 +51,7 @@ export default function ArtifactsPanel(props: { initiativeId: number }) {
   // extraction poll — so the same rules the records list needs apply here, and
   // this list never had either of them.
   const reload = latestOnly(async (isCurrent) => {
-    const attached = (await ArtifactService.ListForTarget(LinkTarget.LinkInitiative, props.initiativeId)) ?? [];
+    const attached = (await ArtifactService.ListForTarget(target().type, target().id)) ?? [];
     const unattached = (await ArtifactService.ListOrphans()) ?? [];
     if (!isCurrent()) return;
     setArtifacts(attached);
@@ -60,9 +62,13 @@ export default function ArtifactsPanel(props: { initiativeId: number }) {
     setExtracting((ids) => ids.filter((id) => !settled.has(id)));
   });
   // Another panel may attach an artifact — a dropped resume, for one — so this
-  // list follows the workspace revision as well as its own actions.
+  // list follows the workspace revision as well as its own actions. It also
+  // follows its own target: a CRM caller keeps this component mounted across
+  // a change of selected record, rather than remounting it, so the target
+  // itself has to be a reload trigger too.
   createEffect(() => {
     workspaceRevision();
+    target();
     void reload();
   });
 
@@ -95,8 +101,8 @@ export default function ArtifactsPanel(props: { initiativeId: number }) {
         originalFilename: file.name,
         source: "Uploaded by the recruiter",
         dataBase64: await readBase64(file),
-        targetType: LinkTarget.LinkInitiative,
-        targetId: props.initiativeId,
+        targetType: target().type,
+        targetId: target().id,
       }),
     );
   };
@@ -108,8 +114,8 @@ export default function ArtifactsPanel(props: { initiativeId: number }) {
         originalFilename: "",
         source: "Pasted by the recruiter",
         dataBase64: base64OfText(pasted()),
-        targetType: LinkTarget.LinkInitiative,
-        targetId: props.initiativeId,
+        targetType: target().type,
+        targetId: target().id,
       });
       setPasted("");
       setPastedName("");
@@ -118,7 +124,7 @@ export default function ArtifactsPanel(props: { initiativeId: number }) {
 
   const extract = (a: Artifact) =>
     act(async () => {
-      const job = await ExtractService.Extract(a.id, props.initiativeId);
+      const job = await ExtractService.Extract(a.id, props.initiativeId ?? 0);
       setExtracting((ids) => [...ids, a.id]);
       return job;
     });
@@ -181,7 +187,7 @@ export default function ArtifactsPanel(props: { initiativeId: number }) {
         <button
           aria-label={`Detach ${a.displayName}`}
           title="Removes this link only — the bytes and any other links are kept"
-          onClick={() => act(() => ArtifactService.Detach(a.id, LinkTarget.LinkInitiative, props.initiativeId))}
+          onClick={() => act(() => ArtifactService.Detach(a.id, target().type, target().id))}
         >
           Detach
         </button>
@@ -189,7 +195,7 @@ export default function ArtifactsPanel(props: { initiativeId: number }) {
       <Show when={!attached}>
         <button
           aria-label={`Attach ${a.displayName}`}
-          onClick={() => act(() => ArtifactService.Link(a.id, LinkTarget.LinkInitiative, props.initiativeId))}
+          onClick={() => act(() => ArtifactService.Link(a.id, target().type, target().id))}
         >
           Attach here
         </button>

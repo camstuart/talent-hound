@@ -114,6 +114,20 @@ describe("RecordForm", () => {
 
     await waitFor(() => expect(screen.getByLabelText("Full name *")).toHaveValue(""));
   });
+
+  it("prefills from initial values for editing", async () => {
+    const onSubmit = vi.fn(async () => undefined);
+    render(() => (
+      <RecordForm
+        legend="Edit"
+        fields={[{ key: "fullName", label: "Full name", required: true }]}
+        submitLabel="Save"
+        initial={{ fullName: "Alice Amber" }}
+        onSubmit={onSubmit}
+      />
+    ));
+    expect((screen.getByLabelText("Full name *") as HTMLInputElement).value).toBe("Alice Amber");
+  });
 });
 
 describe("value helpers", () => {
