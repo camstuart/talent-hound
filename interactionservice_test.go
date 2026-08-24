@@ -166,4 +166,69 @@ func TestAnInteractionOnAMissingTargetIsRefused(t *testing.T) {
 	}
 }
 
+func TestEditingAnInteractionReplacesItsEvidence(t *testing.T) {
+	e := newCrmEnv(t)
+	made, err := e.interactions.Log(InteractionInput{
+		TargetType: models.LinkCandidate, TargetID: e.candidate,
+		Kind: "call", Note: "Interested in quokkastack roles.", OccurredAt: "2026-08-24",
+	})
+	if err != nil {
+		t.Fatalf("logging: %v", err)
+	}
+	waitForLatestJob(t, e.jobs)
+	oldArtifact := made.ArtifactID
+
+	edited, err := e.interactions.Update(InteractionInput{
+		ID: made.ID, TargetType: models.LinkCandidate, TargetID: e.candidate,
+		Kind: "call", Note: "Interested in wombatscale roles.", OccurredAt: "2026-08-24",
+	})
+	if err != nil {
+		t.Fatalf("updating: %v", err)
+	}
+	waitForLatestJob(t, e.jobs)
+
+	if edited.ArtifactID == oldArtifact {
+		t.Fatalf("edit kept the old artifact")
+	}
+	var gone int64
+	e.db.Model(&models.Artifact{}).Where("id = ?", oldArtifact).Count(&gone)
+	if gone != 0 {
+		t.Fatalf("old artifact survived the edit")
+	}
+	var stale int64
+	e.db.Model(&models.Chunk{}).Where("artifact_id = ?", oldArtifact).Count(&stale)
+	if stale != 0 {
+		t.Fatalf("old chunks survived the edit")
+	}
+	// The new wording is what search finds.
+	var fresh []models.Chunk
+	e.db.Where("artifact_id = ?", edited.ArtifactID).Find(&fresh)
+	if len(fresh) == 0 || !strings.Contains(fresh[0].Text, "wombatscale") {
+		t.Fatalf("new chunks missing or stale: %+v", fresh)
+	}
+}
+
+func TestDeletingAnInteractionRemovesItsEvidence(t *testing.T) {
+	e := newCrmEnv(t)
+	made, err := e.interactions.Log(InteractionInput{
+		TargetType: models.LinkCandidate, TargetID: e.candidate,
+		Kind: "note", Note: "Short-lived note.", OccurredAt: "2026-08-24",
+	})
+	if err != nil {
+		t.Fatalf("logging: %v", err)
+	}
+	waitForLatestJob(t, e.jobs)
+
+	if err := e.interactions.Delete(made.ID); err != nil {
+		t.Fatalf("deleting: %v", err)
+	}
+	var rows, artifacts, chunks int64
+	e.db.Model(&models.Interaction{}).Count(&rows)
+	e.db.Model(&models.Artifact{}).Where("id = ?", made.ArtifactID).Count(&artifacts)
+	e.db.Model(&models.Chunk{}).Where("artifact_id = ?", made.ArtifactID).Count(&chunks)
+	if rows != 0 || artifacts != 0 || chunks != 0 {
+		t.Fatalf("leftovers: %d rows, %d artifacts, %d chunks", rows, artifacts, chunks)
+	}
+}
+
 var _ = gorm.ErrRecordNotFound // keep the import if unused after edits

@@ -202,3 +202,63 @@ func (s *InteractionService) Timeline(targetType models.LinkTarget, targetID uin
 	}
 	return entries, nil
 }
+
+// Update edits an interaction and replaces its evidence artifact, so search
+// always reflects the current wording. The target cannot change: a note about
+// someone else is a new interaction.
+func (s *InteractionService) Update(in InteractionInput) (*models.Interaction, error) {
+	if err := guardAllows(s.Guard); err != nil {
+		return nil, err
+	}
+	var existing models.Interaction
+	if err := s.db.First(&existing, in.ID).Error; err != nil {
+		return nil, fmt.Errorf("loading interaction %d: %w", in.ID, err)
+	}
+	interaction := in.row()
+	interaction.TargetType, interaction.TargetID = existing.TargetType, existing.TargetID
+	interaction.CreatedAt = existing.CreatedAt
+	if err := interaction.Validate(); err != nil {
+		return nil, err
+	}
+	err := s.db.Transaction(func(tx *gorm.DB) error {
+		// Create the new artifact first so the interaction always has a valid reference.
+		artifact, err := s.evidenceWithin(tx, &interaction)
+		if err != nil {
+			return err
+		}
+		interaction.ArtifactID = artifact.ID
+		if err := tx.Save(&interaction).Error; err != nil {
+			return fmt.Errorf("updating interaction: %w", err)
+		}
+		// Now safe to delete the old artifact.
+		if err := deleteArtifactsWithin(tx, []uint{existing.ArtifactID}); err != nil {
+			return err
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	if _, err := s.chunks.Chunk(interaction.ArtifactID, in.InitiativeID); err != nil {
+		return nil, fmt.Errorf("queueing the note for indexing: %w", err)
+	}
+	return &interaction, nil
+}
+
+// Delete removes an interaction and everything derived from its note.
+func (s *InteractionService) Delete(id uint) error {
+	var existing models.Interaction
+	if err := s.db.First(&existing, id).Error; err != nil {
+		return fmt.Errorf("loading interaction %d: %w", id, err)
+	}
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		// Delete the interaction first to clear the reference, then delete the artifact.
+		if err := tx.Delete(&models.Interaction{}, id).Error; err != nil {
+			return fmt.Errorf("deleting interaction: %w", err)
+		}
+		if err := deleteArtifactsWithin(tx, []uint{existing.ArtifactID}); err != nil {
+			return err
+		}
+		return nil
+	})
+}
