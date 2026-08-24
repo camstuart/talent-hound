@@ -304,7 +304,7 @@ func TestValidationAcceptsTheAwkwardButValid(t *testing.T) {
 	got, err := r.CreateCandidate(models.Candidate{
 		FullName:   unicode,
 		Location:   "Reykjavík 🇮🇸",
-		SourceNote: "combining marks: é",
+		SourceNote: "combining marks: é",
 		Emails:     models.StringList{"  spaced@example.test  ", "   ", ""},
 	})
 	if err != nil {
@@ -313,7 +313,7 @@ func TestValidationAcceptsTheAwkwardButValid(t *testing.T) {
 	if got.FullName != "Zoë  Ólafsdóttir-李" {
 		t.Errorf("full name was mangled: %q", got.FullName)
 	}
-	if got.Location != "Reykjavík 🇮🇸" || got.SourceNote != "combining marks: é" {
+	if got.Location != "Reykjavík 🇮🇸" || got.SourceNote != "combining marks: é" {
 		t.Errorf("unicode content was rewritten: %+v", got)
 	}
 	if len(got.Emails) != 1 || got.Emails[0] != "spaced@example.test" {
