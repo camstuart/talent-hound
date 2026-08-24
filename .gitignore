@@ -54,6 +54,9 @@ Thumbs.db
 # Local tooling config (Claude Code)
 /.claude/
 
+# Vendored Ollama binary staging folder (not committed; see docs/product/OLLAMA_BUNDLING.md)
+build/ollama/
+
 # MarkItDown sidecar build artifacts (pin is recorded in build/sidecar/PIN.md)
 build/sidecar/dist/
 build/sidecar/work/

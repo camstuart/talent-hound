@@ -46,6 +46,8 @@ Adding a backend capability means: write the Go service method → register it i
 
 Root `Taskfile.yml` dispatches to `build/Taskfile.yml` (common tasks, including server mode) and per-platform Taskfiles in `build/<os>/`. App/product metadata is in `build/config.yml`.
 
+**Ollama:** the app detects a running Ollama at `localhost:11434`, else launches a bundled copy (`ollama/` beside the app binary, endpoint `127.0.0.1:11435`) and kills it on exit — see `internal/platform/ollamamanage.go` and `docs/product/OLLAMA_BUNDLING.md`.
+
 ## Testing strategy (three layers)
 
 - **Go unit tests** (`*_test.go`): plain Go tests against services directly.
