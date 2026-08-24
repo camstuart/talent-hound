@@ -1,0 +1,25 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e5]: Talent Hound
+    - generic [ref=e6]:
+      - button "Help" [ref=e7] [cursor=pointer]
+      - button "Settings" [ref=e8] [cursor=pointer]
+  - generic [ref=e9]:
+    - navigation "Initiatives" [ref=e10]:
+      - generic [ref=e11]:
+        - generic [ref=e12]: Initiatives
+        - button "New initiative" [ref=e13] [cursor=pointer]: +
+      - generic [ref=e14]:
+        - checkbox "Show archived initiatives" [ref=e15]
+        - text: Show archived
+      - list [ref=e16]
+    - main [ref=e17]:
+      - generic [ref=e19]:
+        - heading "Talent Hound" [level=1] [ref=e20]
+        - paragraph [ref=e21]: Create an initiative from the panel on the left to get started.
+      - generic "Operating state" [ref=e22]:
+        - generic "Active initiative" [ref=e23]: No initiative open
+        - generic "Data scope" [ref=e24]: Real scope
+        - generic "Selected models" [ref=e25]: "embed: unassigned (unassigned) · classify: unassigned (unassigned) · generate: unassigned (unassigned)"
+        - generic "Cloud override" [ref=e26]: Local only
+        - generic "Connectivity" [ref=e27]: Offline
