@@ -714,6 +714,11 @@ li[data-satisfied="yes"] .artifact-name {
     align-items: start;
 }
 
+.help-index {
+    border-right: 1px solid var(--border);
+    padding-right: 1.5rem;
+}
+
 .help-index h4 {
     margin: 0.8rem 0 0.3rem;
     font-size: 0.8rem;
@@ -733,7 +738,8 @@ li[data-satisfied="yes"] .artifact-name {
     text-align: left;
     background: none;
     border: none;
-    padding: 0;
+    border-left: 3px solid transparent;
+    padding: 0 0 0 0.5rem;
     font: inherit;
     cursor: pointer;
     text-decoration: underline;
@@ -742,6 +748,8 @@ li[data-satisfied="yes"] .artifact-name {
 .help-index button[data-current="yes"] {
     font-weight: 600;
     text-decoration: none;
+    border-left-color: var(--accent);
+    color: var(--accent);
 }
 
 .help-article h5 {
@@ -757,5 +765,12 @@ li[data-satisfied="yes"] .artifact-name {
 @media (max-width: 60rem) {
     .help-body {
         grid-template-columns: 1fr;
+    }
+
+    .help-index {
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        padding-right: 0;
+        padding-bottom: 1rem;
     }
 }

@@ -208,3 +208,41 @@ func headings(hits []Hit) []string {
 	}
 	return out
 }
+
+func TestEachWayOfWorkingHasItsOwnTutorial(t *testing.T) {
+	// One tutorial per initiative type, plus one for the CRM: a recruiter's
+	// first question is "how do I do my kind of work here".
+	for _, id := range []string{
+		"tutorial",
+		"tutorial-talent-search",
+		"tutorial-business-development",
+		"tutorial-crm",
+	} {
+		a, err := Find(id)
+		if err != nil {
+			t.Fatalf("finding %q: %v", id, err)
+		}
+		if a.Group != "First steps" {
+			t.Fatalf("%q is in group %q, want it beside the other tutorials", id, a.Group)
+		}
+		if len(a.Sections) < 3 {
+			t.Fatalf("%q has %d sections, too thin to demonstrate anything", id, len(a.Sections))
+		}
+	}
+
+	// The tutorials sit together, in reading order, right after the flagship one.
+	articles, err := Articles()
+	if err != nil {
+		t.Fatalf("loading: %v", err)
+	}
+	order := map[string]int{}
+	for i, a := range articles {
+		order[a.ID] = i
+	}
+	if !(order["tutorial"] < order["tutorial-talent-search"] &&
+		order["tutorial-talent-search"] < order["tutorial-business-development"] &&
+		order["tutorial-business-development"] < order["tutorial-crm"] &&
+		order["tutorial-crm"] < order["initiatives-and-records"]) {
+		t.Fatalf("tutorials are out of reading order: %v", order)
+	}
+}

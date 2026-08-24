@@ -1,8 +1,8 @@
 ---
 id: tutorial
-title: Tutorial — a candidate from document to draft
+title: Tutorial — Job Search, a candidate from document to draft
 group: First steps
-summary: The whole flagship loop in order, with what to expect at each step.
+summary: The whole Job Search loop in order, with what to expect at each step.
 ---
 
 ## 1. Create an initiative
