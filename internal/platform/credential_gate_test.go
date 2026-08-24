@@ -1,13 +1,11 @@
-//go:build windowsgate
+//go:build (windows && windowsgate) || credentialgate
 
-// External test package: an internal one would import internal/db, which
-// imports this package, and Go refuses the cycle — which made the whole
-// windowsgate build fail before it could run.
 package platform_test
 
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -18,7 +16,7 @@ import (
 )
 
 func TestGateCredentialRoundTrip(t *testing.T) {
-	const purpose = "gate-test"
+	purpose := fmt.Sprintf("gate-test-%d", os.Getpid())
 	secret := []byte("s3cr3t-gate-value-do-not-log")
 
 	var logs bytes.Buffer
@@ -36,6 +34,17 @@ func TestGateCredentialRoundTrip(t *testing.T) {
 	}
 	if !bytes.Equal(got, secret) {
 		t.Fatalf("LoadSecret returned %q, want the stored secret", got)
+	}
+	replacement := []byte("replacement-gate-value-do-not-log")
+	if err := platform.StoreSecret(purpose, replacement); err != nil {
+		t.Fatalf("replacing secret: %v", err)
+	}
+	got, err = platform.LoadSecret(purpose)
+	if err != nil {
+		t.Fatalf("loading replacement: %v", err)
+	}
+	if !bytes.Equal(got, replacement) {
+		t.Fatalf("LoadSecret returned %q, want the replacement", got)
 	}
 	if err := platform.DeleteSecret(purpose); err != nil {
 		t.Fatalf("DeleteSecret: %v", err)
@@ -56,7 +65,10 @@ func TestGateCredentialRoundTrip(t *testing.T) {
 	if bytes.Contains(raw, secret) {
 		t.Fatal("secret found in the database file")
 	}
-	if bytes.Contains(logs.Bytes(), secret) {
+	if bytes.Contains(raw, replacement) {
+		t.Fatal("replacement found in the database file")
+	}
+	if bytes.Contains(logs.Bytes(), secret) || bytes.Contains(logs.Bytes(), replacement) {
 		t.Fatal("secret found in log output")
 	}
 }

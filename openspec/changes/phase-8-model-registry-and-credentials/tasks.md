@@ -24,7 +24,7 @@
 
 ## 4. Credentials
 
-- [x] 4.1 `internal/platform/credential_other.go` refusing on every non-Windows platform, with no fallback store
+- [x] 4.1 Native Windows Credential Manager and macOS Keychain stores, with unsupported platforms refusing and no fallback store
 - [x] 4.2 A `SecretStore` seam with the platform implementation and a test-only in-memory one
 - [x] 4.3 `credentialservice.go`: `Store`, `Has`, `Delete`, and no getter of any kind
 - [x] 4.4 Refuse an empty secret; a missing credential is an answer, not an error

@@ -369,7 +369,7 @@ Cloud consent is bound to the exact initiative, endpoint, and eligible task type
 
 Every non-localhost request creates a local audit event containing timestamp, provider, task, information categories, initiative, and nullable record references. Audit events never store request payload, query content, document content, or draft text. Exa Search records may retain their visible query within the owning initiative for reproducibility.
 
-Provider keys live in the Windows credential store, are masked after entry, and never enter application data, logs, diagnostics, or directory-copy recovery. Removing a credential disables the provider without deleting local information.
+Provider keys live in Windows Credential Manager or macOS Keychain, are masked after entry, and never enter application data, logs, diagnostics, or directory-copy recovery. Removing a credential disables the provider without deleting local information.
 
 External failure never blocks CRM, artifacts, profiles, local retrieval, or local generation.
 
@@ -378,7 +378,7 @@ External failure never blocks CRM, artifacts, profiles, local retrieval, or loca
 ### PoC release gates
 
 - The selected data-folder volume is encrypted and checked at every startup. Real personal-data workflows remain unavailable otherwise.
-- Credentials live only in the Windows credential store.
+- Credentials live only in Windows Credential Manager or macOS Keychain.
 - No candidate artifact, profile, or CRM content leaves the device merely because it was added.
 - Exa and cloud disclosures follow the provider rules and are locally audited.
 - Candidate data can be inspected, corrected, and deleted together with its profiles and derived retrieval data.
@@ -407,7 +407,7 @@ A full specialist review of Australian privacy, employment, discrimination, and 
 
 The selected data folder contains all recruiter content, CRM records, artifacts, profiles, aspects, indexes, audit events, background-job state, migration snapshots, and redacted logs.
 
-Application binaries and the extraction sidecar live in the install directory. Credentials live in the Windows credential store. Ollama and downloaded models live in Ollama-managed storage.
+Application binaries and the extraction sidecar live in the install directory. Credentials live in Windows Credential Manager or macOS Keychain. Ollama and downloaded models live in Ollama-managed storage.
 
 Only the selected data folder must be copied for data recovery. Credentials must be re-entered and missing models re-downloaded.
 
@@ -475,7 +475,7 @@ A failed integrity check or migration never opens a partially recovered database
 | FR-08 | Produce a top-20 hybrid shortlist and two-directional criteria assessment using the KNN evidence, deterministic ranking, background-job lifecycle, and assessment input hash defined here. |
 | FR-09 | Create editable evidence-backed pitches and outreach drafts. Copy-out creates metadata-only audit events; the application cannot send messages. |
 | FR-10 | Provide required local **embed**, **classify**, and **generate** assignments plus one optional cloud endpoint under the validation, disclosure, and task-boundary rules. |
-| FR-11 | Store Exa and cloud credentials in the Windows credential store and provide visible provider configuration and revocation. |
+| FR-11 | Store Exa and cloud credentials in Windows Credential Manager or macOS Keychain and provide visible provider configuration and revocation. |
 | FR-12 | Enforce every deletion invariant and verify scoped removal from profiles, retrieval, matching, and candidate-owned evidence. |
 | FR-13 | Provide the BitLocker gate, first-run flow, migration snapshots, closed-app recovery procedure, manual updates, uninstall information, and redacted diagnostics. |
 

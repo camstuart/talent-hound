@@ -236,8 +236,8 @@ func TestASecretReachesNoDatabaseNoLogAndNoError(t *testing.T) {
 }
 
 func TestThePlatformStoreRefusesWhereThereIsNoStore(t *testing.T) {
-	if runtime.GOOS == "windows" {
-		t.Skip("Windows has a credential store; the round trip is a gate test")
+	if runtime.GOOS == "windows" || runtime.GOOS == "darwin" {
+		t.Skip("this platform has a credential store; the round trip is a gate test")
 	}
 	svc := NewCredentialService()
 	err := svc.Store("exa", inventedKey)

@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: Provider secrets live only in the operating system credential store
-A provider secret SHALL be stored only in the Windows credential store. The application SHALL NOT provide any other storage for a secret — no file, no database column, no environment variable — on any platform.
+A provider secret SHALL be stored only in Windows Credential Manager or macOS Keychain. The application SHALL NOT provide any other storage for a secret — no file, no database column, no environment variable — on any platform.
 
 #### Scenario: A secret is stored in the credential store
 - **WHEN** a provider secret is stored

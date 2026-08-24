@@ -293,7 +293,7 @@ Do not build general platform abstractions in this phase. Keep only code or reco
 - Default `classify` to the local `generate` model without duplicating configuration.
 - Record model name, immutable digest when available, parameters, and Validated/Unvalidated status.
 - Verify Ollama and required models; expose missing-model information and pull prompts.
-- Store Exa and optional cloud secrets only in Windows Credential Manager.
+- Store Exa and optional cloud secrets only in Windows Credential Manager or macOS Keychain.
 - Redact secrets and sensitive content from errors and diagnostics.
 
 **Tests:**

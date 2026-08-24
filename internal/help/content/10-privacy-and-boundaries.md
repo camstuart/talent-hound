@@ -29,7 +29,7 @@ Before the first send for a task, you see the payload — the bytes. For chat, y
 
 ## Credentials
 
-Provider keys are stored in the Windows credential store and nowhere else. They are not in the database, the logs, the diagnostics, or a copied data folder. There is no way to read one back through the application — a stored key can be replaced or removed, not displayed.
+On Windows and macOS, provider keys are stored in Windows Credential Manager or macOS Keychain and nowhere else. They are not in the database, the logs, the diagnostics, or a copied data folder. There is no way to read one back through the application — a stored key can be replaced or removed, not displayed.
 
 ## Diagnostics
 

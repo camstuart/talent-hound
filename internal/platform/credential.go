@@ -12,10 +12,6 @@ var (
 
 	// ErrCredentialStoreUnsupported is a platform with nowhere a secret may go.
 	//
-	// There is deliberately no fallback. "Provider keys live in the Windows
-	// credential store and never enter application data" is a release gate, and
-	// a development convenience that writes them to a file or an environment
-	// variable is that gate failing quietly on a developer's machine first —
-	// which is the machine where nobody is checking.
+	// There is deliberately no file or environment-variable fallback.
 	ErrCredentialStoreUnsupported = errors.New("no supported credential store on this platform")
 )

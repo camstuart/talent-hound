@@ -68,11 +68,11 @@ This is the whole design. A getter on a service bound to the frontend is a gette
 
 The service also refuses to store an empty secret and trims nothing else — a key with a trailing space is a key the provider will reject, and silently repairing it hides the recruiter's paste error.
 
-### There is no non-Windows credential store, and no fallback
+### Each supported operating system uses its native credential store
 
-`internal/platform/credential_other.go` returns a distinct "unsupported on this platform" error for every operation. It does not write a file, an environment variable, or an encrypted blob.
+Windows uses Credential Manager and macOS uses Keychain. `internal/platform/credential_other.go` returns a distinct "unsupported on this platform" error everywhere else. No implementation writes a file, an environment variable, or an encrypted blob.
 
-A fallback would be the reasonable-looking change that breaks the PRD gate: "credentials live only in the Windows credential store" is a release condition, and a development convenience that stores them elsewhere is that condition failing quietly on the developer's machine first. The cost is that the credential feature cannot be exercised end to end off Windows, which is the same cost Phases 1 and 6 already pay, and it is paid in the same place — the gate evidence.
+A fallback would be the reasonable-looking change that breaks the PRD gate: credentials live only in the operating system credential store. A development convenience that stores them elsewhere would make that condition fail quietly.
 
 To keep the service's own rules testable everywhere, the store is one small interface with two implementations: the platform one, and an in-memory one that exists only in tests. Nothing file-backed ships.
 
@@ -84,7 +84,7 @@ It is a crude test and that is why it works: it does not care how the secret mig
 
 ## Risks / Trade-offs
 
-- **The credential round trip stays unrun off Windows.** Create, replace, retrieve, revoke, and missing-entry against the real Credential Manager are gate tests, joining the Phase 1 and Phase 6 evidence gap. Everything about the service's own behaviour is proven against the in-memory store.
+- **The credential round trip needs a native gate run.** Create, replace, retrieve, revoke, and missing-entry run against Windows Credential Manager or macOS Keychain under the `credentialgate` tag. Everything about the service's own behaviour is also proven against the in-memory store.
 - **Availability checks need a running Ollama.** The state machine is tested against a fake OpenAI-compatible endpoint that returns each failure on demand; the real Ollama proofs remain behind the `livemodel` tag, where Phase 1 put them.
 - **Append-only assignments grow.** One row per configuration change, on a single-user desktop app, forever — which is a few dozen rows in a realistic lifetime and a table nobody ever needs to prune.
 - **No un-assign for `classify`.** Once explicitly assigned it stops following `generate` permanently. Restoring inheritance means adding a state; the phase that wants it can pay for it.

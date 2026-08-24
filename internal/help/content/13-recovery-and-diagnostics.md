@@ -9,7 +9,7 @@ summary: Copying your data safely, moving to a new machine, and what the diagnos
 
 Close Talent Hound completely, then copy the whole data folder. That folder holds everything: records, documents, profiles, indexes, audit events, job state, migration snapshots, and logs.
 
-Two things are not in it, by design: your provider keys, which live in the Windows credential store, and your models, which live in Ollama's storage. Both are re-entered or re-downloaded rather than copied.
+Two things are not in it, by design: provider keys in Windows Credential Manager or macOS Keychain, and models in Ollama's storage. Both are re-entered or re-downloaded rather than copied.
 
 ## Recovering onto another machine
 

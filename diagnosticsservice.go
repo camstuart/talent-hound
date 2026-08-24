@@ -259,7 +259,7 @@ func (s *DiagnosticsService) RecoveryProcedure() *Recovery {
 			"Start Talent Hound and select the copied folder as the data folder.",
 			"The database is checked for integrity and its schema version before it opens; " +
 				"a snapshot is taken before any migration, and restored if one fails.",
-			"Re-enter provider credentials: they live in the Windows credential store, not in the folder.",
+			"Provider credentials are not part of the copied folder; re-enter them on supported systems.",
 			"Re-download any missing models: they live in Ollama's storage, not in the folder.",
 		},
 	}

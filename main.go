@@ -98,7 +98,7 @@ func main() {
 	profiles := NewCandidateProfileService(gdb, classify, records)
 	artifacts := NewArtifactService(gdb)
 	criteria := NewCriteriaService(gdb, registry, ollama, profiles)
-	// The Exa key lives in the Windows credential store and is read at call
+	// The Exa key lives in the operating system credential store and is read at call
 	// time; an empty key means searches refuse rather than being unavailable.
 	credentials := NewCredentialService()
 	search := NewSearchService(gdb)
