@@ -406,6 +406,15 @@ run, always "what I just created is not on screen within fifteen seconds", in
 whichever spec lost the race that time. Every reading of it as a product fault
 was wrong, including the two recorded above before this paragraph was written.
 
+The cost is repetition, not a slow interface, and that distinction was measured
+rather than assumed. Against the same accumulated database, one browser on an
+idle machine loads the application in 567 ms with 6,855 workspaces listed, and
+opens one in 295 ms with 1,272 candidates rendered. That is fine. What is not
+fine is fifty-five specs each loading that page several times, in four contexts
+sharing one machine, every one of them re-rendering those lists on every
+workspace change — which is how half a second becomes minutes and how a
+fifteen-second assertion eventually loses.
+
 Measured, same suite, same machine, same commit:
 
 | Database | Wall time | Result |
@@ -780,6 +789,7 @@ to produce a first number.
 | One assessment | below 60 s | NOT RUN — `just bench-assess` | needs a live generate model | |
 | End to end over twenty roles | role profiling plus assessment below 30 min | NOT RUN | needs live models | |
 | Database size after the acceptance corpus | below 5 GB | **52 MiB** at the same corpus | one chunk per document — see below | go, with a wide margin |
+| Interface at more than the representative corpus | no PRD figure; cold start below 5 s is the nearest | **567 ms** to load, **295 ms** to open a workspace | one browser, idle machine, 6,855 workspaces and 1,272 candidates in the database | go — above the PRD's ~1,000 candidates, and well inside the nearest budget |
 | Overnight corpus indexing | 1,000 resumes below 8 h | NOT RUN | needs a live embed model | |
 
 Two things about those two numbers, both of which make them weaker than they
