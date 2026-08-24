@@ -170,9 +170,12 @@ func main() {
 		Width:  1000,
 		Height: 618,
 		Mac: application.MacWindow{
-			InvisibleTitleBarHeight: 50,
-			Backdrop:                application.MacBackdropTranslucent,
-			TitleBar:                application.MacTitleBarHiddenInset,
+			Backdrop: application.MacBackdropTranslucent,
+			// Hidden-inset keeps the traffic lights on top of the webview; the
+			// title bar the frontend draws leaves room for them and marks itself
+			// draggable. No InvisibleTitleBarHeight: that swallows every click in
+			// the top 50px, which is exactly where the menu buttons now live.
+			TitleBar: application.MacTitleBarHiddenInset,
 		},
 		BackgroundColour: application.NewRGB(6, 7, 15),
 		URL:              "/",

@@ -5,6 +5,7 @@ package db
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -131,7 +132,13 @@ func openRaw(path string) (*gorm.DB, error) {
 	dsn := fmt.Sprintf("%s?_pragma=busy_timeout(%d)&_pragma=foreign_keys(1)&_txlock=immediate",
 		path, busyTimeoutMS)
 	gdb, err := gorm.Open(sqlite.Open(dsn), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Warn),
+		// "record not found" is an answer, not a fault: several services ask for
+		// a row that legitimately does not exist yet (first run has no model
+		// assignments), and logging it buries real warnings.
+		Logger: logger.New(log.New(os.Stderr, "\r\n", log.LstdFlags), logger.Config{
+			LogLevel:                  logger.Warn,
+			IgnoreRecordNotFoundError: true,
+		}),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("opening sqlite db at %s: %w", path, err)

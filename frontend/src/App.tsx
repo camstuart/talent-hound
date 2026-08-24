@@ -101,92 +101,114 @@ export default function App() {
 
   return (
     <div class="app">
-      <Sidebar
-        initiatives={initiatives()}
-        activeId={activeId()}
-        showArchived={showArchived()}
-        onSelect={openInitiative}
-        onNew={() => setShowModal(true)}
-        onToggleArchived={toggleArchived}
-        onSettings={() => {
-          setShowHelp(false);
-          setShowSettings((on) => !on);
-        }}
-        onHelp={() => {
-          setShowSettings(false);
-          setShowHelp((on) => !on);
-        }}
-      />
-      <main class="main">
-        <Show when={openTabs().length > 0}>
-          <TabBar tabs={openTabs()} activeId={activeId()} onActivate={setActiveId} onClose={closeTab} />
-        </Show>
-        <div class="content">
-          <Show when={showHelp()}>
-            <HelpPanel />
-          </Show>
-          <Show when={!showHelp() && needsSetup()}>
-            <div class="container">
-              <h1>Welcome to Talent Hound</h1>
-              <p class="muted">Choose where this installation keeps its data before anything else.</p>
-              <FirstRunWizard />
-            </div>
-          </Show>
-          <Show when={!showHelp() && !needsSetup() && showSettings()}>
-            <SettingsPanel />
-          </Show>
-          <Show when={!showHelp() && !needsSetup() && !showSettings()}>
-          <Show when={activeInitiative()} fallback={<Welcome />}>
-            {(initiative) => (
-              <section class="initiative-panel">
-                <header class="initiative-panel-header">
-                  <InitiativeIcon type={initiative().type} />
-                  <Show
-                    when={renaming()}
-                    fallback={
-                      <>
-                        <h1>{initiative().name}</h1>
-                        <button onClick={() => setRenaming(true)}>Rename</button>
-                      </>
-                    }
-                  >
-                    <input
-                      class="rename-input"
-                      aria-label="New name"
-                      value={initiative().name}
-                      ref={(el) => setTimeout(() => el.select())}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") rename(initiative().id, e.currentTarget.value);
-                        if (e.key === "Escape") setRenaming(false);
-                      }}
-                      onBlur={(e) => rename(initiative().id, e.currentTarget.value)}
-                    />
-                  </Show>
-                  <span class="initiative-type-badge">{INITIATIVE_TYPE_LABELS[initiative().type]}</span>
-                  <span class="initiative-status-badge" data-status={initiative().status}>
-                    {initiative().status === InitiativeStatus.InitiativeArchived ? "Archived" : "Active"}
-                  </span>
-                  {/* Exactly one of archive or reopen, per the current state. */}
-                  <Show
-                    when={initiative().status === InitiativeStatus.InitiativeArchived}
-                    fallback={
-                      <button onClick={() => act(() => InitiativeService.Archive(initiative().id))}>Archive</button>
-                    }
-                  >
-                    <button onClick={() => act(() => InitiativeService.Reopen(initiative().id))}>Reopen</button>
-                  </Show>
-                </header>
-                <Show when={error()}>
-                  <p class="modal-error">{error()}</p>
-                </Show>
-                <WorkspaceAreas initiativeId={initiative().id} type={initiative().type} />
-              </section>
-            )}
-          </Show>
-          </Show>
+      {/* The window has no native title bar, so this strip is both the drag
+          handle and the home of the application-wide menu items. Its left
+          padding is where the macOS traffic lights sit. */}
+      <header class="titlebar">
+        <span class="titlebar-title">Talent Hound</span>
+        <div class="titlebar-actions">
+          <button
+            aria-label="Help"
+            aria-pressed={showHelp()}
+            onClick={() => {
+              setShowSettings(false);
+              setShowHelp((on) => !on);
+            }}
+          >
+            Help
+          </button>
+          <button
+            aria-label="Settings"
+            aria-pressed={showSettings()}
+            onClick={() => {
+              setShowHelp(false);
+              setShowSettings((on) => !on);
+            }}
+          >
+            Settings
+          </button>
         </div>
-        <StatusStrip initiativeId={activeInitiative()?.id} initiativeName={activeInitiative()?.name} />
-      </main>
+      </header>
+      <div class="app-body">
+        <Sidebar
+          initiatives={initiatives()}
+          activeId={activeId()}
+          showArchived={showArchived()}
+          onSelect={openInitiative}
+          onNew={() => setShowModal(true)}
+          onToggleArchived={toggleArchived}
+        />
+        <main class="main">
+          <Show when={openTabs().length > 0}>
+            <TabBar tabs={openTabs()} activeId={activeId()} onActivate={setActiveId} onClose={closeTab} />
+          </Show>
+          <div class="content">
+            <Show when={showHelp()}>
+              <HelpPanel />
+            </Show>
+            <Show when={!showHelp() && needsSetup()}>
+              <div class="container">
+                <h1>Welcome to Talent Hound</h1>
+                <p class="muted">Choose where this installation keeps its data before anything else.</p>
+                <FirstRunWizard />
+              </div>
+            </Show>
+            <Show when={!showHelp() && !needsSetup() && showSettings()}>
+              <SettingsPanel />
+            </Show>
+            <Show when={!showHelp() && !needsSetup() && !showSettings()}>
+            <Show when={activeInitiative()} fallback={<Welcome />}>
+              {(initiative) => (
+                <section class="initiative-panel">
+                  <header class="initiative-panel-header">
+                    <InitiativeIcon type={initiative().type} />
+                    <Show
+                      when={renaming()}
+                      fallback={
+                        <>
+                          <h1>{initiative().name}</h1>
+                          <button onClick={() => setRenaming(true)}>Rename</button>
+                        </>
+                      }
+                    >
+                      <input
+                        class="rename-input"
+                        aria-label="New name"
+                        value={initiative().name}
+                        ref={(el) => setTimeout(() => el.select())}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") rename(initiative().id, e.currentTarget.value);
+                          if (e.key === "Escape") setRenaming(false);
+                        }}
+                        onBlur={(e) => rename(initiative().id, e.currentTarget.value)}
+                      />
+                    </Show>
+                    <span class="initiative-type-badge">{INITIATIVE_TYPE_LABELS[initiative().type]}</span>
+                    <span class="initiative-status-badge" data-status={initiative().status}>
+                      {initiative().status === InitiativeStatus.InitiativeArchived ? "Archived" : "Active"}
+                    </span>
+                    {/* Exactly one of archive or reopen, per the current state. */}
+                    <Show
+                      when={initiative().status === InitiativeStatus.InitiativeArchived}
+                      fallback={
+                        <button onClick={() => act(() => InitiativeService.Archive(initiative().id))}>Archive</button>
+                      }
+                    >
+                      <button onClick={() => act(() => InitiativeService.Reopen(initiative().id))}>Reopen</button>
+                    </Show>
+                  </header>
+                  <Show when={error()}>
+                    <p class="modal-error">{error()}</p>
+                  </Show>
+                  <WorkspaceAreas initiativeId={initiative().id} type={initiative().type} />
+                </section>
+              )}
+            </Show>
+            </Show>
+          </div>
+          <StatusStrip initiativeId={activeInitiative()?.id} initiativeName={activeInitiative()?.name} />
+        </main>
+      </div>
       <Show when={showModal()}>
         <NewInitiativeModal onCreate={createInitiative} onCancel={() => setShowModal(false)} />
       </Show>

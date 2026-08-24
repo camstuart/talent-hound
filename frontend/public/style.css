@@ -34,8 +34,79 @@ h1 {
 
 .app {
     display: flex;
+    flex-direction: column;
     height: 100%;
     overflow: hidden;
+}
+
+.app-body {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    overflow: hidden;
+}
+
+/* ---------- Title bar ---------- */
+
+/* The window is frameless, so this strip carries the window controls' space,
+   the drag handle, and the application-wide menu items. */
+.titlebar {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    height: 44px;
+    padding: 0 0.6rem;
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border);
+    --wails-draggable: drag;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+/* Room for the macOS traffic lights, which float over the top-left corner. */
+html[data-os="darwin"] .titlebar {
+    padding-left: 78px;
+}
+
+/* Windows and Linux put their window controls top-right instead. */
+html[data-os="windows"] .titlebar,
+html[data-os="linux"] .titlebar {
+    padding-right: 140px;
+}
+
+.titlebar-title {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+}
+
+.titlebar-actions {
+    margin-left: auto;
+    display: flex;
+    gap: 0.4rem;
+    /* Buttons in a drag region are clicks, not drags. */
+    --wails-draggable: no-drag;
+}
+
+.titlebar-actions button {
+    padding: 0.3rem 0.75rem;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: none;
+    color: var(--muted);
+}
+
+.titlebar-actions button:hover {
+    background: var(--bg-hover);
+    color: inherit;
+}
+
+.titlebar-actions button[aria-pressed="true"] {
+    background: var(--bg-active);
+    color: inherit;
 }
 
 /* ---------- Sidebar ---------- */
@@ -526,11 +597,6 @@ button {
     word-break: break-word;
     font-size: 0.8rem;
     color: var(--muted);
-}
-
-.sidebar-settings {
-    margin: 0.5rem;
-    align-self: stretch;
 }
 
 .settings {
