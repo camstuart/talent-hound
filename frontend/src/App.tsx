@@ -10,6 +10,7 @@ import NewInitiativeModal from "./components/NewInitiativeModal";
 import WorkspaceAreas from "./components/WorkspaceAreas";
 import SettingsPanel from "./components/SettingsPanel";
 import HelpPanel from "./components/HelpPanel";
+import CrmPanel from "./components/CrmPanel";
 import StatusStrip from "./components/StatusStrip";
 import FirstRunWizard from "./components/FirstRunWizard";
 import { SetupService } from "../bindings/camstuart/talent-hound";
@@ -45,7 +46,7 @@ export default function App() {
   });
 
   const byId = (id: number) => initiatives().find((i) => i.id === id);
-  const UTILITY_TITLES = { settings: "Settings", help: "Help" } as const;
+  const UTILITY_TITLES = { settings: "Settings", help: "Help", crm: "CRM" } as const;
   const openTabs = (): Tab[] =>
     openTabIds()
       .map((id): Tab | undefined => {
@@ -122,6 +123,9 @@ export default function App() {
       <header class="titlebar">
         <span class="titlebar-title">Talent Hound</span>
         <div class="titlebar-actions">
+          <button aria-label="CRM" aria-pressed={activeId() === "crm"} onClick={() => openInitiative("crm")}>
+            CRM
+          </button>
           <button aria-label="Help" aria-pressed={activeId() === "help"} onClick={() => openInitiative("help")}>
             Help
           </button>
@@ -160,6 +164,9 @@ export default function App() {
             </Show>
             <Show when={!needsSetup() && activeId() === "settings"}>
               <SettingsPanel />
+            </Show>
+            <Show when={!needsSetup() && activeId() === "crm"}>
+              <CrmPanel />
             </Show>
             <Show when={!needsSetup() && typeof activeId() !== "string"}>
             <Show when={activeInitiative()} fallback={<Welcome />}>

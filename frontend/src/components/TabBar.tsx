@@ -3,7 +3,7 @@ import type { InitiativeType } from "../../bindings/camstuart/talent-hound/inter
 import { InitiativeIcon } from "./InitiativeIcon";
 
 // One open tab: an initiative by id, or a utility screen by name.
-export type TabId = number | "settings" | "help";
+export type TabId = number | "settings" | "help" | "crm";
 
 export interface Tab {
   id: TabId;
