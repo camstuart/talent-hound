@@ -195,10 +195,21 @@ func (s *ArtifactService) list(q *gorm.DB) ([]models.Artifact, error) {
 }
 
 // Rename changes the display name, and only the display name.
+//
+// An interaction's companion artifact cannot be renamed: its display name is
+// generated from the interaction that owns it and would drift from its own
+// note on the next edit.
 func (s *ArtifactService) Rename(id uint, displayName string) (*models.Artifact, error) {
 	displayName = strings.TrimSpace(displayName)
 	if displayName == "" {
 		return nil, fmt.Errorf("artifact display name must not be empty")
+	}
+	owned, err := isInteractionOwned(s.db, id)
+	if err != nil {
+		return nil, err
+	}
+	if owned {
+		return nil, fmt.Errorf("this is an interaction's companion note and cannot be renamed independently")
 	}
 	artifact, err := s.Get(id)
 	if err != nil {
@@ -208,6 +219,18 @@ func (s *ArtifactService) Rename(id uint, displayName string) (*models.Artifact,
 		return nil, fmt.Errorf("renaming artifact %d: %w", id, err)
 	}
 	return artifact, nil
+}
+
+// isInteractionOwned reports whether an artifact is the companion evidence of
+// a logged interaction. The authoritative check is an interactions row
+// pointing at the artifact, not the artifact's source label — the label is
+// how the artifact was made, the interaction row is what still owns it.
+func isInteractionOwned(db *gorm.DB, artifactID uint) (bool, error) {
+	var n int64
+	if err := db.Model(&models.Interaction{}).Where("artifact_id = ?", artifactID).Count(&n).Error; err != nil {
+		return false, fmt.Errorf("checking artifact ownership: %w", err)
+	}
+	return n > 0, nil
 }
 
 // Link attaches an artifact to a record. Linking something already linked is

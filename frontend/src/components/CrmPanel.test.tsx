@@ -3,7 +3,7 @@ import { render, screen, fireEvent, waitFor } from "@solidjs/testing-library";
 import CrmPanel from "./CrmPanel";
 
 // The Go backend is not running: bindings are mocked. Every fixture is invented.
-const { state, recordMocks, searchMocks, interactionMocks, profileMocks, artifactMocks, extractMocks } = vi.hoisted(() => {
+const { state, initiativeMocks, recordMocks, searchMocks, interactionMocks, profileMocks, artifactMocks, extractMocks } = vi.hoisted(() => {
   const state = {
     candidates: [
       { id: 1, fullName: "Alice Amber", location: "Sydney", emails: [], phones: [], compensation: {} },
@@ -12,9 +12,13 @@ const { state, recordMocks, searchMocks, interactionMocks, profileMocks, artifac
     people: [] as Record<string, unknown>[],
     timeline: [] as Record<string, unknown>[],
     roles: [] as Record<string, unknown>[],
+    initiatives: [] as Record<string, unknown>[],
   };
   return {
     state,
+    initiativeMocks: {
+      List: vi.fn(async () => state.initiatives),
+    },
     recordMocks: {
       SearchCandidates: vi.fn(async () => state.candidates),
       SearchCompanies: vi.fn(async () => []),
@@ -72,12 +76,14 @@ vi.mock("../../bindings/camstuart/talent-hound", () => ({
   CandidateProfileService: profileMocks,
   ArtifactService: artifactMocks,
   ExtractService: extractMocks,
+  InitiativeService: initiativeMocks,
 }));
 
 beforeEach(() => {
   state.people = [];
   state.timeline = [];
   state.roles = [];
+  state.initiatives = [];
   // UpdateCandidate mutates this fixture in place (see above), so it has to
   // be restored between tests too.
   state.candidates = [
@@ -177,12 +183,36 @@ describe("CrmPanel", () => {
     await waitFor(() => expect(interactionMocks.Timeline).toHaveBeenCalledTimes(2));
   });
 
-  it("an outcome kind requires picking a role in the form", async () => {
+  it("an outcome kind without a role surfaces the backend's refusal as an alert", async () => {
+    interactionMocks.Log.mockRejectedValueOnce(new Error("a placement needs the role it is about"));
     render(() => <CrmPanel />);
     fireEvent.click(await screen.findByText("Alice Amber"));
-    await screen.findByLabelText("Interaction kind");
-    fireEvent.change(screen.getByLabelText("Interaction kind"), { target: { value: "placement" } });
-    await screen.findByLabelText("Interaction role");
+    fireEvent.change(await screen.findByLabelText("Interaction kind"), { target: { value: "placement" } });
+    fireEvent.input(screen.getByLabelText("Interaction note"), { target: { value: "Placed." } });
+    fireEvent.submit(screen.getByLabelText("Log interaction form"));
+    const alert = await screen.findByRole("alert");
+    expect(alert.textContent).toBe("a placement needs the role it is about");
+  });
+
+  it("a non-outcome kind can still carry a role, and sends the chosen initiative", async () => {
+    state.roles = [{ id: 3, title: "Engineer" }];
+    state.initiatives = [{ id: 8, name: "Q3 search" }];
+    render(() => <CrmPanel />);
+    fireEvent.click(await screen.findByText("Alice Amber"));
+
+    fireEvent.change(await screen.findByLabelText("Interaction kind"), { target: { value: "call" } });
+    await screen.findByText("Engineer");
+    fireEvent.change(screen.getByLabelText("Interaction role"), { target: { value: "3" } });
+    await screen.findByText("Q3 search");
+    fireEvent.change(screen.getByLabelText("Interaction initiative"), { target: { value: "8" } });
+    fireEvent.input(screen.getByLabelText("Interaction note"), { target: { value: "Quick call." } });
+    fireEvent.submit(screen.getByLabelText("Log interaction form"));
+
+    await waitFor(() =>
+      expect(interactionMocks.Log).toHaveBeenCalledWith(
+        expect.objectContaining({ kind: "call", roleId: 3, initiativeId: 8 }),
+      ),
+    );
   });
 
   it("edits the selected record through the details form", async () => {
@@ -218,19 +248,17 @@ describe("CrmPanel", () => {
     await waitFor(() => expect(screen.getByLabelText("Full name *")).toHaveValue("Alice A. Amber"));
   });
 
-  it("does not submit a stale role id after switching away from an outcome kind", async () => {
+  it("clearing the role select sends roleId 0, not the last-picked role", async () => {
     state.roles = [{ id: 3, title: "Engineer" }];
     render(() => <CrmPanel />);
     fireEvent.click(await screen.findByText("Alice Amber"));
 
-    const kindSelect = await screen.findByLabelText("Interaction kind");
-    fireEvent.change(kindSelect, { target: { value: "placement" } });
     const roleSelect = await screen.findByLabelText("Interaction role");
     // The role list loads asynchronously — the option has to exist before a
     // select's value can be set to it.
     await screen.findByText("Engineer");
     fireEvent.change(roleSelect, { target: { value: "3" } });
-    fireEvent.change(kindSelect, { target: { value: "call" } });
+    fireEvent.change(roleSelect, { target: { value: "" } });
 
     fireEvent.input(screen.getByLabelText("Interaction note"), { target: { value: "Left a voicemail." } });
     fireEvent.submit(screen.getByLabelText("Log interaction form"));
@@ -238,5 +266,25 @@ describe("CrmPanel", () => {
     await waitFor(() =>
       expect(interactionMocks.Log).toHaveBeenCalledWith(expect.objectContaining({ kind: "call", roleId: 0 })),
     );
+  });
+
+  it("disables the log form's submit button while an action is in flight", async () => {
+    let resolveLog: (() => void) | undefined;
+    interactionMocks.Log.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveLog = () => resolve({ id: 5 });
+        }),
+    );
+    render(() => <CrmPanel />);
+    fireEvent.click(await screen.findByText("Alice Amber"));
+    fireEvent.input(screen.getByLabelText("Interaction note"), { target: { value: "Left a voicemail." } });
+
+    const submit = screen.getByRole("button", { name: "Log interaction" });
+    fireEvent.submit(screen.getByLabelText("Log interaction form"));
+    await waitFor(() => expect(submit).toBeDisabled());
+
+    resolveLog?.();
+    await waitFor(() => expect(submit).not.toBeDisabled());
   });
 });

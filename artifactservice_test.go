@@ -292,6 +292,42 @@ func TestRenameChangesOnlyTheDisplayName(t *testing.T) {
 	}
 }
 
+// TestRenameRefusesAnInteractionsArtifact proves the spec's ownership
+// invariant: an interaction's companion note cannot be renamed independently,
+// while an ordinary artifact on the same record still can.
+func TestRenameRefusesAnInteractionsArtifact(t *testing.T) {
+	e := newCrmEnv(t)
+	logged, err := e.interactions.Log(InteractionInput{
+		TargetType: models.LinkCandidate, TargetID: e.candidate,
+		Kind: "note", Note: "Left a voicemail.", OccurredAt: "2026-08-24",
+	})
+	if err != nil {
+		t.Fatalf("logging: %v", err)
+	}
+
+	artifacts := NewArtifactService(e.db)
+	if _, err := artifacts.Rename(logged.ArtifactID, "Renamed note"); err == nil {
+		t.Fatal("renamed an interaction's companion artifact")
+	}
+	var got models.Artifact
+	if err := e.db.First(&got, logged.ArtifactID).Error; err != nil {
+		t.Fatalf("loading artifact: %v", err)
+	}
+	if strings.Contains(got.DisplayName, "Renamed note") {
+		t.Fatalf("refused rename changed the stored name anyway: %q", got.DisplayName)
+	}
+
+	// An ordinary artifact on the same candidate is unaffected.
+	ordinary, err := artifacts.create("Attached resume", "resume.pdf", "", []byte("resume bytes"),
+		models.LinkCandidate, e.candidate)
+	if err != nil {
+		t.Fatalf("creating ordinary artifact: %v", err)
+	}
+	if _, err := artifacts.Rename(ordinary.ID, "New name"); err != nil {
+		t.Fatalf("renaming an ordinary artifact was refused: %v", err)
+	}
+}
+
 func TestArtifactLinkingAndDetaching(t *testing.T) {
 	gdb := newTestDB(t)
 	s := NewArtifactService(gdb)

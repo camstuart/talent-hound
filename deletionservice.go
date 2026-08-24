@@ -412,6 +412,11 @@ func deleteArtifactsWithin(tx *gorm.DB, ids []uint) error {
 // A role's source artifact cannot be detached: a role's provenance is the
 // sequence of listings it was seen as, and letting one be removed leaves a
 // match citing a listing that no longer exists.
+//
+// An interaction's companion artifact cannot be detached either: detaching it
+// would sever the artifact_links row SearchService.People joins on, so the
+// note would silently stop being talent-search evidence while the interaction
+// still points at it — the interaction owns this artifact, not the target.
 func (s *DeletionService) Detach(artifactID uint, targetType models.LinkTarget, targetID uint) error {
 	if targetType == models.LinkRole {
 		owned, err := s.isRoleSource(artifactID)
@@ -422,7 +427,14 @@ func (s *DeletionService) Detach(artifactID uint, targetType models.LinkTarget, 
 			return fmt.Errorf("this is a role's source listing and cannot be detached — purge the role instead")
 		}
 	}
-	err := s.db.Where("artifact_id = ? AND target_type = ? AND target_id = ?",
+	interactionOwned, err := isInteractionOwned(s.db, artifactID)
+	if err != nil {
+		return err
+	}
+	if interactionOwned {
+		return fmt.Errorf("this is an interaction's companion note and cannot be detached independently — delete the interaction instead")
+	}
+	err = s.db.Where("artifact_id = ? AND target_type = ? AND target_id = ?",
 		artifactID, targetType, targetID).Delete(&models.ArtifactLink{}).Error
 	if err != nil {
 		return fmt.Errorf("detaching the artifact: %w", err)

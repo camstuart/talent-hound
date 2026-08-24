@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 
-// Unique per run: the E2E database persists across local runs. All content is
-// invented — no real candidate information is uploaded.
+// Unique per run: specs run in parallel against one shared backend. All
+// content is invented — no real candidate information is uploaded.
 const stamp = Date.now();
 
 test("a logged call becomes findable evidence with a visible history", async ({ page }) => {
@@ -57,7 +57,8 @@ test("an outcome names its role in the timeline", async ({ page }) => {
   await page.getByRole("list", { name: "Records" }).getByText(name, { exact: true }).click();
 
   await page.getByLabel("Interaction kind").selectOption("placement");
-  // The role select only appears for outcome kinds, and only once a role exists.
+  // The role select is always present, but only has this role's option once
+  // it exists.
   await expect(page.getByLabel("Interaction role")).toBeVisible();
   await page.getByLabel("Interaction role").selectOption({ label: roleTitle });
   await page.getByLabel("Interaction note").fill(`Placed into ${roleTitle}.`);

@@ -345,6 +345,42 @@ func TestDetachRemovesOneLinkAndDeleteRemovesEverything(t *testing.T) {
 	}
 }
 
+// An interaction's companion note is owned by the interaction, not by
+// whatever record it is attached to: detaching it would sever the
+// artifact_links row SearchService.People joins on while the interaction
+// still points at it.
+func TestDetachRefusesAnInteractionsArtifact(t *testing.T) {
+	e := newCrmEnv(t)
+	logged, err := e.interactions.Log(InteractionInput{
+		TargetType: models.LinkCandidate, TargetID: e.candidate,
+		Kind: "note", Note: "Left a voicemail.", OccurredAt: "2026-08-24",
+	})
+	if err != nil {
+		t.Fatalf("logging: %v", err)
+	}
+
+	deletion := NewDeletionService(e.db)
+	if err := deletion.Detach(logged.ArtifactID, models.LinkCandidate, e.candidate); err == nil {
+		t.Fatal("detached an interaction's companion artifact")
+	}
+	var n int64
+	e.db.Model(&models.ArtifactLink{}).Where("artifact_id = ?", logged.ArtifactID).Count(&n)
+	if n != 1 {
+		t.Fatalf("refused detach removed the link anyway: %d links remain", n)
+	}
+
+	// An ordinary artifact on the same candidate still detaches normally.
+	artifacts := NewArtifactService(e.db)
+	ordinary, err := artifacts.create("Attached resume", "resume.pdf", "", []byte("resume bytes"),
+		models.LinkCandidate, e.candidate)
+	if err != nil {
+		t.Fatalf("creating ordinary artifact: %v", err)
+	}
+	if err := deletion.Detach(ordinary.ID, models.LinkCandidate, e.candidate); err != nil {
+		t.Fatalf("detaching an ordinary artifact was refused: %v", err)
+	}
+}
+
 // A role's provenance is the sequence of listings it was seen as.
 func TestARoleSourceArtifactCannotBeDetachedOrDeleted(t *testing.T) {
 	e := newDeletionEnv(t)

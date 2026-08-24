@@ -1,13 +1,14 @@
 import { createEffect, createSignal, For, onMount, Show } from "solid-js";
 import {
   CandidateProfileService,
+  InitiativeService,
   InteractionService,
   RecordService,
   SearchService,
 } from "../../bindings/camstuart/talent-hound";
 import type { PersonHit, TimelineEntry } from "../../bindings/camstuart/talent-hound";
 import { LinkTarget } from "../../bindings/camstuart/talent-hound/internal/models";
-import type { Candidate, Company, Contact, Profile, Role } from "../../bindings/camstuart/talent-hound/internal/models";
+import type { Candidate, Company, Contact, Initiative, Profile, Role } from "../../bindings/camstuart/talent-hound/internal/models";
 import { createAction } from "../act";
 import RecordForm, { list, num, type FieldSpec } from "./RecordForm";
 import ArtifactsPanel from "./ArtifactsPanel";
@@ -392,22 +393,25 @@ function Detail(props: { sel: () => { type: CrmKind; id: number } }) {
   const [companies, setCompanies] = createSignal<Company[]>([]);
   const [timeline, setTimeline] = createSignal<TimelineEntry[]>([]);
   const [roles, setRoles] = createSignal<Role[]>([]);
+  const [initiatives, setInitiatives] = createSignal<Initiative[]>([]);
   const [profile, setProfile] = createSignal<Profile | null>(null);
 
   const [kind, setKind] = createSignal("call");
   const [note, setNote] = createSignal("");
   const [occurredAt, setOccurredAt] = createSignal("");
   const [roleId, setRoleId] = createSignal("");
+  const [initiativeId, setInitiativeId] = createSignal("");
   const [editingId, setEditingId] = createSignal<number | null>(null);
 
   // The backend's own words, verbatim: it knows rules the UI does not.
-  const { act, error } = createAction();
+  const { act, busy, error } = createAction();
 
   const resetLogForm = () => {
     setKind("call");
     setNote("");
     setOccurredAt("");
     setRoleId("");
+    setInitiativeId("");
     setEditingId(null);
   };
 
@@ -420,9 +424,14 @@ function Detail(props: { sel: () => { type: CrmKind; id: number } }) {
     act(async () => {
       const s = props.sel();
       resetLogForm();
-      const [rec, rolesList] = await Promise.all([getRecord(s.type, s.id), RecordService.ListRoles()]);
+      const [rec, rolesList, initiativesList] = await Promise.all([
+        getRecord(s.type, s.id),
+        RecordService.ListRoles(),
+        InitiativeService.List(false),
+      ]);
       setRecord((rec as unknown as Record<string, unknown>) ?? null);
       setRoles((rolesList ?? []) as Role[]);
+      setInitiatives((initiativesList ?? []) as Initiative[]);
       await loadTimeline();
       setProfile(s.type === "candidate" ? (((await CandidateProfileService.InUse(s.id)) ?? null) as Profile | null) : null);
     });
@@ -454,10 +463,11 @@ function Detail(props: { sel: () => { type: CrmKind; id: number } }) {
         kind: kind(),
         note: note(),
         occurredAt: occurredAt(),
-        // A role picked before switching away from an outcome kind is no
-        // longer meaningful: only an outcome kind may submit one.
-        roleId: OUTCOME_KINDS.has(kind()) && roleId() ? Number(roleId()) : 0,
-        initiativeId: 0,
+        // The role select is optional for every kind now, and required only
+        // for outcome kinds — a role cleared by the recruiter sends 0, the
+        // backend's "none" value.
+        roleId: roleId() ? Number(roleId()) : 0,
+        initiativeId: initiativeId() ? Number(initiativeId()) : 0,
       };
       if (editingId() !== null) await InteractionService.Update(input);
       else await InteractionService.Log(input);
@@ -472,6 +482,7 @@ function Detail(props: { sel: () => { type: CrmKind; id: number } }) {
     setNote(entry.note);
     setOccurredAt(entry.occurredAt);
     setRoleId(entry.roleId ? String(entry.roleId) : "");
+    setInitiativeId(entry.initiativeId ? String(entry.initiativeId) : "");
   };
 
   const deleteEntry = (entry: TimelineEntry) =>
@@ -557,15 +568,25 @@ function Detail(props: { sel: () => { type: CrmKind; id: number } }) {
               <For each={INTERACTION_KINDS}>{(k) => <option value={k.value}>{k.label}</option>}</For>
             </select>
           </label>
-          <Show when={OUTCOME_KINDS.has(kind())}>
-            <label>
-              <span>Role</span>
-              <select aria-label="Interaction role" value={roleId()} onChange={(e) => setRoleId(e.currentTarget.value)}>
-                <option value="">— none —</option>
-                <For each={roles()}>{(r) => <option value={String(r.id)}>{r.title}</option>}</For>
-              </select>
-            </label>
-          </Show>
+          <label>
+            <span>Role</span>
+            <select
+              aria-label="Interaction role"
+              value={roleId()}
+              required={OUTCOME_KINDS.has(kind())}
+              onChange={(e) => setRoleId(e.currentTarget.value)}
+            >
+              <option value="">No role</option>
+              <For each={roles()}>{(r) => <option value={String(r.id)}>{r.title}</option>}</For>
+            </select>
+          </label>
+          <label>
+            <span>Initiative</span>
+            <select aria-label="Interaction initiative" value={initiativeId()} onChange={(e) => setInitiativeId(e.currentTarget.value)}>
+              <option value="">No initiative</option>
+              <For each={initiatives()}>{(i) => <option value={String(i.id)}>{i.name}</option>}</For>
+            </select>
+          </label>
           <label>
             <span>Note</span>
             <textarea aria-label="Interaction note" value={note()} onInput={(e) => setNote(e.currentTarget.value)} />
@@ -579,7 +600,7 @@ function Detail(props: { sel: () => { type: CrmKind; id: number } }) {
               onInput={(e) => setOccurredAt(e.currentTarget.value)}
             />
           </label>
-          <button class="primary" type="submit">
+          <button class="primary" type="submit" disabled={busy()}>
             {editingId() !== null ? "Save interaction" : "Log interaction"}
           </button>
         </form>
@@ -616,7 +637,7 @@ export default function CrmPanel() {
   const [selected, setSelected] = createSignal<{ type: CrmKind; id: number } | null>(null);
   const [people, setPeople] = createSignal<PersonHit[] | null>(null);
   const [talentQuery, setTalentQuery] = createSignal("");
-  const [list, setList] = createSignal<Row[]>([]);
+  const [records, setRecords] = createSignal<Row[]>([]);
   const [creating, setCreating] = createSignal(false);
   const [companies, setCompanies] = createSignal<Company[]>([]);
   // The backend's own words, verbatim: it knows rules the UI does not — a
@@ -626,7 +647,7 @@ export default function CrmPanel() {
   const reload = reloader(async (isCurrent) => {
     const found = await rows(kind(), applied());
     if (!isCurrent()) return;
-    setList(found);
+    setRecords(found);
   });
 
   createEffect(() => {
@@ -743,7 +764,7 @@ export default function CrmPanel() {
           when={people()}
           fallback={
             <ul class="record-list" aria-label="Records">
-              <For each={list()}>
+              <For each={records()}>
                 {(r) => (
                   <li
                     class="search-hit"
@@ -759,20 +780,22 @@ export default function CrmPanel() {
           }
         >
           {(hits) => (
-            <ul class="record-list" aria-label="Talent search results">
-              <For each={hits()}>
-                {(h) => (
-                  <li class="search-hit" onClick={() => setSelected({ type: "candidate", id: h.candidate.id })}>
-                    <span class="artifact-name">{h.candidate.fullName}</span>
-                    <span class="muted">{h.artifactName}</span>
-                    <span class="shell-note">{h.snippet}</span>
-                  </li>
-                )}
-              </For>
+            <>
+              <ul class="record-list" aria-label="Talent search results">
+                <For each={hits()}>
+                  {(h) => (
+                    <li class="search-hit" onClick={() => setSelected({ type: "candidate", id: h.candidate.id })}>
+                      <span class="artifact-name">{h.candidate.fullName}</span>
+                      <span class="muted">{h.artifactName}</span>
+                      <span class="shell-note">{h.snippet}</span>
+                    </li>
+                  )}
+                </For>
+              </ul>
               <button class="muted" onClick={() => setPeople(null)}>
                 Back to the list
               </button>
-            </ul>
+            </>
           )}
         </Show>
       </aside>

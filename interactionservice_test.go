@@ -4,8 +4,6 @@ import (
 	"strings"
 	"testing"
 
-	"gorm.io/gorm"
-
 	"camstuart/talent-hound/internal/models"
 )
 
@@ -208,6 +206,68 @@ func TestEditingAnInteractionReplacesItsEvidence(t *testing.T) {
 	}
 }
 
+func TestLoggingTheSameNoteTwiceOnTheSameTargetIsRefused(t *testing.T) {
+	e := newCrmEnv(t)
+	in := InteractionInput{
+		TargetType: models.LinkCandidate, TargetID: e.candidate,
+		Kind: "note", Note: "Called, left a voicemail.", OccurredAt: "2026-08-24",
+	}
+	if _, err := e.interactions.Log(in); err != nil {
+		t.Fatalf("logging: %v", err)
+	}
+	if _, err := e.interactions.Log(in); err == nil {
+		t.Fatal("an identical duplicate note was accepted")
+	} else if !strings.Contains(err.Error(), "already recorded") {
+		t.Fatalf("unexpected refusal message: %v", err)
+	}
+	var n int64
+	e.db.Model(&models.Interaction{}).Where("target_type = ? AND target_id = ?",
+		models.LinkCandidate, e.candidate).Count(&n)
+	if n != 1 {
+		t.Fatalf("want 1 interaction after the refused duplicate, got %d", n)
+	}
+
+	// The same wording on a different target is not a duplicate.
+	other := models.Candidate{FullName: "Other Sample"}
+	if err := e.db.Create(&other).Error; err != nil {
+		t.Fatalf("creating other candidate: %v", err)
+	}
+	if _, err := e.interactions.Log(InteractionInput{
+		TargetType: models.LinkCandidate, TargetID: other.ID,
+		Kind: "note", Note: "Called, left a voicemail.", OccurredAt: "2026-08-24",
+	}); err != nil {
+		t.Fatalf("identical wording on a different target was refused: %v", err)
+	}
+}
+
+func TestEditingANoteWithoutChangingItStillSucceeds(t *testing.T) {
+	e := newCrmEnv(t)
+	made, err := e.interactions.Log(InteractionInput{
+		TargetType: models.LinkCandidate, TargetID: e.candidate,
+		Kind: "call", Note: "Interested in quokkastack roles.", OccurredAt: "2026-08-24",
+	})
+	if err != nil {
+		t.Fatalf("logging: %v", err)
+	}
+	waitForLatestJob(t, e.jobs)
+
+	edited, err := e.interactions.Update(InteractionInput{
+		ID: made.ID, TargetType: models.LinkCandidate, TargetID: e.candidate,
+		Kind: "call", Note: "Interested in quokkastack roles.", OccurredAt: "2026-08-24",
+	})
+	if err != nil {
+		t.Fatalf("editing without changing the note was refused: %v", err)
+	}
+	if edited.ArtifactID == made.ArtifactID {
+		t.Fatalf("edit did not replace the artifact")
+	}
+	var gone int64
+	e.db.Model(&models.Artifact{}).Where("id = ?", made.ArtifactID).Count(&gone)
+	if gone != 0 {
+		t.Fatalf("old artifact survived the edit")
+	}
+}
+
 func TestDeletingAnInteractionRemovesItsEvidence(t *testing.T) {
 	e := newCrmEnv(t)
 	made, err := e.interactions.Log(InteractionInput{
@@ -230,5 +290,3 @@ func TestDeletingAnInteractionRemovesItsEvidence(t *testing.T) {
 		t.Fatalf("leftovers: %d rows, %d artifacts, %d chunks", rows, artifacts, chunks)
 	}
 }
-
-var _ = gorm.ErrRecordNotFound // keep the import if unused after edits

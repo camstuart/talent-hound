@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"time"
 
@@ -73,7 +74,7 @@ func (s *InteractionService) Log(in InteractionInput) (*models.Interaction, erro
 		return nil, err
 	}
 	err := s.db.Transaction(func(tx *gorm.DB) error {
-		artifact, err := s.evidenceWithin(tx, &interaction)
+		artifact, err := s.evidenceWithin(tx, &interaction, 0)
 		if err != nil {
 			return err
 		}
@@ -96,7 +97,11 @@ func (s *InteractionService) Log(in InteractionInput) (*models.Interaction, erro
 // evidenceWithin creates the note's artifact inside tx and links it to the
 // interaction's target. The Markdown is set here — this application wrote the
 // note, so there is nothing to extract.
-func (s *InteractionService) evidenceWithin(tx *gorm.DB, i *models.Interaction) (*models.Artifact, error) {
+//
+// exclude is an artifact ID the duplicate check must ignore — the interaction
+// being edited still points at its own prior wording when this runs, and that
+// is not a repeat log. Log passes 0, which matches nothing.
+func (s *InteractionService) evidenceWithin(tx *gorm.DB, i *models.Interaction, exclude uint) (*models.Artifact, error) {
 	subject, err := targetName(tx, i.TargetType, i.TargetID)
 	if err != nil {
 		return nil, err
@@ -125,6 +130,23 @@ func (s *InteractionService) evidenceWithin(tx *gorm.DB, i *models.Interaction) 
 		Extractor:        "interaction",
 		ExtractorVersion: "1",
 	}
+	// The same wording already recorded against the same target is a repeat
+	// log, not new evidence — mirrors the same-target dedup ArtifactService.Create
+	// applies to uploads. Update replaces the old artifact before creating the
+	// new one in the same transaction, so an unchanged edit sees only its own
+	// (already-deleted) prior wording here and still succeeds.
+	var dup models.Artifact
+	err = tx.Select("id").
+		Where("sha256 = ? AND id <> ?", artifact.SHA256, exclude).
+		Where("id IN (?)", tx.Model(&models.ArtifactLink{}).Select("artifact_id").
+			Where("target_type = ? AND target_id = ?", i.TargetType, i.TargetID)).
+		First(&dup).Error
+	if err == nil {
+		return nil, fmt.Errorf("this note is already recorded — it is identical to one already logged here")
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, fmt.Errorf("checking for a duplicate note: %w", err)
+	}
+
 	if err := tx.Create(artifact).Error; err != nil {
 		return nil, fmt.Errorf("storing the note: %w", err)
 	}
@@ -221,8 +243,13 @@ func (s *InteractionService) Update(in InteractionInput) (*models.Interaction, e
 		return nil, err
 	}
 	err := s.db.Transaction(func(tx *gorm.DB) error {
-		// Create the new artifact first so the interaction always has a valid reference.
-		artifact, err := s.evidenceWithin(tx, &interaction)
+		// Create the new artifact first so the interaction always has a valid
+		// reference (its artifact_id has a NOT NULL foreign key, so the old
+		// artifact cannot be deleted while the row still points at it). The
+		// duplicate check inside evidenceWithin excludes the interaction's own
+		// current artifact, so an edit that leaves the note unchanged is not
+		// mistaken for logging the same note twice.
+		artifact, err := s.evidenceWithin(tx, &interaction, existing.ArtifactID)
 		if err != nil {
 			return err
 		}
