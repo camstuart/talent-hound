@@ -6,9 +6,24 @@ set windows-shell := ["cmd.exe", "/c"]
 default:
     @just --list
 
+sidecar_exe := justfile_directory() / "build/sidecar/dist/markitdown-sidecar/markitdown-sidecar"
+
+# The extraction sidecar is built first if it is missing, and the app is told
+# where it lives via TH_SIDECAR_EXE — the dev bundle wails3 recreates never
+# contains it.
 # Run the app in development mode (desktop window, hot reload)
+[unix]
+dev: sidecar-dev
+    TH_SIDECAR_EXE="{{sidecar_exe}}" wails3 dev
+
+[windows]
 dev:
     wails3 dev
+
+# Build the sidecar only when its binary is not already there (it is slow)
+[unix]
+sidecar-dev:
+    test -x "{{sidecar_exe}}" || just sidecar
 
 # ---------- Tests ----------
 
@@ -35,6 +50,10 @@ test-e2e:
 # Run on the target Windows 11 x64 laptop; needs TH_SIDECAR_EXE (see `just sidecar`).
 gate:
     go test -tags windowsgate -v -count=1 ./internal/platform/
+
+# Native credential-store round trip on either Windows or macOS.
+gate-credential:
+    go test -tags credentialgate -v -count=1 -run TestGateCredentialRoundTrip ./internal/platform/
 
 # Live local-model proofs against Ollama at http://localhost:11434.
 # Override models with TH_INSTRUCT_MODELS / TH_EMBED_MODELS.
@@ -118,7 +137,12 @@ tune-classify:
 tune:
     go test -tags livemodel -v -count=1 -timeout 120m -run TestTuneRetrieval .
 
-# Build the pinned MarkItDown PyInstaller one-dir sidecar (Windows only)
+# Build the pinned MarkItDown PyInstaller one-dir sidecar
+[unix]
+sidecar:
+    bash build/sidecar/build.sh
+
+[windows]
 sidecar:
     powershell -NoProfile -ExecutionPolicy Bypass -File build/sidecar/build.ps1
 
