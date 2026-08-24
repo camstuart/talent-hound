@@ -656,6 +656,28 @@ var migrations = []migration{
 			"CREATE UNIQUE INDEX `idx_cloud_endpoints_revision` ON `cloud_endpoints`(`revision`)",
 		},
 	},
+	{
+		Version: 17,
+		Name:    "interactions",
+		SQL: []string{
+			"CREATE TABLE `interactions` (" +
+				"`id` integer PRIMARY KEY AUTOINCREMENT," +
+				"`target_type` text NOT NULL CHECK (`target_type` IN " +
+				"('candidate','contact','company','role'))," +
+				"`target_id` integer NOT NULL," +
+				"`kind` text NOT NULL CHECK (`kind` IN " +
+				"('call','meeting','email','note','placement','application','rejection'))," +
+				"`note` text NOT NULL," +
+				"`occurred_at` text NOT NULL," +
+				"`role_id` integer REFERENCES `roles`(`id`)," +
+				"`initiative_id` integer REFERENCES `initiatives`(`id`)," +
+				"`artifact_id` integer NOT NULL REFERENCES `artifacts`(`id`)," +
+				"`created_at` datetime," +
+				"`updated_at` datetime)",
+			"CREATE INDEX `idx_interactions_target` ON " +
+				"`interactions`(`target_type`,`target_id`,`occurred_at`)",
+		},
+	},
 }
 
 // badVectorLength is the condition an embedding is refused on: a blob that is
