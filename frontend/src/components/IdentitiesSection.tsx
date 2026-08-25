@@ -1,5 +1,5 @@
 import { createAction } from "../act";
-import { createEffect, createSignal, For, Show } from "solid-js";
+import { createEffect, createSignal, For, on, Show } from "solid-js";
 import { Browser } from "@wailsio/runtime";
 import { EnrichService } from "../../bindings/camstuart/talent-hound";
 import type { EnrichOutcome, EnrichPreview } from "../../bindings/camstuart/talent-hound";
@@ -37,11 +37,15 @@ export default function IdentitiesSection(props: { candidateId: number }) {
     setPreview((p ?? null) as EnrichPreview | null);
   });
 
-  createEffect(() => {
-    props.candidateId;
-    setOutcome(null);
-    void reload();
-  });
+  createEffect(
+    on(
+      () => props.candidateId,
+      () => {
+        setOutcome(null);
+        void reload();
+      },
+    ),
+  );
 
   const add = (e: Event) => {
     e.preventDefault();
