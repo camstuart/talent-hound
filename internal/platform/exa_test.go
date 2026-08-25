@@ -159,3 +159,46 @@ func TestADateIsKeptAsTheDayItNames(t *testing.T) {
 		}
 	}
 }
+
+// A people search is the same request with one word changed. The query is
+// still sent exactly as confirmed, and the category is the only thing that
+// says what kind of page comes back.
+func TestAPeopleSearchSendsTheQueryUnchangedWithThePeopleCategory(t *testing.T) {
+	const confirmed = `platform engineer local-first desktop tools Melbourne`
+	var sent map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(body, &sent)
+		_, _ = w.Write([]byte(`{"results":[{"id":"p1","url":"https://example.org/quokka","title":"Quokka","text":"Builds things."}],"nextCursor":""}`))
+	}))
+	defer server.Close()
+
+	client := &Exa{BaseURL: server.URL, Client: server.Client(), Key: "not-a-real-key-EXA-4c19f7"}
+	got, err := client.SearchPeople(context.Background(), confirmed, 20, "")
+	if err != nil {
+		t.Fatalf("searching: %v", err)
+	}
+	if sent["query"] != confirmed {
+		t.Fatalf("sent %q, the recruiter confirmed %q", sent["query"], confirmed)
+	}
+	if sent["category"] != "people" {
+		t.Fatalf("the search category is %q", sent["category"])
+	}
+	if len(got.Results) != 1 || got.Results[0].URL != "https://example.org/quokka" {
+		t.Fatalf("results = %+v", got.Results)
+	}
+}
+
+// No key means no request for people either.
+func TestNoKeyMeansNoPeopleRequestEither(t *testing.T) {
+	requests := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { requests++ }))
+	defer server.Close()
+	client := &Exa{BaseURL: server.URL, Client: server.Client(), Key: " "}
+	if _, err := client.SearchPeople(context.Background(), "anything", 20, ""); !errors.Is(err, ErrSearchUnauthorized) {
+		t.Fatalf("err = %v", err)
+	}
+	if requests != 0 {
+		t.Fatalf("%d requests were made", requests)
+	}
+}

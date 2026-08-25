@@ -55,10 +55,11 @@ type SearchResponse struct {
 	Skipped int
 }
 
-// Exa is the role-listing search provider.
+// Exa is the search provider.
 //
-// It searches listings only: company, profile, and news searches are out of
-// scope, and the client has no method for them.
+// It has exactly two searches — role listings and people — and each is a
+// separate method, so the category on the wire is fixed by which one was
+// called rather than by an argument that could be wrong.
 type Exa struct {
 	BaseURL string
 	Client  *http.Client
@@ -82,6 +83,16 @@ func NewExa(key string) *Exa {
 // specific string, and a client that decorated it would make that confirmation
 // about something that was not sent.
 func (e *Exa) Search(ctx context.Context, query string, limit int, cursor string) (*SearchResponse, error) {
+	return e.search(ctx, query, limit, cursor, "job posting")
+}
+
+// SearchPeople sends exactly the query it is given, asking for pages about
+// people: profiles, personal sites, speaker pages.
+func (e *Exa) SearchPeople(ctx context.Context, query string, limit int, cursor string) (*SearchResponse, error) {
+	return e.search(ctx, query, limit, cursor, "people")
+}
+
+func (e *Exa) search(ctx context.Context, query string, limit int, cursor, category string) (*SearchResponse, error) {
 	if strings.TrimSpace(e.Key) == "" {
 		return nil, ErrSearchUnauthorized
 	}
@@ -91,7 +102,7 @@ func (e *Exa) Search(ctx context.Context, query string, limit int, cursor string
 	body := map[string]any{
 		"query":      query,
 		"numResults": limit,
-		"category":   "job posting",
+		"category":   category,
 		"contents":   map[string]any{"text": true},
 	}
 	if cursor != "" {
