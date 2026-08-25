@@ -279,7 +279,7 @@ func TestNoTelemetrySettingExists(t *testing.T) {
 // impossible: a client this repository builds, pointed somewhere that is not
 // the local model runtime, that nothing gated it.
 //
-// So every construction of an HTTP client is confined to two files, and every
+// So every construction of an HTTP client is confined to a few named files, and every
 // absolute destination in the repository is either the local runtime or a
 // remote the recruiter is asked about first. A third file gaining one is the
 // thing that breaks offline use, and it fails here on the day it is written
@@ -288,9 +288,12 @@ func TestNothingReachesTheNetworkExceptTheRuntimeAndApprovedRemotes(t *testing.T
 	// Where an outbound client may be built at all. Exa is recruiter-initiated
 	// with a per-query preview; the cloud endpoint is configured, approved per
 	// task, credentialed, and checked to be the one that was approved; the
-	// runtime is local. A fourth file here is a fourth way out.
+	// runtime is local; GitHub is recruiter-initiated with a per-run preview
+	// of the one handle that goes, credentialed, and disclosed. A sixth file
+	// here is a sixth way out.
 	allowed := map[string]bool{
 		filepath.Join("internal", "platform", "exa.go"):          true,
+		filepath.Join("internal", "platform", "github.go"):       true,
 		filepath.Join("internal", "platform", "ollama.go"):       true,
 		filepath.Join("internal", "platform", "ollamamanage.go"): true,
 		filepath.Join("internal", "platform", "cloudchat.go"):    true,
@@ -303,7 +306,7 @@ func TestNothingReachesTheNetworkExceptTheRuntimeAndApprovedRemotes(t *testing.T
 	// whatever they approved. That is the gate — an endpoint nobody typed is an
 	// endpoint nothing sends to.
 	permitted := []string{
-		"http://localhost", "http://127.0.0.1", "https://api.exa.ai",
+		"http://localhost", "http://127.0.0.1", "https://api.exa.ai", "https://api.github.com",
 	}
 
 	builders := []string{"http.NewRequest", "http.Client{", "http.Post(", "http.Get(", "http.Head("}

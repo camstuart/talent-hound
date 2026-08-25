@@ -86,7 +86,7 @@ func (s *EnrichService) AddIdentity(candidateID uint, provider, rawURL string) (
 	if handle == "" || detected != provider {
 		handle = hostOf(rawURL)
 		if provider == models.IdentityGitHub {
-			return nil, fmt.Errorf("a GitHub identity is a profile URL like https://github.com/login")
+			return nil, fmt.Errorf("a GitHub identity is a profile address: github.com/<login>")
 		}
 	}
 	identity := models.Identity{CandidateID: candidateID, Provider: provider, Handle: handle, URL: rawURL}
