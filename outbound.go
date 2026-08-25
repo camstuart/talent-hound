@@ -7,6 +7,7 @@ import (
 	"gorm.io/gorm"
 
 	"camstuart/talent-hound/internal/models"
+	"camstuart/talent-hound/internal/platform"
 	"camstuart/talent-hound/internal/scrub"
 )
 
@@ -40,6 +41,16 @@ func (o *outbound) key(provider string) (string, error) {
 		return "", fmt.Errorf("no search credential is stored — the provider is disabled")
 	}
 	return key, nil
+}
+
+// exa is the search client for this request, built from the credential read
+// now.
+func (o *outbound) exa() (*platform.Exa, error) {
+	key, err := o.key(models.ProviderExa)
+	if err != nil {
+		return nil, err
+	}
+	return platform.NewExa(key), nil
 }
 
 // record writes the audit event: that information left, never what.

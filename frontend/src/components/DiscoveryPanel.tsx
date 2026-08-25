@@ -1,5 +1,7 @@
 import { createAction } from "../act";
 import { createEffect, createSignal, For, Show } from "solid-js";
+import QueryPreviewEditor from "./QueryPreviewEditor";
+import PastSearches from "./PastSearches";
 import { DiscoveryService, RecordService } from "../../bindings/camstuart/talent-hound";
 import type { QueryPreview, SearchOutcome } from "../../bindings/camstuart/talent-hound";
 import type { Candidate, Search } from "../../bindings/camstuart/talent-hound/internal/models";
@@ -111,32 +113,18 @@ export default function DiscoveryPanel(props: { initiativeId: number }) {
 
       <Show when={preview()}>
         {(p) => (
-          <div class="extraction-view" role="region" aria-label="Query preview">
-            <h4>This is exactly what will be sent</h4>
-            <textarea
-              aria-label="Query to send"
-              rows="3"
-              value={query()}
-              onInput={(e) => edit(e.currentTarget.value)}
-            />
-            <Show when={p().organizationWarning}>
-              <p class="shell-note" aria-label="Organization warning">
-                {p().organizationWarning}
-              </p>
-            </Show>
-            <Show when={p().identifierWarning}>
-              {/* The serious one: shown as an error rather than a note. */}
-              <p class="modal-error" aria-label="Identifier warning">
-                {p().identifierWarning}
-              </p>
-            </Show>
-            <button class="primary" aria-label="Send this query" disabled={busy()} onClick={send}>
-              Send it
-            </button>
-            <button aria-label="Cancel this search" onClick={cancel}>
-              Cancel
-            </button>
-          </div>
+          <QueryPreviewEditor
+            regionLabel="Query preview"
+            fieldLabel="Query to send"
+            sendLabel="Send this query"
+            cancelLabel="Cancel this search"
+            preview={p()}
+            query={query()}
+            busy={busy()}
+            onEdit={edit}
+            onSend={send}
+            onCancel={cancel}
+          />
         )}
       </Show>
 
@@ -153,24 +141,12 @@ export default function DiscoveryPanel(props: { initiativeId: number }) {
         )}
       </Show>
 
-      <ul class="record-list" aria-label="Past searches">
-        <For each={searches()} fallback={<li class="muted">No searches yet.</li>}>
-          {(s, i) => (
-            <li class="search-hit">
-              <span class="artifact-name">
-                {s.provider}
-                <span class="muted">
-                  {" "}
-                  — {s.failureReason ? s.failureReason.replace(/_/g, " ") : `${s.resultCount} results`}
-                  {s.partial ? ", partial" : ""}
-                </span>
-              </span>
-              {/* Kept so a shortlist can be traced to the query that produced it. */}
-              <pre aria-label={`Query sent for search ${i() + 1}`}>{s.query}</pre>
-            </li>
-          )}
-        </For>
-      </ul>
+      <PastSearches
+        label="Past searches"
+        emptyText="No searches yet."
+        queryLabel={(i) => `Query sent for search ${i}`}
+        searches={searches()}
+      />
     </section>
   );
 }

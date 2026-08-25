@@ -1,11 +1,9 @@
 package main
 
 import (
-	"context"
 	"database/sql"
 	"fmt"
 	"strings"
-	"sync"
 	"testing"
 	"time"
 
@@ -16,33 +14,9 @@ import (
 
 // Every fixture here is invented. No real person appears in these tests.
 
-// fakePeopleExa records exactly what it was asked and answers however the test
-// says. The interesting assertion is what went out, not what came back.
-type fakePeopleExa struct {
-	mu        sync.Mutex
-	queries   []string
-	responses []*platform.SearchResponse
-	err       error
-	calls     int
-}
-
-func (f *fakePeopleExa) SearchPeople(_ context.Context, query string, _ int, _ string) (*platform.SearchResponse, error) {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	f.calls++
-	f.queries = append(f.queries, query)
-	if f.err != nil {
-		return nil, f.err
-	}
-	if len(f.responses) == 0 {
-		return &platform.SearchResponse{}, nil
-	}
-	return f.responses[min(f.calls-1, len(f.responses)-1)], nil
-}
-
 type sourcingEnv struct {
 	*roleEnv
-	exa        *fakePeopleExa
+	exa        *fakeExa
 	sourcing   *SourcingService
 	initiative uint
 	clock      time.Time
@@ -56,7 +30,7 @@ func newSourcingEnv(t *testing.T) *sourcingEnv {
 		t.Fatalf("creating initiative: %v", err)
 	}
 	e := &sourcingEnv{
-		roleEnv: base, exa: &fakePeopleExa{}, initiative: initiative.ID,
+		roleEnv: base, exa: &fakeExa{}, initiative: initiative.ID,
 		clock: time.Date(2026, 8, 26, 9, 0, 0, 0, time.UTC),
 	}
 	e.sourcing = NewSourcingService(base.db, e.exa, base.roles, base.records, base.artifacts, nil)

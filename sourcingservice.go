@@ -327,11 +327,7 @@ func (s *SourcingService) searcher() (PeopleSearcher, error) {
 	if s.exa != nil {
 		return s.exa, nil
 	}
-	key, err := s.out.key(models.ProviderExa)
-	if err != nil {
-		return nil, err
-	}
-	return platform.NewExa(key), nil
+	return s.out.exa()
 }
 
 // Searches lists the people searches sent under an initiative, newest first.

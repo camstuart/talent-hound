@@ -45,6 +45,12 @@ func (f *fakeExa) Search(_ context.Context, query string, _ int, _ string) (*pla
 	return f.responses[i], nil
 }
 
+// SearchPeople is the same fake wearing the people hat: the assertion in both
+// suites is what went out, and the recorder is the same recorder.
+func (f *fakeExa) SearchPeople(ctx context.Context, query string, limit int, cursor string) (*platform.SearchResponse, error) {
+	return f.Search(ctx, query, limit, cursor)
+}
+
 func (f *fakeExa) sent() []string {
 	f.mu.Lock()
 	defer f.mu.Unlock()

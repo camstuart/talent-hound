@@ -1,5 +1,7 @@
 import { createAction } from "../act";
 import { createEffect, createSignal, For, Show } from "solid-js";
+import QueryPreviewEditor from "./QueryPreviewEditor";
+import PastSearches from "./PastSearches";
 import { Browser } from "@wailsio/runtime";
 import { RecordService, SourcingService } from "../../bindings/camstuart/talent-hound";
 import type { LeadView, QueryPreview, SourcingOutcome } from "../../bindings/camstuart/talent-hound";
@@ -155,27 +157,18 @@ export default function PeopleSourcingPanel(props: { initiativeId: number }) {
 
       <Show when={preview()}>
         {(p) => (
-          <div class="extraction-view" role="region" aria-label="People query preview">
-            <h4>This is exactly what will be sent</h4>
-            <textarea
-              aria-label="People query to send"
-              rows="3"
-              value={query()}
-              onInput={(e) => edit(e.currentTarget.value)}
-            />
-            <Show when={p().organizationWarning}>
-              <p class="shell-note" aria-label="Organization warning">{p().organizationWarning}</p>
-            </Show>
-            <Show when={p().identifierWarning}>
-              <p class="modal-error" aria-label="Identifier warning">{p().identifierWarning}</p>
-            </Show>
-            <button class="primary" aria-label="Send this people search" disabled={busy()} onClick={send}>
-              Send it
-            </button>
-            <button aria-label="Cancel this people search" onClick={cancel}>
-              Cancel
-            </button>
-          </div>
+          <QueryPreviewEditor
+            regionLabel="People query preview"
+            fieldLabel="People query to send"
+            sendLabel="Send this people search"
+            cancelLabel="Cancel this people search"
+            preview={p()}
+            query={query()}
+            busy={busy()}
+            onEdit={edit}
+            onSend={send}
+            onCancel={cancel}
+          />
         )}
       </Show>
 
@@ -257,22 +250,12 @@ export default function PeopleSourcingPanel(props: { initiativeId: number }) {
         </For>
       </ul>
 
-      <ul class="record-list" aria-label="Past people searches">
-        <For each={searches()} fallback={<li class="muted">No people searches yet.</li>}>
-          {(s, i) => (
-            <li class="search-hit">
-              <span class="artifact-name">
-                {s.provider}
-                <span class="muted">
-                  {" "}— {s.failureReason ? s.failureReason.replace(/_/g, " ") : `${s.resultCount} results`}
-                  {s.partial ? ", partial" : ""}
-                </span>
-              </span>
-              <pre aria-label={`People query sent for search ${i() + 1}`}>{s.query}</pre>
-            </li>
-          )}
-        </For>
-      </ul>
+      <PastSearches
+        label="Past people searches"
+        emptyText="No people searches yet."
+        queryLabel={(i) => `People query sent for search ${i}`}
+        searches={searches()}
+      />
     </section>
   );
 }

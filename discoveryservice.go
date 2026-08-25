@@ -318,11 +318,7 @@ func (s *DiscoveryService) searcher() (Searcher, error) {
 	if s.exa != nil {
 		return s.exa, nil
 	}
-	key, err := s.out.key(models.ProviderExa)
-	if err != nil {
-		return nil, err
-	}
-	return platform.NewExa(key), nil
+	return s.out.exa()
 }
 
 // categories names what kinds of thing this query disclosed.
