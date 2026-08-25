@@ -40,13 +40,13 @@ type DiscoveryService struct {
 	// credential. Only tests set it: a real search reads the key at the moment
 	// of the request, because a client built at start-up holds whatever the
 	// credential was then — which, at start-up, is nothing.
-	exa         Searcher
-	credentials *CredentialService
-	profiles    *CandidateProfileService
-	criteria    *CriteriaService
-	records     *RecordService
-	artifacts   *ArtifactService
-	now         Clock
+	exa       Searcher
+	out       *outbound
+	profiles  *CandidateProfileService
+	criteria  *CriteriaService
+	records   *RecordService
+	artifacts *ArtifactService
+	now       Clock
 }
 
 // NewDiscoveryService wires discovery to the profile gate and the criteria.
@@ -57,7 +57,8 @@ func NewDiscoveryService(
 ) *DiscoveryService {
 	return &DiscoveryService{
 		db: db, exa: exa, profiles: profiles, criteria: criteria,
-		records: records, artifacts: artifacts, credentials: credentials,
+		records: records, artifacts: artifacts,
+		out: &outbound{db: db, credentials: credentials},
 		now: func() time.Time { return time.Now().UTC() },
 	}
 }
@@ -141,7 +142,7 @@ func (s *DiscoveryService) Preview(initiativeID, candidateID uint) (*QueryPrevie
 	joined := strings.Join(parts, ", ")
 	query := scrub.Generalize(scrub.Text(joined, ids))
 
-	return s.describe(query, ids), nil
+	return s.out.describe(query, ids), nil
 }
 
 // Inspect reports what is worrying about a query the recruiter has edited.
@@ -150,13 +151,7 @@ func (s *DiscoveryService) Inspect(candidateID uint, query string) (*QueryPrevie
 	if err != nil {
 		return nil, err
 	}
-	return s.describe(query, ids), nil
-}
-
-// describe attaches the two warnings to a query without changing it.
-func (s *DiscoveryService) describe(query string, ids scrub.Identifiers) *QueryPreview {
-	org, ident := scrub.Warnings(scrub.Detect(query, ids))
-	return &QueryPreview{Query: query, OrganizationWarning: org, IdentifierWarning: ident}
+	return s.out.describe(query, ids), nil
 }
 
 // identifiers gathers a candidate's direct identifiers, for removal and for
@@ -307,10 +302,7 @@ func (s *DiscoveryService) recordDisclosure(at time.Time, in SendInput) error {
 		id := in.CandidateID
 		event.CandidateID = &id
 	}
-	if err := s.db.Create(&event).Error; err != nil {
-		return fmt.Errorf("recording the disclosure: %w", err)
-	}
-	return nil
+	return s.out.record(event)
 }
 
 // searcher is the client this search will use.
@@ -324,12 +316,9 @@ func (s *DiscoveryService) searcher() (Searcher, error) {
 	if s.exa != nil {
 		return s.exa, nil
 	}
-	if s.credentials == nil {
-		return nil, fmt.Errorf("no credential store is available for the search provider")
-	}
-	key, err := s.credentials.secret("exa")
+	key, err := s.out.key(models.ProviderExa)
 	if err != nil {
-		return nil, fmt.Errorf("no search credential is stored — the provider is disabled")
+		return nil, err
 	}
 	return platform.NewExa(key), nil
 }
@@ -356,21 +345,7 @@ func (s *DiscoveryService) categories(in SendInput) string {
 		// to have happened by a lookup failing afterwards.
 		return strings.Join(append(kinds, "unverified content"), ", ")
 	}
-	organization, identifier := false, false
-	for _, found := range scrub.Detect(in.Query, ids) {
-		if found.Kind == scrub.KindOrganization {
-			organization = true
-			continue
-		}
-		identifier = true
-	}
-	if organization {
-		kinds = append(kinds, "an organization name")
-	}
-	if identifier {
-		kinds = append(kinds, "a direct identifier")
-	}
-	return strings.Join(kinds, ", ")
+	return s.out.categories(kinds, in.Query, ids)
 }
 
 // observe resolves a result to a role and applies the source-observation rules.

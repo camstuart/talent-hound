@@ -839,7 +839,7 @@ func TestASearchReadsTheStoredCredentialWhenItSearches(t *testing.T) {
 	e := newDiscoveryEnv(t)
 	store := &countingStore{memoryStore: newMemoryStore()}
 	e.discovery.exa = nil
-	e.discovery.credentials = &CredentialService{store: store}
+	e.discovery.out.credentials = &CredentialService{store: store}
 
 	// Nothing stored: refused by name, and the store was asked.
 	if _, err := e.discovery.Send(SendInput{
@@ -887,7 +887,7 @@ func (c *countingStore) Load(purpose string) ([]byte, error) {
 func TestARefusedSearchIsRecordedWithoutADisclosure(t *testing.T) {
 	e := newDiscoveryEnv(t)
 	e.discovery.exa = nil
-	e.discovery.credentials = &CredentialService{store: newMemoryStore()}
+	e.discovery.out.credentials = &CredentialService{store: newMemoryStore()}
 
 	before, err := e.discovery.Disclosures()
 	if err != nil {
