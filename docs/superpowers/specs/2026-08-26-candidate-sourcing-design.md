@@ -194,8 +194,10 @@ them empty.
   a subject-access or deletion request can be answered from the record.
 - The audit trail holds provider, task, category, and record ids — not the
   query, not the handle, not the results.
-- Direct fetching stays deny-by-default; the only additions are Exa
-  `contents` (already allowed) and `api.github.com`.
+- Direct page fetching stays deny-by-default with the shipped allowlist
+  empty — a rule pinned by test. The GitHub API client is a provider with
+  a fixed endpoint, like the Exa client; neither goes through the page
+  fetch policy, and neither can fetch an arbitrary URL.
 
 ## Error handling
 

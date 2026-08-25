@@ -721,6 +721,19 @@ var migrations = []migration{
 			"ALTER TABLE `searches` ADD COLUMN `task` text NOT NULL DEFAULT 'role_search'",
 		},
 	},
+	{
+		Version: 19,
+		Name:    "http_cache",
+		SQL: []string{
+			// A provider answer remembered by its validator, so a repeat costs
+			// no quota. Public-handle answers only; nothing the recruiter typed.
+			"CREATE TABLE `http_cache` (" +
+				"`url` text PRIMARY KEY," +
+				"`etag` text NOT NULL," +
+				"`body` blob NOT NULL," +
+				"`fetched_at` datetime NOT NULL)",
+		},
+	},
 }
 
 // badVectorLength is the condition an embedding is refused on: a blob that is

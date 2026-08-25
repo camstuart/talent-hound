@@ -32,7 +32,7 @@ type SecretStore interface {
 
 // Providers are the external services a secret can be held for. A fixed list,
 // because an arbitrary purpose string is an arbitrary credential-store entry.
-var Providers = []string{"exa", "cloud"}
+var Providers = []string{"exa", "cloud", "github"}
 
 // NewCredentialService returns a service backed by the platform credential
 // store. On a platform without one, every operation refuses — see
