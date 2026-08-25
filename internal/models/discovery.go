@@ -11,6 +11,8 @@ type Search struct {
 	ID           uint   `gorm:"primarykey" json:"id"`
 	InitiativeID uint   `gorm:"not null" json:"initiativeId"`
 	Provider     string `gorm:"not null" json:"provider"`
+	// Task is what the search was for: a role search or a people search.
+	Task string `gorm:"not null;default:'role_search'" json:"task"`
 	// Query is exactly what was sent, byte for byte with what was previewed.
 	Query        string `gorm:"not null" json:"query"`
 	ResultCount  int    `gorm:"not null;default:0" json:"resultCount"`

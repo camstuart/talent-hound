@@ -144,6 +144,7 @@ func main() {
 			application.NewService(roleProfiles),
 			application.NewService(criteria),
 			application.NewService(NewDiscoveryService(gdb, nil, profiles, criteria, records, artifacts, credentials)),
+			application.NewService(NewSourcingService(gdb, nil, roleProfiles, records, artifacts, credentials)),
 			application.NewService(shortlist),
 			application.NewService(NewAssessService(gdb, jobs, registry, ollama, embed, criteria, profiles, roleProfiles, shortlist)),
 			application.NewService(NewQAService(gdb, registry, ollama, search, embed, profiles)),

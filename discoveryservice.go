@@ -225,6 +225,7 @@ func (s *DiscoveryService) Send(in SendInput) (*SearchOutcome, error) {
 		record := models.Search{
 			InitiativeID:  in.InitiativeID,
 			Provider:      models.ProviderExa,
+			Task:          models.TaskRoleSearch,
 			Query:         query,
 			SentAt:        sentAt,
 			FailureReason: models.ReasonUnauthorized,
@@ -245,6 +246,7 @@ func (s *DiscoveryService) Send(in SendInput) (*SearchOutcome, error) {
 	record := models.Search{
 		InitiativeID: in.InitiativeID,
 		Provider:     models.ProviderExa,
+		Task:         models.TaskRoleSearch,
 		Query:        query,
 		SentAt:       sentAt,
 	}
@@ -565,7 +567,7 @@ func (s *DiscoveryService) Lifecycle(roleID uint) (*RoleLifecycle, error) {
 // can be traced to the query that produced it.
 func (s *DiscoveryService) Searches(initiativeID uint) ([]models.Search, error) {
 	rows := []models.Search{}
-	err := s.db.Where("initiative_id = ?", initiativeID).
+	err := s.db.Where("initiative_id = ? AND task = ?", initiativeID, models.TaskRoleSearch).
 		Order("sent_at desc, id desc").Find(&rows).Error
 	if err != nil {
 		return nil, fmt.Errorf("listing searches: %w", err)

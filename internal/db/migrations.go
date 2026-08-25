@@ -716,6 +716,9 @@ var migrations = []migration{
 				"`updated_at` datetime)",
 			"CREATE UNIQUE INDEX `idx_identities_provider_handle` ON `identities`(`provider`,`handle`)",
 			"CREATE INDEX `idx_identities_candidate` ON `identities`(`candidate_id`)",
+			// A search now says which task sent it, so a people search and a
+			// role search for the same initiative are told apart.
+			"ALTER TABLE `searches` ADD COLUMN `task` text NOT NULL DEFAULT 'role_search'",
 		},
 	},
 }
