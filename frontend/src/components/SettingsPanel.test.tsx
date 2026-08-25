@@ -232,10 +232,10 @@ describe("SettingsPanel", () => {
   });
 
   it("shows whether a key is stored and offers to remove it", async () => {
-    state.credentials = { exa: true, cloud: false };
+    state.credentials = { exa: true, cloud: false, github: false };
     render(() => <SettingsPanel />);
     await screen.findByText(/— key stored/);
-    expect(screen.getByText(/— no key stored/)).toBeTruthy();
+    expect(screen.getAllByText(/— no key stored/)).toHaveLength(2);
     expect(screen.queryByLabelText("Remove cloud")).toBeNull();
 
     fireEvent.click(screen.getByLabelText("Remove exa"));

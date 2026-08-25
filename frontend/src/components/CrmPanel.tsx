@@ -11,6 +11,7 @@ import { LinkTarget } from "../../bindings/camstuart/talent-hound/internal/model
 import type { Candidate, Company, Contact, Initiative, Profile, Role } from "../../bindings/camstuart/talent-hound/internal/models";
 import { createAction } from "../act";
 import RecordForm, { list, num, type FieldSpec } from "./RecordForm";
+import IdentitiesSection from "./IdentitiesSection";
 import ArtifactsPanel from "./ArtifactsPanel";
 
 // The recruiter's whole pool, cross-initiative. Two searches on purpose: the
@@ -607,6 +608,7 @@ function Detail(props: { sel: () => { type: CrmKind; id: number } }) {
       </section>
 
       <Show when={props.sel().type === "candidate"}>
+        <IdentitiesSection candidateId={props.sel().id} />
         <section class="record-section" aria-label="Profile">
           <h3>Profile</h3>
           <Show when={profile()} fallback={<p class="muted">No approved profile yet.</p>}>

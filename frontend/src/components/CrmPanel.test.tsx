@@ -77,6 +77,12 @@ vi.mock("../../bindings/camstuart/talent-hound", () => ({
   ArtifactService: artifactMocks,
   ExtractService: extractMocks,
   InitiativeService: initiativeMocks,
+  // The identities section lives in its own file and has its own tests; here
+  // it only needs to render quietly.
+  EnrichService: {
+    Identities: vi.fn(async () => []),
+    Preview: vi.fn(async () => ({ handles: [], endpoints: [], tokenStored: false, reason: "this candidate has no GitHub identity to read" })),
+  },
 }));
 
 beforeEach(() => {

@@ -32,6 +32,7 @@ const ROLE_BLURBS: Record<string, string> = {
 const PROVIDER_LABELS: Record<string, string> = {
   exa: "Exa (role discovery)",
   cloud: "Cloud provider (optional overrides)",
+  github: "GitHub (candidate enrichment)",
 };
 
 // The three local model roles and the provider keys. Everything here is local
