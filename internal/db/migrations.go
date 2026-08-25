@@ -678,6 +678,46 @@ var migrations = []migration{
 				"`interactions`(`target_type`,`target_id`,`occurred_at`)",
 		},
 	},
+	{
+		Version: 18,
+		Name:    "leads_and_identities",
+		SQL: []string{
+			// A lead is a search result held until the recruiter promotes or
+			// dismisses it. It is not a candidate and has no candidate columns.
+			"CREATE TABLE `leads` (" +
+				"`id` integer PRIMARY KEY AUTOINCREMENT," +
+				"`search_id` integer NOT NULL REFERENCES `searches`(`id`)," +
+				"`initiative_id` integer NOT NULL REFERENCES `initiatives`(`id`)," +
+				"`role_id` integer REFERENCES `roles`(`id`)," +
+				"`provider` text NOT NULL," +
+				"`source_id` text NOT NULL DEFAULT ''," +
+				"`url` text NOT NULL," +
+				"`title` text NOT NULL DEFAULT ''," +
+				"`snippet` text NOT NULL DEFAULT ''," +
+				"`state` text NOT NULL DEFAULT 'new' CHECK (`state` IN " +
+				"('new','promoted','dismissed'))," +
+				"`candidate_id` integer REFERENCES `candidates`(`id`)," +
+				"`created_at` datetime," +
+				"`updated_at` datetime)",
+			"CREATE UNIQUE INDEX `idx_leads_search_url` ON `leads`(`search_id`,`url`)",
+			"CREATE INDEX `idx_leads_initiative` ON `leads`(`initiative_id`,`state`)",
+			"CREATE INDEX `idx_leads_url` ON `leads`(`url`)",
+			// One public handle per provider names one candidate: the key that
+			// dedup and enrichment both resolve on.
+			"CREATE TABLE `identities` (" +
+				"`id` integer PRIMARY KEY AUTOINCREMENT," +
+				"`candidate_id` integer NOT NULL REFERENCES `candidates`(`id`)," +
+				"`provider` text NOT NULL CHECK (`provider` IN " +
+				"('github','website','linkedin','hn'))," +
+				"`handle` text NOT NULL," +
+				"`url` text NOT NULL," +
+				"`verified_at` text NOT NULL DEFAULT ''," +
+				"`created_at` datetime," +
+				"`updated_at` datetime)",
+			"CREATE UNIQUE INDEX `idx_identities_provider_handle` ON `identities`(`provider`,`handle`)",
+			"CREATE INDEX `idx_identities_candidate` ON `identities`(`candidate_id`)",
+		},
+	},
 }
 
 // badVectorLength is the condition an embedding is refused on: a blob that is

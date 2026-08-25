@@ -53,11 +53,16 @@ type DisclosureEvent struct {
 // creates; the cloud tasks arrive with Phase 18.
 const (
 	TaskRoleSearch = "role_search"
+	// TaskCandidateSourcing sends a role's requirements to find people.
+	TaskCandidateSourcing = "candidate_sourcing"
+	// TaskCandidateEnrich sends one public handle to fetch its public footprint.
+	TaskCandidateEnrich = "candidate_enrich"
 )
 
 // The providers that can receive a disclosure.
 const (
-	ProviderExa = "exa"
+	ProviderExa    = "exa"
+	ProviderGitHub = "github"
 )
 
 // Discovery failure codes. Short, lowercase, and carrying nothing of the query.
