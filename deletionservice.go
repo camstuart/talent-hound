@@ -62,6 +62,7 @@ func (s *DeletionService) PreviewInitiative(id uint) (*Preview, error) {
 		{"answers", &models.Answer{}, "initiative_id = ?"},
 		{"audit events", &models.DisclosureEvent{}, "initiative_id = ?"},
 		{"searches", &models.Search{}, "initiative_id = ?"},
+		{"leads", &models.Lead{}, "initiative_id = ?"},
 	}
 	for _, c := range counts {
 		var n int64
@@ -106,6 +107,9 @@ func (s *DeletionService) DeleteInitiative(id uint) error {
 				return tx.Where("initiative_id = ?", id).Delete(&models.CriteriaVersion{}).Error
 			},
 			func(tx *gorm.DB) error {
+				return tx.Where("initiative_id = ?", id).Delete(&models.Lead{}).Error
+			},
+			func(tx *gorm.DB) error {
 				return tx.Where("initiative_id = ?", id).Delete(&models.Search{}).Error
 			},
 			func(tx *gorm.DB) error {
@@ -144,6 +148,7 @@ func (s *DeletionService) verifyInitiative(id uint) error {
 		"drafts":          &models.Draft{},
 		"audit events":    &models.DisclosureEvent{},
 		"searches":        &models.Search{},
+		"leads":           &models.Lead{},
 	}
 	for kind, model := range remaining {
 		var n int64
@@ -224,9 +229,14 @@ func (s *DeletionService) PreviewCandidate(id uint) (*Preview, error) {
 			profile.SubjectCandidate, id).Count(&aspects).Error; err != nil {
 		return nil, fmt.Errorf("counting aspects: %w", err)
 	}
+	var identities int64
+	if err := s.db.Model(&models.Identity{}).Where("candidate_id = ?", id).Count(&identities).Error; err != nil {
+		return nil, fmt.Errorf("counting identities: %w", err)
+	}
 	out.Removes = append(out.Removes,
 		Consequence{Kind: "profile versions", Count: profiles},
 		Consequence{Kind: "profile aspects", Count: aspects},
+		Consequence{Kind: "identities", Count: identities},
 		Consequence{Kind: "candidate-only artifacts", Count: int64(len(linked)) - int64(len(shared))},
 	)
 	return out, nil
@@ -311,6 +321,15 @@ func (s *DeletionService) DeleteCandidate(id uint, choice SharedArtifactChoice) 
 		if err := tx.Where("candidate_id = ?", id).Delete(&models.Match{}).Error; err != nil {
 			return fmt.Errorf("deleting the candidate's matches: %w", err)
 		}
+		if err := tx.Where("candidate_id = ?", id).Delete(&models.Identity{}).Error; err != nil {
+			return fmt.Errorf("deleting the candidate's identities: %w", err)
+		}
+		// A lead that was this person stays a lead: the page exists whether or
+		// not the pool has them.
+		err = tx.Model(&models.Lead{}).Where("candidate_id = ?", id).Update("candidate_id", nil).Error
+		if err != nil {
+			return fmt.Errorf("clearing lead references: %w", err)
+		}
 		if err := tx.Delete(&models.Candidate{}, id).Error; err != nil {
 			return fmt.Errorf("deleting the candidate: %w", err)
 		}
@@ -354,6 +373,13 @@ func (s *DeletionService) verifyCandidate(id uint) error {
 	}
 	if links > 0 {
 		out.Blockers = append(out.Blockers, "artifact links remain")
+	}
+	var identities int64
+	if err := s.db.Model(&models.Identity{}).Where("candidate_id = ?", id).Count(&identities).Error; err != nil {
+		return fmt.Errorf("verifying identities: %w", err)
+	}
+	if identities > 0 {
+		out.Blockers = append(out.Blockers, "identities remain")
 	}
 	if len(out.Blockers) > 0 {
 		out.Blocked = true
@@ -649,6 +675,10 @@ func (s *DeletionService) PurgeRole(id uint) error {
 			Update("role_id", nil).Error
 		if err != nil {
 			return fmt.Errorf("clearing draft references: %w", err)
+		}
+		err = tx.Model(&models.Lead{}).Where("role_id = ?", id).Update("role_id", nil).Error
+		if err != nil {
+			return fmt.Errorf("clearing lead references: %w", err)
 		}
 		if err := tx.Delete(&models.Role{}, id).Error; err != nil {
 			return fmt.Errorf("deleting the role: %w", err)
