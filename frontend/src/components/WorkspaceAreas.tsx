@@ -8,6 +8,7 @@ import CandidateProfilePanel from "./CandidateProfilePanel";
 import RoleProfilePanel from "./RoleProfilePanel";
 import CriteriaPanel from "./CriteriaPanel";
 import DiscoveryPanel from "./DiscoveryPanel";
+import PeopleSourcingPanel from "./PeopleSourcingPanel";
 import ShortlistPanel from "./ShortlistPanel";
 import MatchesPanel from "./MatchesPanel";
 import DraftsPanel from "./DraftsPanel";
@@ -72,6 +73,7 @@ export default function WorkspaceAreas(props: { initiativeId: number; type: Init
         </Show>
         <Show when={area() === "research"}>
           <DiscoveryPanel initiativeId={props.initiativeId} />
+          <PeopleSourcingPanel initiativeId={props.initiativeId} />
           <RoleProfilePanel initiativeId={props.initiativeId} />
         </Show>
         <Show when={area() === "drafts"}>

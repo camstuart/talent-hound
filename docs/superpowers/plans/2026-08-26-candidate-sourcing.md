@@ -17,7 +17,7 @@
 - Schema changes are hand-written SQL migrations in `internal/db/migrations.go` (next version: **18**). There is no AutoMigrate.
 - Snippets, titles, and anything from a provider are displayed, never rendered.
 - Backend errors surface verbatim in the UI inside `role="alert"` elements.
-- `platform.FetchAllowed` is deny-by-default. The only host added in this plan is `api.github.com`. LinkedIn stays on the denylist.
+- `platform.FetchAllowed` is deny-by-default and its allowlist stays empty; provider clients (Exa, GitHub) have fixed endpoints and never go through it. LinkedIn stays on the denylist.
 - A `DisclosureEvent` is written only after bytes actually leave the machine, and never holds a query, a handle, or a result.
 - Provider keys are read at call time through `CredentialService.secret(provider)`, never at start-up (see `DiscoveryService.searcher` for why).
 - Go run: `go test ./...`. Vitest: `cd frontend && bun run test:unit`. E2E: `cd frontend && bun run test:e2e`.
@@ -137,7 +137,7 @@ Promote, in one transaction: `Candidate.Validate` → create → `Identity{Provi
 
 **Files:**
 - Create: `internal/platform/github.go`, `internal/platform/github_test.go`
-- Modify: `internal/platform/exa.go` (`fetchAllowlist` gains `"api.github.com"`), `internal/platform/fetchpolicy_test.go` (the "allowlist is empty" assertion becomes "allowlist is exactly api.github.com"; `github.com` itself and `linkedin.com` still refused).
+- The page-fetch allowlist is NOT touched: it is pinned empty by test and by the PRD review rule. The GitHub client is a provider with a fixed endpoint, like the Exa client — it never goes through `FetchAllowed`. A test pins that `github.com` pages stay unfetchable.
 
 **Interfaces:**
 ```go
@@ -151,7 +151,7 @@ func (g *GitHub) Profile(ctx, login) (*GitHubProfile, error)
 func (g *GitHub) Repos(ctx, login) ([]GitHubRepo, error)      // own repos, forks dropped, sorted by PushedAt desc, capped 50
 func (g *GitHub) Events(ctx, login) ([]GitHubEvent, error)   // public, last page only (≤100)
 ```
-Errors reuse `ErrSearchUnauthorized/RateLimited/Timeout/Offline/Malformed`; rate-limited wraps the `X-RateLimit-Reset` time in the message. Empty token → `ErrSearchUnauthorized` before any request. Every request sends `If-None-Match` when the cache has an ETag; 304 returns the cached body. Every request first passes `FetchAllowed`.
+Errors reuse `ErrSearchUnauthorized/RateLimited/Timeout/Offline/Malformed`; rate-limited wraps the `X-RateLimit-Reset` time in the message. Empty token → `ErrSearchUnauthorized` before any request. Every request sends `If-None-Match` when the cache has an ETag; 304 returns the cached body. The client cannot fetch an arbitrary URL: only its three endpoints, by login.
 
 - [ ] **Step 1: Failing tests** — fake server: auth header present; 304 path returns cached body and increments no request counter beyond the conditional request; forks filtered; 429/403-with-reset mapped; empty token refused with zero requests; a `BaseURL` on a non-allowlisted host is refused by policy.
 - [ ] **Step 2–4: RED → implement → GREEN.**
