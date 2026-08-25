@@ -10,6 +10,10 @@
 
 **Spec:** `docs/superpowers/specs/2026-08-26-candidate-sourcing-design.md`
 
+**Status:** All ten tasks implemented and committed on 2026-08-26. The E2E
+spec's CRM test (identities) cannot pass on a machine where the data guard
+refuses candidate data — the same limit `crm.spec.ts` has there.
+
 ## Global Constraints
 
 - Bun is the only JS package manager/runtime. Never npm/yarn/pnpm.
@@ -38,13 +42,13 @@
 - `models.TaskCandidateSourcing`, `models.TaskCandidateEnrich`, `models.ProviderGitHub`.
 - Tables `leads` (index on `search_id`, `initiative_id`, `url`; CHECK on state) and `identities` (UNIQUE `(provider, handle)`, FK to candidates, CHECK on provider).
 
-- [ ] **Step 1: Write the failing tests** — table-driven like `interaction_test.go`: valid lead accepted; empty URL, relative URL, unknown state, unknown provider refused with the field named. Identity: `GitHub` handle lowercased and `@` stripped; `linkedin` handle kept as-is; empty handle refused; unknown provider refused.
-- [ ] **Step 2: Verify RED** — `go test ./internal/models/` fails on undefined types.
-- [ ] **Step 3: Write the models** — follow `candidate.go`'s comment style; the `Lead` doc comment states it is not a candidate and why.
-- [ ] **Step 4: Verify GREEN.**
-- [ ] **Step 5: Append migration Version 18** `"leads_and_identities"` with both tables and indexes, `ON DELETE` handled by `DeletionService` (not cascades — match how other tables do it).
-- [ ] **Step 6: `go test ./...`** — the migration test that checks every model has a table will catch the rest.
-- [ ] **Step 7: Commit** — "Add lead and identity records for candidate sourcing".
+- [x] **Step 1: Write the failing tests** — table-driven like `interaction_test.go`: valid lead accepted; empty URL, relative URL, unknown state, unknown provider refused with the field named. Identity: `GitHub` handle lowercased and `@` stripped; `linkedin` handle kept as-is; empty handle refused; unknown provider refused.
+- [x] **Step 2: Verify RED** — `go test ./internal/models/` fails on undefined types.
+- [x] **Step 3: Write the models** — follow `candidate.go`'s comment style; the `Lead` doc comment states it is not a candidate and why.
+- [x] **Step 4: Verify GREEN.**
+- [x] **Step 5: Append migration Version 18** `"leads_and_identities"` with both tables and indexes, `ON DELETE` handled by `DeletionService` (not cascades — match how other tables do it).
+- [x] **Step 6: `go test ./...`** — the migration test that checks every model has a table will catch the rest.
+- [x] **Step 7: Commit** — "Add lead and identity records for candidate sourcing".
 
 ---
 
@@ -61,9 +65,9 @@
 - `func (o *outbound) record(sentAt time.Time, provider, task, categories string, refs disclosureRefs) error` — writes the `DisclosureEvent`.
 - `func (o *outbound) exaClient(override Searcher) (Searcher, error)` — the body of today's `searcher()`.
 
-- [ ] **Step 1: Extract** — move `describe`, `recordDisclosure`'s write, and `searcher` into `outbound`; `DiscoveryService` embeds `*outbound` and delegates. No behaviour change.
-- [ ] **Step 2: `go test -run 'Discovery' ./`** then `go test ./...` — all green with no test edits. If a test needed editing, the extraction changed behaviour; stop and fix.
-- [ ] **Step 3: Commit** — "Share the outbound preview and disclosure core between search services".
+- [x] **Step 1: Extract** — move `describe`, `recordDisclosure`'s write, and `searcher` into `outbound`; `DiscoveryService` embeds `*outbound` and delegates. No behaviour change.
+- [x] **Step 2: `go test -run 'Discovery' ./`** then `go test ./...` — all green with no test edits. If a test needed editing, the extraction changed behaviour; stop and fix.
+- [x] **Step 3: Commit** — "Share the outbound preview and disclosure core between search services".
 
 ---
 
@@ -76,9 +80,9 @@
 **Interfaces:**
 - `func (e *Exa) SearchPeople(ctx, query string, limit int, cursor string) (*SearchResponse, error)` — identical to `Search` but `"category": "people"`. Share the request/response code through an unexported `search(ctx, body)`; the doc comment on `Exa` ("searches listings only") is updated to name both.
 
-- [ ] **Step 1: Failing test** — fake server asserts body `category == "people"` and that `query` is byte-for-byte what was passed; error mapping (401, 429, timeout) reuses the existing table-driven test by parameterising over both methods.
-- [ ] **Step 2: RED**, **Step 3: implement**, **Step 4: GREEN**, `go test ./...`.
-- [ ] **Step 5: Commit** — "Teach the Exa client to search for people".
+- [x] **Step 1: Failing test** — fake server asserts body `category == "people"` and that `query` is byte-for-byte what was passed; error mapping (401, 429, timeout) reuses the existing table-driven test by parameterising over both methods.
+- [x] **Step 2: RED**, **Step 3: implement**, **Step 4: GREEN**, `go test ./...`.
+- [x] **Step 5: Commit** — "Teach the Exa client to search for people".
 
 ---
 
@@ -105,10 +109,10 @@ func (s *SourcingService) Send(in SourcingSendInput) (*SourcingOutcome, error)  
 
 **Send rules:** mirror `DiscoveryService.Send` exactly for the no-credential path (Search row with `ReasonUnauthorized`, no disclosure). On success: `Search` row (`Provider: exa`), one `DisclosureEvent` (`Task: candidate_sourcing`, `Categories: "professional requirements"` plus `"organization name"`/`"identifier"` per `Detect` warnings, `InitiativeID`, `RoleID`), then a `Lead` per result upserted on `(search_id, url)`. Dedup: a lead whose URL equals an `Identity.URL`, or whose hostname+path matches an identity's provider+handle (github.com/<login>), gets `CandidateID` set and is counted in `AlreadyInPool`.
 
-- [ ] **Step 1: Failing tests** — (a) preview uses approved role aspects and scrubs the company and contact names; (b) preview refuses unapproved profile; (c) send with no key records a Search with `ReasonUnauthorized` and zero disclosure events; (d) send with fake searcher writes Search + one DisclosureEvent whose row has no query text anywhere (assert with `SELECT *` string scan, as `discoveryservice_test.go` does); (e) leads upsert idempotently on resend; (f) existing github identity marks the lead in-pool.
-- [ ] **Step 2: RED**, **Step 3: implement**, **Step 4: GREEN**, `go test ./...`.
-- [ ] **Step 5: Register** `NewSourcingService(gdb, nil, roleProfiles, records, credentials)` in `main.go`.
-- [ ] **Step 6: Commit** — "Find people for a role through a previewed, scrubbed search".
+- [x] **Step 1: Failing tests** — (a) preview uses approved role aspects and scrubs the company and contact names; (b) preview refuses unapproved profile; (c) send with no key records a Search with `ReasonUnauthorized` and zero disclosure events; (d) send with fake searcher writes Search + one DisclosureEvent whose row has no query text anywhere (assert with `SELECT *` string scan, as `discoveryservice_test.go` does); (e) leads upsert idempotently on resend; (f) existing github identity marks the lead in-pool.
+- [x] **Step 2: RED**, **Step 3: implement**, **Step 4: GREEN**, `go test ./...`.
+- [x] **Step 5: Register** `NewSourcingService(gdb, nil, roleProfiles, records, credentials)` in `main.go`.
+- [x] **Step 6: Commit** — "Find people for a role through a previewed, scrubbed search".
 
 ---
 
@@ -127,9 +131,9 @@ Promote, in one transaction: `Candidate.Validate` → create → `Identity{Provi
 
 `DeletionService`: `DeleteCandidate` removes its identities and nulls `leads.candidate_id`; `DeleteInitiative` removes its leads. Previews list the counts.
 
-- [ ] **Step 1: Failing tests** — promote creates all four rows and refuses twice; `Suggest` never writes; `Dismiss` then `Leads(state="new")` excludes it; deletion cascades; delete-all leaves both tables empty (extend the existing delete-all test).
-- [ ] **Step 2–4: RED → implement → GREEN**, `go test ./...`.
-- [ ] **Step 5: Commit** — "Promote a lead into a candidate with its identity and evidence".
+- [x] **Step 1: Failing tests** — promote creates all four rows and refuses twice; `Suggest` never writes; `Dismiss` then `Leads(state="new")` excludes it; deletion cascades; delete-all leaves both tables empty (extend the existing delete-all test).
+- [x] **Step 2–4: RED → implement → GREEN**, `go test ./...`.
+- [x] **Step 5: Commit** — "Promote a lead into a candidate with its identity and evidence".
 
 ---
 
@@ -153,9 +157,9 @@ func (g *GitHub) Events(ctx, login) ([]GitHubEvent, error)   // public, last pag
 ```
 Errors reuse `ErrSearchUnauthorized/RateLimited/Timeout/Offline/Malformed`; rate-limited wraps the `X-RateLimit-Reset` time in the message. Empty token → `ErrSearchUnauthorized` before any request. Every request sends `If-None-Match` when the cache has an ETag; 304 returns the cached body. The client cannot fetch an arbitrary URL: only its three endpoints, by login.
 
-- [ ] **Step 1: Failing tests** — fake server: auth header present; 304 path returns cached body and increments no request counter beyond the conditional request; forks filtered; 429/403-with-reset mapped; empty token refused with zero requests; a `BaseURL` on a non-allowlisted host is refused by policy.
-- [ ] **Step 2–4: RED → implement → GREEN.**
-- [ ] **Step 5: Commit** — "Add a GitHub client behind the fetch policy".
+- [x] **Step 1: Failing tests** — fake server: auth header present; 304 path returns cached body and increments no request counter beyond the conditional request; forks filtered; 429/403-with-reset mapped; empty token refused with zero requests; a `BaseURL` on a non-allowlisted host is refused by policy.
+- [x] **Step 2–4: RED → implement → GREEN.**
+- [x] **Step 5: Commit** — "Add a GitHub client behind the fetch policy".
 
 ---
 
@@ -177,10 +181,10 @@ func (s *EnrichService) Run(candidateID uint) (*EnrichOutcome, error)      // {A
 ```
 `Run`: refuse before any request when no `github` identity or no token. Fetch profile → repos → events; render each to Markdown (`internal/enrich/markdown.go`, pure functions, table-tested) and `artifacts.Create` with `Source: "github:<login>/profile"` etc., `OriginalFilename` empty. A same-bytes refusal counts as `Unchanged`, not an error. One `DisclosureEvent` (`Provider: github`, `Task: candidate_enrich`, `Categories: "public handle"`, `CandidateID`) written after the first request succeeds; a run that fails on the first request writes none. A later failure marks `Partial` and keeps what landed. `Identity.VerifiedAt` set to today on a successful profile fetch.
 
-- [ ] **Step 1: Failing tests** — refuses with no identity / no token and writes nothing; happy path yields three artifacts linked to the candidate with the right sources and one disclosure holding no login; rerun with identical fake responses yields `Unchanged == 3` and no new artifacts; rate limit on `Repos` gives one artifact, `Partial`, and one disclosure; Markdown renderer never includes email when `Email` is set (spec: not harvested); `AddIdentity` with `https://github.com/@Octocat/` stores handle `octocat`.
-- [ ] **Step 2–4: RED → implement → GREEN**, `go test ./...`.
-- [ ] **Step 5: Register** in `main.go`; credential UI provider list gains `github`.
-- [ ] **Step 6: Commit** — "Enrich a candidate from GitHub into cited artifacts".
+- [x] **Step 1: Failing tests** — refuses with no identity / no token and writes nothing; happy path yields three artifacts linked to the candidate with the right sources and one disclosure holding no login; rerun with identical fake responses yields `Unchanged == 3` and no new artifacts; rate limit on `Repos` gives one artifact, `Partial`, and one disclosure; Markdown renderer never includes email when `Email` is set (spec: not harvested); `AddIdentity` with `https://github.com/@Octocat/` stores handle `octocat`.
+- [x] **Step 2–4: RED → implement → GREEN**, `go test ./...`.
+- [x] **Step 5: Register** in `main.go`; credential UI provider list gains `github`.
+- [x] **Step 6: Commit** — "Enrich a candidate from GitHub into cited artifacts".
 
 ---
 
@@ -193,10 +197,10 @@ func (s *EnrichService) Run(candidateID uint) (*EnrichOutcome, error)      // {A
 
 Behaviour mirrors `RoleDiscoveryPanel`: *Build a query* → editable `Query to send` textarea with the two warnings → *Send this search* / *Cancel this search* → results list `aria-label="Leads"` with title, host, snippet, *In pool* badge, and per-lead *Promote*, *Dismiss*, *Open* (`window.open` via the Wails browser-open runtime; never an iframe). *Promote* opens `RecordForm` prefilled from `Suggest`, saving through `Promote`. Past searches list as in discovery.
 
-- [ ] **Step 1: `wails3 generate bindings -clean=true -ts -i`.**
-- [ ] **Step 2: Failing Vitest** with mocked bindings: preview populates the box; cancel calls nothing; send renders leads and the in-pool badge; promote prefills and calls `Promote`; dismiss removes the row; backend error lands in `role="alert"`.
-- [ ] **Step 3–4: RED → implement → GREEN**, `bun run test:unit`, `bunx tsc --noEmit`.
-- [ ] **Step 5: Commit** — "Find people for a role from the role page".
+- [x] **Step 1: `wails3 generate bindings -clean=true -ts -i`.**
+- [x] **Step 2: Failing Vitest** with mocked bindings: preview populates the box; cancel calls nothing; send renders leads and the in-pool badge; promote prefills and calls `Promote`; dismiss removes the row; backend error lands in `role="alert"`.
+- [x] **Step 3–4: RED → implement → GREEN**, `bun run test:unit`, `bunx tsc --noEmit`.
+- [x] **Step 5: Commit** — "Find people for a role from the role page".
 
 ---
 
@@ -208,9 +212,9 @@ Behaviour mirrors `RoleDiscoveryPanel`: *Build a query* → editable `Query to s
 
 Section: list of identities (provider, handle, link), *Add identity* (provider select + URL), *Remove*, and *Enrich from GitHub* → preview modal listing handles and endpoints and whether a token is stored → *Run*. Outcome line: "3 artifacts added" / "nothing new" / partial with reason. Disabled with reason when no token or no GitHub identity.
 
-- [ ] **Step 1: Failing Vitest** — list/add/remove; enrich disabled reasons; preview → run → outcome; settings shows GitHub row.
-- [ ] **Step 2–3: RED → implement → GREEN**, `bun run test:unit`, tsc.
-- [ ] **Step 4: Commit** — "Manage a candidate's identities and enrich from GitHub".
+- [x] **Step 1: Failing Vitest** — list/add/remove; enrich disabled reasons; preview → run → outcome; settings shows GitHub row.
+- [x] **Step 2–3: RED → implement → GREEN**, `bun run test:unit`, tsc.
+- [x] **Step 4: Commit** — "Manage a candidate's identities and enrich from GitHub".
 
 ---
 
@@ -220,9 +224,9 @@ Section: list of identities (provider, handle, link), *Add identity* (provider s
 
 As `discovery.spec.ts`: create initiative → role with an approved profile (follow `role-profile.spec.ts` for how a profile gets approved in E2E) → *Find people* → query box contains the role's aspect tag and not the company name → edit → cancel records nothing → send is refused with the missing-credential message and *Past searches* shows the refused attempt. Then CRM → candidate → add a GitHub identity → *Enrich* is disabled with "no GitHub token is stored".
 
-- [ ] **Step 1: Write the spec** with per-run base-36 tags, locators scoped to the new regions.
-- [ ] **Step 2: `bunx playwright test e2e/sourcing.spec.ts`.**
-- [ ] **Step 3: `just check`, commit** — "Prove candidate sourcing end to end".
+- [x] **Step 1: Write the spec** with per-run base-36 tags, locators scoped to the new regions.
+- [x] **Step 2: `bunx playwright test e2e/sourcing.spec.ts`.**
+- [x] **Step 3: `just check`, commit** — "Prove candidate sourcing end to end".
 
 ---
 

@@ -39,6 +39,10 @@ type SourcingService struct {
 	records   *RecordService
 	artifacts *ArtifactService
 	now       Clock
+	// Guard refuses personal data in demo scope and on an unencrypted volume.
+	// A promoted lead is personal data: the refusal is at the write, as it is
+	// for a candidate typed in.
+	Guard DataGuard
 }
 
 // NewSourcingService wires sourcing to the role profile gate and the records.
@@ -56,6 +60,12 @@ func NewSourcingService(
 // sourcingCategories are the kinds of thing a generated people query carries.
 var sourcingCategories = []string{"professional requirements"}
 
+// aspectTypesForPeopleQuery are the role aspects a people query draws on: the
+// professional ones discovery uses, plus what the recruiter typed by hand —
+// which for a role is a requirement in their own words, the most exact
+// statement of what they are looking for.
+var aspectTypesForPeopleQuery = append(append([]profile.AspectType(nil), aspectTypesForQuery...), profile.Other)
+
 // Preview builds a query from the role's ready profile, and writes nothing.
 func (s *SourcingService) Preview(roleID uint) (*QueryPreview, error) {
 	status, err := s.roles.Status(roleID)
@@ -67,7 +77,7 @@ func (s *SourcingService) Preview(roleID uint) (*QueryPreview, error) {
 	}
 	parts := []string{}
 	for _, a := range status.Aspects {
-		if containsType(aspectTypesForQuery, profile.AspectType(a.Type)) {
+		if containsType(aspectTypesForPeopleQuery, profile.AspectType(a.Type)) {
 			parts = append(parts, a.Wording)
 		}
 	}

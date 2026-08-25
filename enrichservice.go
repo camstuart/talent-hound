@@ -39,6 +39,10 @@ type EnrichService struct {
 	records   *RecordService
 	artifacts *ArtifactService
 	now       Clock
+	// Guard refuses personal data in demo scope and on an unencrypted volume.
+	// An identity names a person; the evidence a run keeps is guarded by the
+	// artifact store itself.
+	Guard DataGuard
 }
 
 // NewEnrichService wires enrichment to the records and the evidence store.
@@ -66,6 +70,9 @@ func (s *EnrichService) Identities(candidateID uint) ([]models.Identity, error) 
 // AddIdentity records a handle from its URL. The handle is parsed from the
 // URL where the host has handles; elsewhere it is the host.
 func (s *EnrichService) AddIdentity(candidateID uint, provider, rawURL string) (*models.Identity, error) {
+	if err := guardAllows(s.Guard); err != nil {
+		return nil, err
+	}
 	if _, err := s.records.GetCandidate(candidateID); err != nil {
 		return nil, err
 	}

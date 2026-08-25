@@ -91,6 +91,9 @@ func (s *SourcingService) Suggest(leadID uint) (*models.Candidate, error) {
 // The recruiter's corrected fields are what is saved; the lead's own text is
 // evidence, not fields.
 func (s *SourcingService) Promote(leadID uint, in models.Candidate) (*models.Candidate, error) {
+	if err := guardAllows(s.Guard); err != nil {
+		return nil, err
+	}
 	lead, err := s.lead(leadID)
 	if err != nil {
 		return nil, err

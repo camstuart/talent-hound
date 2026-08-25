@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"strings"
 	"sync"
 	"testing"
@@ -92,6 +93,9 @@ func (e *sourcingEnv) readyRole(t *testing.T) uint {
 			Priority: profile.MustHave, Citations: e.citing(t, "Go and production SQLite")},
 		{Type: profile.Experience, Wording: "report to Priya Okonkwo at Northwind Pty Ltd",
 			Priority: profile.NiceToHave, Citations: e.citing(t, "head of engineering")},
+		{Type: profile.Other, Wording: "experience operating multi-region systems", Priority: profile.NiceToHave,
+			Citations: e.citing(t, "operating multi-region systems")},
+		{Type: profile.Compensation, Wording: "AUD 180,000 base", Citations: e.citing(t, "AUD 180,000 base")},
 	})}
 	if _, err := e.roles.Profile(roleID); err != nil {
 		t.Fatalf("profiling: %v", err)
@@ -122,8 +126,11 @@ func TestAPeopleQueryIsBuiltFromTheRoleProfileWithoutTheClient(t *testing.T) {
 	if err != nil {
 		t.Fatalf("preview: %v", err)
 	}
-	if !strings.Contains(preview.Query, "Go") || !strings.Contains(preview.Query, "SQLite") {
+	if !strings.Contains(preview.Query, "Go") || !strings.Contains(preview.Query, "SQLite") || !strings.Contains(preview.Query, "multi-region") {
 		t.Fatalf("the requirements are missing from %q", preview.Query)
+	}
+	if strings.Contains(preview.Query, "180,000") {
+		t.Fatalf("compensation is not a requirement to search with: %q", preview.Query)
 	}
 	for _, secret := range []string{"Northwind", "Priya", "Okonkwo", "northwind.invalid"} {
 		if strings.Contains(preview.Query, secret) {
@@ -221,7 +228,7 @@ func TestASentPeopleSearchIsDisclosedAsAKindAndKeptAsLeads(t *testing.T) {
 	if rows[0]["task"] != models.TaskCandidateSourcing || rows[0]["categories"] != "professional requirements" {
 		t.Fatalf("task/categories = %v / %v", rows[0]["task"], rows[0]["categories"])
 	}
-	if rid, ok := rows[0]["role_id"].(int64); !ok || uint(rid) != roleID {
+	if fmt.Sprint(rows[0]["role_id"]) != fmt.Sprint(roleID) {
 		t.Fatalf("role_id = %v", rows[0]["role_id"])
 	}
 

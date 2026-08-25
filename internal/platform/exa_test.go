@@ -192,7 +192,7 @@ func TestAPeopleSearchSendsTheQueryUnchangedWithThePeopleCategory(t *testing.T) 
 // No key means no request for people either.
 func TestNoKeyMeansNoPeopleRequestEither(t *testing.T) {
 	requests := 0
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { requests++ }))
+	server := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { requests++ }))
 	defer server.Close()
 	client := &Exa{BaseURL: server.URL, Client: server.Client(), Key: " "}
 	if _, err := client.SearchPeople(context.Background(), "anything", 20, ""); !errors.Is(err, ErrSearchUnauthorized) {

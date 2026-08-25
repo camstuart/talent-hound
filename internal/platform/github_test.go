@@ -38,17 +38,17 @@ const profileJSON = `{"login":"wombatdev","name":"Wombat Developer","company":"@
 	`"bio":"Local-first tools.","blog":"https://wombat.example.invalid","hireable":true,"public_repos":4,` +
 	`"followers":12,"created_at":"2016-03-04T05:06:07Z","updated_at":"2026-08-01T00:00:00Z","email":"wombat@example.invalid"}`
 
-func gitHubServer(t *testing.T, handler http.HandlerFunc) (*GitHub, *memoryETags, *httptest.Server) {
+func gitHubServer(t *testing.T, handler http.HandlerFunc) (*GitHub, *memoryETags) {
 	t.Helper()
 	server := httptest.NewServer(handler)
 	t.Cleanup(server.Close)
 	cache := newMemoryETags()
-	return &GitHub{BaseURL: server.URL, Client: server.Client(), Token: "not-a-real-token-GH-7f2a", Cache: cache}, cache, server
+	return &GitHub{BaseURL: server.URL, Client: server.Client(), Token: "not-a-real-token-GH-7f2a", Cache: cache}, cache
 }
 
 func TestAProfileIsReadWithTheTokenAndWithoutTheEmail(t *testing.T) {
 	var auth string
-	client, _, _ := gitHubServer(t, func(w http.ResponseWriter, r *http.Request) {
+	client, _ := gitHubServer(t, func(w http.ResponseWriter, r *http.Request) {
 		auth = r.Header.Get("Authorization")
 		if r.URL.Path != "/users/wombatdev" {
 			t.Errorf("asked for %s", r.URL.Path)
@@ -70,7 +70,7 @@ func TestAProfileIsReadWithTheTokenAndWithoutTheEmail(t *testing.T) {
 
 func TestNoTokenMeansNoRequestAtAll(t *testing.T) {
 	requests := 0
-	client, _, _ := gitHubServer(t, func(http.ResponseWriter, *http.Request) { requests++ })
+	client, _ := gitHubServer(t, func(http.ResponseWriter, *http.Request) { requests++ })
 	client.Token = " "
 	if _, err := client.Profile(context.Background(), "wombatdev"); !errors.Is(err, ErrSearchUnauthorized) {
 		t.Fatalf("err = %v", err)
@@ -82,7 +82,7 @@ func TestNoTokenMeansNoRequestAtAll(t *testing.T) {
 
 func TestARepeatIsConditionalAndAnswersFromTheCache(t *testing.T) {
 	served := 0
-	client, cache, _ := gitHubServer(t, func(w http.ResponseWriter, r *http.Request) {
+	client, cache := gitHubServer(t, func(w http.ResponseWriter, r *http.Request) {
 		served++
 		if r.Header.Get("If-None-Match") == `"v1"` {
 			w.WriteHeader(http.StatusNotModified)
@@ -108,7 +108,7 @@ func TestARepeatIsConditionalAndAnswersFromTheCache(t *testing.T) {
 }
 
 func TestForksAreDroppedAndReposAreNewestFirst(t *testing.T) {
-	client, _, _ := gitHubServer(t, func(w http.ResponseWriter, r *http.Request) {
+	client, _ := gitHubServer(t, func(w http.ResponseWriter, r *http.Request) {
 		if !strings.HasPrefix(r.URL.Path, "/users/wombatdev/repos") {
 			t.Errorf("asked for %s", r.URL.Path)
 		}
@@ -141,7 +141,7 @@ func TestProviderFailuresAreTypedAndNeverQuoted(t *testing.T) {
 		{http.StatusNotFound, "", ErrSearchMalformed},
 		{http.StatusInternalServerError, "", ErrSearchMalformed},
 	} {
-		client, _, _ := gitHubServer(t, func(w http.ResponseWriter, _ *http.Request) {
+		client, _ := gitHubServer(t, func(w http.ResponseWriter, _ *http.Request) {
 			if c.remaining != "" {
 				w.Header().Set("X-RateLimit-Remaining", c.remaining)
 				w.Header().Set("X-RateLimit-Reset", "1767225600")

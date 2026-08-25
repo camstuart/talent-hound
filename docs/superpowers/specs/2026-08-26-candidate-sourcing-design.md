@@ -1,7 +1,11 @@
 # Candidate Sourcing from Web Data — Design
 
 **Date:** 2026-08-26
-**Status:** Brainstormed; awaiting approval before implementation planning.
+**Status:** Implemented 2026-08-26 (see the plan for per-task commits). Deviations
+from the first draft: the page-fetch allowlist stays empty (the GitHub client
+is a provider, not a fetcher); `Preview` takes the role only; hand-entered
+(`other`) role aspects are part of a people query; `searches` gained a `task`
+column so role and people searches list apart.
 
 ## Goal
 
