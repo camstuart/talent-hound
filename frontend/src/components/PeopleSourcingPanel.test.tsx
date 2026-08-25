@@ -104,7 +104,7 @@ describe("PeopleSourcingPanel", () => {
     await clickWhenReady("Send this people search");
 
     await waitFor(() => expect(sourcingMocks.Send).toHaveBeenCalledTimes(1));
-    expect(sourcingMocks.Send.mock.calls[0][0]).toMatchObject({ initiativeId: 1, roleId: 7, query: "Go engineers in Melbourne" });
+    expect((sourcingMocks.Send.mock.calls as unknown[][])[0][0]).toMatchObject({ initiativeId: 1, roleId: 7, query: "Go engineers in Melbourne" });
     const outcome = await screen.findByLabelText("People search outcome");
     expect(outcome.textContent).toContain("2 leads");
     expect(outcome.textContent).toContain("1 already in the pool");
@@ -132,8 +132,8 @@ describe("PeopleSourcingPanel", () => {
     if (name) fireEvent.input(name, { target: { value: "Quokka Stack" } });
     fireEvent.submit(form);
     await waitFor(() => expect(sourcingMocks.Promote).toHaveBeenCalledTimes(1));
-    expect(sourcingMocks.Promote.mock.calls[0][0]).toBe(1);
-    expect(sourcingMocks.Promote.mock.calls[0][1]).toMatchObject({ fullName: "Quokka Stack" });
+    expect((sourcingMocks.Promote.mock.calls as unknown[][])[0][0]).toBe(1);
+    expect((sourcingMocks.Promote.mock.calls as unknown[][])[0][1]).toMatchObject({ fullName: "Quokka Stack" });
   });
 
   it("dismisses a lead and opens a page in the browser, never in the window", async () => {
