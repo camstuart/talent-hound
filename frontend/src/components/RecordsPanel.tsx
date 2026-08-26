@@ -3,31 +3,8 @@ import { bumpWorkspace, workspaceRevision } from "../workspaceRevision";
 import { latestOnly } from "../latestOnly";
 import { RecordService } from "../../bindings/camstuart/talent-hound";
 import type { Candidate, Company, Contact, Role } from "../../bindings/camstuart/talent-hound/internal/models";
-import RecordForm, { list, num, type FieldSpec } from "./RecordForm";
-
-const PERIODS = [
-  { value: "", label: "—" },
-  { value: "hour", label: "per hour" },
-  { value: "day", label: "per day" },
-  { value: "week", label: "per week" },
-  { value: "month", label: "per month" },
-  { value: "year", label: "per year" },
-];
-
-// Compensation is four fields wherever it appears.
-const compensationFields = (): FieldSpec[] => [
-  { key: "compMin", label: "Compensation minimum", type: "number", match: "minimum" },
-  { key: "compMax", label: "Compensation maximum", type: "number", match: "maximum" },
-  { key: "compCurrency", label: "Currency", placeholder: "NZD", match: "currency" },
-  { key: "compPeriod", label: "Period", type: "select", options: PERIODS, match: "period" },
-];
-
-const compensation = (v: Record<string, string>) => ({
-  min: num(v.compMin),
-  max: num(v.compMax),
-  currency: v.compCurrency,
-  period: v.compPeriod,
-});
+import RecordForm from "./RecordForm";
+import { detailFields, payloadFor, withCompanies } from "./recordFields";
 
 // Shared records: candidates, companies, contacts, and roles, plus the warm-path
 // contacts-at-company lookup. They belong to the talent pool, not to any one
@@ -100,35 +77,9 @@ export default function RecordsPanel() {
         <RecordForm
           legend="New candidate"
           submitLabel="Add candidate"
-          fields={[
-            { key: "fullName", label: "Full name", required: true, match: "full name" },
-            { key: "preferredName", label: "Preferred name" },
-            { key: "emails", label: "Email addresses", placeholder: "comma separated" },
-            { key: "phones", label: "Phone numbers", placeholder: "comma separated" },
-            { key: "location", label: "Location" },
-            { key: "workRights", label: "Work rights or visa" },
-            { key: "availability", label: "Available from", type: "date", match: "availability" },
-            { key: "desiredEmploymentType", label: "Desired employment type" },
-            { key: "desiredWorkArrangement", label: "Desired work arrangement" },
-            ...compensationFields(),
-            { key: "sourceNote", label: "Source or authority" },
-            { key: "lastConfirmed", label: "Last confirmed", type: "date", match: "last-confirmed" },
-          ]}
+          fields={detailFields("candidate")}
           onSubmit={async (v) => {
-            await RecordService.CreateCandidate({
-              fullName: v.fullName,
-              preferredName: v.preferredName,
-              emails: list(v.emails),
-              phones: list(v.phones),
-              location: v.location,
-              workRights: v.workRights,
-              availability: v.availability,
-              desiredEmploymentType: v.desiredEmploymentType,
-              desiredWorkArrangement: v.desiredWorkArrangement,
-              compensation: compensation(v),
-              sourceNote: v.sourceNote,
-              lastConfirmed: v.lastConfirmed,
-            } as unknown as Candidate);
+            await RecordService.CreateCandidate(payloadFor("candidate", v) as unknown as Candidate);
             // Other panels list these records too.
             // The bump reloads this panel too, and awaiting a second one here
             // would report a failed refresh as a failed create.
@@ -147,19 +98,9 @@ export default function RecordsPanel() {
         <RecordForm
           legend="New company"
           submitLabel="Add company"
-          fields={[
-            { key: "name", label: "Name", required: true, match: "company name" },
-            { key: "website", label: "Website", placeholder: "https://example.test", match: "website" },
-            { key: "location", label: "Location" },
-            { key: "source", label: "Source" },
-          ]}
+          fields={detailFields("company")}
           onSubmit={async (v) => {
-            await RecordService.CreateCompany({
-              name: v.name,
-              website: v.website,
-              location: v.location,
-              source: v.source,
-            } as unknown as Company);
+            await RecordService.CreateCompany(payloadFor("company", v) as unknown as Company);
             // Other panels list these records too.
             // The bump reloads this panel too, and awaiting a second one here
             // would report a failed refresh as a failed create.
@@ -173,23 +114,9 @@ export default function RecordsPanel() {
         <RecordForm
           legend="New contact"
           submitLabel="Add contact"
-          fields={[
-            { key: "companyId", label: "Company", type: "select", options: companyOptions(), match: "company" },
-            { key: "fullName", label: "Full name", required: true, match: "contact full name" },
-            { key: "title", label: "Role or title" },
-            { key: "email", label: "Email" },
-            { key: "phone", label: "Phone" },
-            { key: "source", label: "Source" },
-          ]}
+          fields={withCompanies(detailFields("contact"), companyOptions())}
           onSubmit={async (v) => {
-            await RecordService.CreateContact({
-              companyId: Number(v.companyId),
-              fullName: v.fullName,
-              title: v.title,
-              email: v.email,
-              phone: v.phone,
-              source: v.source,
-            } as unknown as Contact);
+            await RecordService.CreateContact(payloadFor("contact", v) as unknown as Contact);
             await lookup(selectedCompany());
           }}
         />
@@ -249,63 +176,9 @@ export default function RecordsPanel() {
         <RecordForm
           legend="New role"
           submitLabel="Add role"
-          fields={[
-            { key: "title", label: "Title", required: true, match: "role title" },
-            { key: "companyName", label: "Company name" },
-            { key: "companyId", label: "Company record", type: "select", options: companyOptions() },
-            { key: "location", label: "Location" },
-            { key: "workArrangement", label: "Work arrangement" },
-            { key: "employmentType", label: "Employment type" },
-            ...compensationFields(),
-            { key: "publishedOn", label: "Published", type: "date", match: "published" },
-            { key: "closingOn", label: "Closing", type: "date", match: "closing" },
-            { key: "retrievedOn", label: "Retrieved", type: "date", match: "retrieved" },
-            { key: "sourceId", label: "Source ID" },
-            { key: "canonicalUrl", label: "Canonical URL", match: "canonical url" },
-            { key: "source", label: "Source" },
-            {
-              key: "origin",
-              label: "Origin",
-              type: "select",
-              match: "origin",
-              options: [
-                { value: "recruiter_entered", label: "Recruiter entered" },
-                { value: "discovered", label: "Discovered" },
-              ],
-            },
-            {
-              key: "lifecycleState",
-              label: "Lifecycle state",
-              type: "select",
-              match: "lifecycle state",
-              options: [
-                { value: "open", label: "Open (recruiter entered)" },
-                { value: "filled", label: "Filled (recruiter entered)" },
-                { value: "closed", label: "Closed (recruiter entered)" },
-                { value: "active", label: "Active (discovered)" },
-                { value: "stale", label: "Stale (discovered)" },
-                { value: "purged", label: "Purged (discovered)" },
-              ],
-            },
-          ]}
+          fields={withCompanies(detailFields("role"), companyOptions())}
           onSubmit={async (v) => {
-            await RecordService.CreateRole({
-              title: v.title,
-              companyName: v.companyName,
-              companyId: v.companyId ? Number(v.companyId) : null,
-              location: v.location,
-              workArrangement: v.workArrangement,
-              employmentType: v.employmentType,
-              compensation: compensation(v),
-              publishedOn: v.publishedOn,
-              closingOn: v.closingOn,
-              retrievedOn: v.retrievedOn,
-              sourceId: v.sourceId,
-              canonicalUrl: v.canonicalUrl,
-              source: v.source,
-              origin: v.origin,
-              lifecycleState: v.lifecycleState,
-            } as unknown as Role);
+            await RecordService.CreateRole(payloadFor("role", v) as unknown as Role);
             // Other panels list these records too.
             // The bump reloads this panel too, and awaiting a second one here
             // would report a failed refresh as a failed create.

@@ -26,7 +26,7 @@ const initial = (fields: FieldSpec[]): Record<string, string> =>
 
 // One form for every record type: the fields differ, the behaviour does not.
 export default function RecordForm(props: Props) {
-  const [values, setValues] = createSignal({ ...initial(props.fields), ...(props.initial ?? {}) });
+  const [values, setValues] = createSignal({ ...initial(props.fields), ...props.initial });
   const [errors, setErrors] = createSignal<Record<string, string>>({});
   const [formError, setFormError] = createSignal("");
   const [busy, setBusy] = createSignal(false);
@@ -48,7 +48,7 @@ export default function RecordForm(props: Props) {
     setBusy(true);
     try {
       await props.onSubmit(values());
-      setValues({ ...initial(props.fields), ...(props.initial ?? {}) });
+      setValues({ ...initial(props.fields), ...props.initial });
     } catch (err) {
       // Show the backend's own words: it knows rules the form does not.
       const message = err instanceof Error ? err.message : String(err);
