@@ -124,10 +124,16 @@ tasks:
       # Create the Microsoft WebView2 bootstrapper if it doesn't exist
       - wails3 generate webview2bootstrapper -dir "{{.ROOT_DIR}}/build/windows/nsis"
       - |
+        # The bundled Ollama rides along when it was staged (just ollama-windows);
+        # an installer built without it relies on detection, as before.
+        OLLAMA=""
+        if [ -d "{{.ROOT_DIR}}/build/ollama/windows-{{.ARCH}}" ]; then
+          OLLAMA="-DARG_WAILS_OLLAMA_DIR={{.ROOT_DIR}}/build/ollama/windows-{{.ARCH}}"
+        fi
         {{if eq OS "windows"}}
-        makensis {{if eq .INSTALL_SCOPE "user"}}-DWAILS_INSTALL_SCOPE=user -DREQUEST_EXECUTION_LEVEL=user {{end}}-DARG_WAILS_{{.ARG_FLAG}}_BINARY="{{.ROOT_DIR}}\{{.BIN_DIR}}\{{.APP_NAME}}.exe" project.nsi
+        makensis {{if eq .INSTALL_SCOPE "user"}}-DWAILS_INSTALL_SCOPE=user -DREQUEST_EXECUTION_LEVEL=user {{end}}-DARG_WAILS_{{.ARG_FLAG}}_BINARY="{{.ROOT_DIR}}{{.BIN_DIR}}{{.APP_NAME}}.exe"  project.nsi
         {{else}}
-        makensis {{if eq .INSTALL_SCOPE "user"}}-DWAILS_INSTALL_SCOPE=user -DREQUEST_EXECUTION_LEVEL=user {{end}}-DARG_WAILS_{{.ARG_FLAG}}_BINARY="{{.ROOT_DIR}}/{{.BIN_DIR}}/{{.APP_NAME}}.exe" project.nsi
+        makensis {{if eq .INSTALL_SCOPE "user"}}-DWAILS_INSTALL_SCOPE=user -DREQUEST_EXECUTION_LEVEL=user {{end}}-DARG_WAILS_{{.ARG_FLAG}}_BINARY="{{.ROOT_DIR}}/{{.BIN_DIR}}/{{.APP_NAME}}.exe"  project.nsi
         {{end}}
     vars:
       ARCH: '{{.ARCH | default ARCH}}'

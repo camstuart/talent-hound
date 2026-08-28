@@ -1,13 +1,17 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
 
 	"camstuart/talent-hound/internal/extract"
+	"camstuart/talent-hound/internal/platform"
 )
 
 // The identity a recruiter sees before they see the application: the installer,
@@ -308,5 +312,53 @@ func TestTheLaptopAcceptanceRunHasOneEntryPoint(t *testing.T) {
 	}
 	if rows < 20 {
 		t.Fatalf("the packaging evidence has %d checklist rows, which is too few to be the record", rows)
+	}
+}
+
+// The bundled Ollama is what makes "install nothing else" true, and it is only
+// true while the installer, the staging recipe, and the pin agree. Each is a
+// file that somebody edits alone; this is where they are read together.
+func TestTheOllamaPinIsCarriedIntoTheWindowsInstaller(t *testing.T) {
+	pin, err := os.ReadFile("build/ollama/PIN.md")
+	if err != nil {
+		t.Fatalf("reading the pin record: %v", err)
+	}
+	if !strings.Contains(string(pin), platform.PinnedOllamaVersion) {
+		t.Fatalf("PIN.md does not record version %s", platform.PinnedOllamaVersion)
+	}
+	for _, referenced := range referencedRecipes(string(pin)) {
+		if !hasRecipe(t, referenced) {
+			t.Fatalf("PIN.md tells the reader to run `just %s`, which does not exist", referenced)
+		}
+	}
+
+	// The installer copies the staged folder to where the application looks.
+	nsi := string(mustRead(filepath.Join("build", "windows", "nsis", "project.nsi")))
+	if !strings.Contains(nsi, `SetOutPath "$INSTDIR\ollama"`) || !strings.Contains(nsi, "ARG_WAILS_OLLAMA_DIR") {
+		t.Fatal("the NSIS script does not install the bundled Ollama beside the application")
+	}
+	taskfile := string(mustRead(filepath.Join("build", "windows", "Taskfile.yml")))
+	if !strings.Contains(taskfile, "build/ollama/windows-") || !strings.Contains(taskfile, "ARG_WAILS_OLLAMA_DIR") {
+		t.Fatal("the Windows packaging task does not hand the staged Ollama to the installer")
+	}
+	// The ignore rule keeps the binaries out and the record in.
+	ignore := string(mustRead(".gitignore"))
+	if !strings.Contains(ignore, "build/ollama/*/") || strings.Contains(ignore, "\nbuild/ollama/\n") {
+		t.Fatal(".gitignore must ignore the staged platform folders and keep build/ollama/PIN.md")
+	}
+
+	// When a Windows binary is staged, it is the pinned one. Not staged is
+	// fine — a build without it relies on detection — but the wrong version
+	// staged would ship silently.
+	exe := filepath.Join("build", "ollama", "windows-amd64", "ollama.exe")
+	if _, err := os.Stat(exe); err != nil {
+		t.Skip("no Windows Ollama staged; run `just ollama-windows` to check the staged version")
+	}
+	out, err := exec.CommandContext(context.Background(), exe, "--version").CombinedOutput() // #nosec G204 -- a fixed path under the repository.
+	if err != nil {
+		t.Fatalf("running the staged ollama: %v\n%s", err, out)
+	}
+	if !strings.Contains(string(out), platform.PinnedOllamaVersion) {
+		t.Fatalf("the staged ollama reports %q, the application demands %s", strings.TrimSpace(string(out)), platform.PinnedOllamaVersion)
 	}
 }

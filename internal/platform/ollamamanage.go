@@ -43,6 +43,12 @@ func ollamaAnswers(ctx context.Context, baseURL string) bool {
 	return resp.StatusCode == http.StatusOK
 }
 
+// PinnedOllamaVersion is the Ollama release a packaged build carries; see
+// build/ollama/PIN.md and docs/product/OLLAMA_BUNDLING.md. The staging recipe
+// downloads exactly this version, and the packaging test refuses a staged
+// binary that reports another.
+const PinnedOllamaVersion = "0.33.1"
+
 // BundledOllamaPath is where a packaged install keeps its own Ollama: beside
 // the application binary, in its own folder — the extraction sidecar's pattern.
 // Empty means nothing is bundled.

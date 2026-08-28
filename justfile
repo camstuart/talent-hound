@@ -199,3 +199,14 @@ dupes:
 
 # QA plus all tests — the full pre-commit gate
 check: qa test
+
+# Stage the pinned Ollama release for the Windows installer (see build/ollama/PIN.md).
+# Downloads exactly the version the application demands and prints what it got;
+# the packaging test refuses a staged binary that reports another version.
+[unix]
+ollama-windows:
+    pwsh -NoProfile -File build/ollama/stage-windows.ps1
+
+[windows]
+ollama-windows:
+    powershell -NoProfile -ExecutionPolicy Bypass -File build/ollama/stage-windows.ps1

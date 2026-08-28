@@ -94,6 +94,15 @@ Section
     
     !insertmacro wails.files
 
+    # The bundled Ollama, when the build staged one (see build/ollama/PIN.md).
+    # Beside the application in its own folder, which is where
+    # platform.BundledOllamaPath looks.
+    !ifdef ARG_WAILS_OLLAMA_DIR
+        SetOutPath "$INSTDIR\ollama"
+        File /r "${ARG_WAILS_OLLAMA_DIR}\*.*"
+        SetOutPath $INSTDIR
+    !endif
+
     CreateShortcut "$SMPROGRAMS\${INFO_PRODUCTNAME}.lnk" "$INSTDIR\${PRODUCT_EXECUTABLE}"
     CreateShortCut "$DESKTOP\${INFO_PRODUCTNAME}.lnk" "$INSTDIR\${PRODUCT_EXECUTABLE}"
 

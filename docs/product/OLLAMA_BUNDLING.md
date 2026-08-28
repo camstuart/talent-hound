@@ -14,11 +14,13 @@ official release into an untracked folder first:
 - macOS: download the darwin release from https://github.com/ollama/ollama/releases,
   place the standalone `ollama` binary (and nothing else) in
   `build/ollama/darwin-arm64/`.
-- Windows: place `ollama.exe` and the `lib/` folder from the
-  `ollama-windows-amd64.zip` release in `build/ollama/windows-amd64/`, and add
-  a copy step mirroring the darwin one to the NSIS/MSIX packaging when Windows
-  packaging is next touched (`build/windows/Taskfile.yml`). Until then the
-  Windows installer ships without a bundled copy and relies on detection.
+- Windows: run `just ollama-windows`. It downloads the pinned release
+  (`platform.PinnedOllamaVersion`, recorded in `build/ollama/PIN.md`) and
+  stages `ollama.exe`, `lib/`, and the licence in `build/ollama/windows-amd64/`.
+  The NSIS installer copies that folder to `ollama/` beside the application
+  whenever it is present; built without it, the installer relies on detection
+  and the first-run wizard says how to install Ollama. The MSIX package does
+  not carry it yet.
 
 Ollama is MIT-licensed; include its LICENSE file in the staged folder.
 
