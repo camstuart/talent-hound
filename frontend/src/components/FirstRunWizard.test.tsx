@@ -105,6 +105,11 @@ describe("FirstRunWizard", () => {
     }));
     render(() => <FirstRunWizard />);
     const why = await screen.findByLabelText("Why ollama is not done");
+    // And how to fix it, not only that it is broken.
+    const how = await screen.findByLabelText("How to set up Ollama");
+    expect(how).toHaveTextContent("ollama.com/download");
+    await clickWhenReady("Check Ollama again");
+    await waitFor(() => expect(setupMocks.State.mock.calls.length).toBeGreaterThan(1));
     expect(why.textContent).toContain("Ollama is not reachable");
     expect(why.textContent).toContain("11434");
   });

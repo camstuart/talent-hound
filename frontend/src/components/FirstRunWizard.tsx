@@ -103,6 +103,23 @@ export default function FirstRunWizard() {
               </For>
             </ol>
 
+            {/* Ollama is the one thing the recruiter installs themselves, so the
+                step says how, rather than only that it is missing. */}
+            <Show when={current() === "ollama"}>
+              <div class="extraction-view" role="region" aria-label="How to set up Ollama">
+                <h4>Set up Ollama</h4>
+                <p class="muted">Ollama runs the models on this computer. Talent Hound needs it running in the background.</p>
+                <ol class="record-list">
+                  <li>Download Ollama from <span class="artifact-name">ollama.com/download</span> and run the installer.</li>
+                  <li>Open Ollama once. It stays running in the background — nothing else needs configuring.</li>
+                  <li>Press <span class="artifact-name">Check again</span>. The next step downloads the models.</li>
+                </ol>
+                <button aria-label="Check Ollama again" disabled={busy()} onClick={() => run(() => SetupService.State())}>
+                  Check again
+                </button>
+              </div>
+            </Show>
+
             {/* The data folder: the one folder that holds everything, and the
                 one folder recovery copies. */}
             <Show when={current() === "data_folder" || st().complete}>

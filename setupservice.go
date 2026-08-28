@@ -338,12 +338,22 @@ func ollamaReachable(views []ModelView, endpoint string) (bool, string) {
 	for _, v := range views {
 		switch v.State {
 		case models.ModelEndpointDown:
-			return false, fmt.Sprintf("Ollama is not reachable at %s", endpoint)
+			return false, fmt.Sprintf("Ollama is not reachable at %s — %s", endpoint, ollamaAdvice())
 		case models.ModelTimeout:
-			return false, fmt.Sprintf("Ollama did not answer in time at %s", endpoint)
+			return false, fmt.Sprintf("Ollama did not answer in time at %s — if it is still starting, wait a moment and check again", endpoint)
 		}
 	}
 	return true, ""
+}
+
+// ollamaAdvice says what to do about Ollama not running, which depends on
+// whether this build carries its own copy. The message is the whole of what
+// the recruiter sees, so it names the place to get it.
+func ollamaAdvice() string {
+	if platform.BundledOllamaPath() != "" {
+		return "the bundled copy did not start; try again, or install Ollama from ollama.com/download and open it, then check again"
+	}
+	return "install Ollama from ollama.com/download, open it so it runs in the background, then check again"
 }
 
 // ChooseFolder records the data folder after checking it can actually be used.

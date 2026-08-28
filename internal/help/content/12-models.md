@@ -13,6 +13,16 @@ summary: The three roles, what each does, and what to do when one is unavailable
 
 You assign a model to each role. Generate can stand in for classify if you have not assigned one separately.
 
+## Installing Ollama
+
+Ollama is the program that runs the three models on your computer. Talent Hound does not include it unless your build says so on the Ollama step, so on most machines you install it once:
+
+1. Download it from ollama.com/download and run the installer.
+2. Open Ollama. It runs in the background — on Windows and macOS you will see its icon in the tray or menu bar. Nothing else needs configuring: Talent Hound looks for it at its standard address, localhost:11434.
+3. In Talent Hound, press *Check again* on the Ollama step, or *Check the system again* in Settings. The step turns to done, and the next step downloads the models.
+
+If Ollama is installed but the step still says it is not reachable, it is not running: start it from the Start menu or Applications. If it says Ollama did not answer in time, it is probably still starting — wait a moment and check again.
+
 ## Availability
 
 Each role reports one of: ready, no model chosen, not installed, Ollama not running, download declined, download failed, no answer in time, unexpected answer, or not enough memory.

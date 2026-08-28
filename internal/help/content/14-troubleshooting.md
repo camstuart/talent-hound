@@ -5,6 +5,10 @@ group: Setup
 summary: The refusals you are most likely to meet, and what each one means.
 ---
 
+## Ollama is not reachable
+
+Ollama is not installed, or is installed and not running. Install it from ollama.com/download, open it, and press *Check again*. The Models page under Setup walks through it.
+
 ## "This installation cannot hold candidate data"
 
 The volume holding your data folder is not encrypted, or the check could not be made. Real candidate data needs an encrypted volume. Demo scope works anywhere but refuses documents and candidates, and is not a place to do real work.
