@@ -13,7 +13,7 @@ import type { PickerOption } from "./RolePicker";
 
 const STEP_TITLES: Record<string, string> = {
   data_folder: "Choose the data folder",
-  encryption: "Verify the volume is encrypted",
+  encryption: "Check the volume's encryption",
   sidecar: "Verify the document reader",
   ollama: "Verify Ollama",
   models: "Install the required models",
@@ -147,6 +147,31 @@ export default function FirstRunWizard() {
                 <p class="modal-error" aria-label="Why real data is blocked">
                   {st().realDataWhy}
                 </p>
+              </Show>
+              {/* The choice most recruiters will make, said back to them for as
+                  long as it is in force. It is a recorded setting, not a bypass. */}
+              <Show when={st().warning}>
+                <p class="shell-note" aria-label="Unencrypted storage warning">
+                  {st().warning}
+                </p>
+              </Show>
+              <Show when={st().scope !== Scope.ScopeDemo && st().encryption !== "encrypted" && !st().unencryptedAccepted}>
+                <button
+                  aria-label="Store candidate data without disk encryption"
+                  disabled={busy()}
+                  onClick={() => run(() => SetupService.AcceptUnencrypted(true))}
+                >
+                  Continue without disk encryption
+                </button>
+              </Show>
+              <Show when={st().unencryptedAccepted}>
+                <button
+                  aria-label="Require disk encryption again"
+                  disabled={busy()}
+                  onClick={() => run(() => SetupService.AcceptUnencrypted(false))}
+                >
+                  Require encryption again
+                </button>
               </Show>
               <button
                 aria-label="Check the volume again"

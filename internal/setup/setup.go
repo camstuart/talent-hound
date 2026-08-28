@@ -57,6 +57,11 @@ func (s Scope) Valid() bool { return s == ScopeReal || s == ScopeDemo }
 // A changed text is a new acknowledgement, not a remembered old one.
 const AcknowledgementVersion = "1"
 
+// UnencryptedAcceptanceVersion identifies the warning text accepted when the
+// recruiter chooses to hold candidate data without disk encryption. A changed
+// warning is a new acceptance.
+const UnencryptedAcceptanceVersion = "1"
+
 // Checks is what is true about this machine right now. Every field is gathered
 // fresh: a remembered fact about a machine is a fact about the machine as it
 // was.
@@ -70,7 +75,10 @@ type Checks struct {
 	OllamaWhy    string                    `json:"ollamaWhy"`
 	Models       map[models.ModelRole]bool `json:"models"`
 	Acknowledged string                    `json:"acknowledged"`
-	Initiatives  int64                     `json:"initiatives"`
+	// UnencryptedAccepted is the acceptance version the recruiter recorded
+	// for holding data without encryption, or empty.
+	UnencryptedAccepted string `json:"unencryptedAccepted"`
+	Initiatives         int64  `json:"initiatives"`
 }
 
 // Next returns the first unsatisfied step, or StepComplete.
@@ -82,9 +90,12 @@ func Next(c Checks) Step {
 	switch {
 	case c.DataFolder == "":
 		return StepDataFolder
-	// Demo scope is allowed on any volume, so the encryption step is satisfied
-	// by choosing demo — not by an unencrypted volume being tolerated.
-	case c.Scope != ScopeDemo && c.Encryption != platform.StatusEncrypted:
+	// Demo scope is allowed on any volume. Real scope needs an encrypted
+	// volume, or the recruiter's recorded acceptance of storing without one
+	// — a choice made in the open, never an unencrypted volume tolerated
+	// quietly.
+	case c.Scope != ScopeDemo && c.Encryption != platform.StatusEncrypted &&
+		c.UnencryptedAccepted != UnencryptedAcceptanceVersion:
 		return StepEncryption
 	case !c.Sidecar:
 		return StepSidecar
@@ -111,14 +122,25 @@ func modelsReady(present map[models.ModelRole]bool) bool {
 
 // RealDataAllowed reports whether personal data may be held, and why not when
 // it may not. "Could not check" and "not encrypted" are different sentences to
-// the recruiter and the same answer here.
-func RealDataAllowed(scope Scope, status platform.EncryptionStatus) (bool, string) {
+// the recruiter and the same answer here — unless the recruiter has accepted
+// holding data without encryption, in which case the answer is yes and the
+// sentence is a reminder rather than a refusal.
+//
+// The acceptance exists because most recruiters cannot turn disk encryption
+// on, and an application they cannot use protects nobody. It is recorded,
+// versioned, and shown, so it is a decision rather than a default.
+func RealDataAllowed(scope Scope, status platform.EncryptionStatus, unencryptedAccepted bool) (bool, string) {
 	if scope != ScopeReal {
 		return false, "this installation is in demo scope: it holds no candidate data"
 	}
 	switch status {
 	case platform.StatusEncrypted:
 		return true, ""
+	}
+	if unencryptedAccepted {
+		return true, UnencryptedWarning
+	}
+	switch status {
 	case platform.StatusUnencrypted:
 		return false, "the volume holding the data folder is not encrypted"
 	case platform.StatusPermissionDenied:
@@ -129,6 +151,11 @@ func RealDataAllowed(scope Scope, status platform.EncryptionStatus) (bool, strin
 			"so it is not treated as encrypted"
 	}
 }
+
+// UnencryptedWarning is what the recruiter accepts, and what they are reminded
+// of afterwards. Version UnencryptedAcceptanceVersion.
+const UnencryptedWarning = "candidate data is stored without disk encryption, by your choice: " +
+	"anyone with this computer can read it"
 
 // RequiredModel is one role's recommended model and its approximate download
 // size, so the recruiter sees what a working installation costs before it
@@ -156,9 +183,10 @@ var Required = []RequiredModel{
 // It lives outside the data folder, because it is the pointer to that folder
 // and a pointer inside the thing it points at cannot be followed.
 type Settings struct {
-	DataFolder   string `json:"dataFolder"`
-	Scope        Scope  `json:"scope"`
-	Acknowledged string `json:"acknowledged"`
+	DataFolder          string `json:"dataFolder"`
+	Scope               Scope  `json:"scope"`
+	Acknowledged        string `json:"acknowledged"`
+	UnencryptedAccepted string `json:"unencryptedAccepted"`
 }
 
 // SettingsPath returns the settings file's location under dir.

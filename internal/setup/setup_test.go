@@ -102,7 +102,7 @@ func TestOnlyAnEncryptedVolumeInRealScopePermitsData(t *testing.T) {
 		{ScopeDemo, platform.StatusUnencrypted, false},
 	}
 	for _, tc := range cases {
-		ok, why := RealDataAllowed(tc.scope, tc.status)
+		ok, why := RealDataAllowed(tc.scope, tc.status, false)
 		if ok != tc.want {
 			t.Fatalf("RealDataAllowed(%q, %q) = %v, want %v", tc.scope, tc.status, ok, tc.want)
 		}
@@ -115,9 +115,9 @@ func TestOnlyAnEncryptedVolumeInRealScopePermitsData(t *testing.T) {
 // "Could not check" and "not encrypted" are different sentences, because the
 // recruiter's next action differs.
 func TestTheRefusalDistinguishesUnknownFromUnencrypted(t *testing.T) {
-	_, unencrypted := RealDataAllowed(ScopeReal, platform.StatusUnencrypted)
-	_, unknown := RealDataAllowed(ScopeReal, platform.StatusUnavailable)
-	_, denied := RealDataAllowed(ScopeReal, platform.StatusPermissionDenied)
+	_, unencrypted := RealDataAllowed(ScopeReal, platform.StatusUnencrypted, false)
+	_, unknown := RealDataAllowed(ScopeReal, platform.StatusUnavailable, false)
+	_, denied := RealDataAllowed(ScopeReal, platform.StatusPermissionDenied, false)
 	if unencrypted == unknown || unknown == denied || unencrypted == denied {
 		t.Fatalf("three causes gave the same sentence:\n%s\n%s\n%s", unencrypted, unknown, denied)
 	}
@@ -208,5 +208,43 @@ func TestCatalogCoversEveryRoleAndTheRequiredSet(t *testing.T) {
 		if !found {
 			t.Fatalf("required model %s for %s is not in the catalog with the same size", req.Model, req.Role)
 		}
+	}
+}
+
+// Most recruiters cannot turn disk encryption on, and an application they
+// cannot use protects nobody. Accepting unencrypted storage permits real data
+// on any volume — as a recorded choice that is said back to them, never as an
+// unencrypted volume tolerated quietly. Demo scope is unaffected: it holds no
+// candidate data whatever was accepted.
+func TestAcceptingUnencryptedStoragePermitsRealDataAndSaysSo(t *testing.T) {
+	for _, status := range []platform.EncryptionStatus{
+		platform.StatusUnencrypted, platform.StatusUnavailable, platform.StatusPermissionDenied,
+	} {
+		ok, why := RealDataAllowed(ScopeReal, status, true)
+		if !ok {
+			t.Fatalf("accepted unencrypted storage refused real data on %q: %s", status, why)
+		}
+		if why != UnencryptedWarning {
+			t.Fatalf("an accepted unencrypted volume gave %q, want the warning", why)
+		}
+	}
+	if ok, why := RealDataAllowed(ScopeReal, platform.StatusEncrypted, true); !ok || why != "" {
+		t.Fatalf("an encrypted volume warned: ok=%v why=%q", ok, why)
+	}
+	if ok, _ := RealDataAllowed(ScopeDemo, platform.StatusUnencrypted, true); ok {
+		t.Fatal("acceptance let demo scope hold data")
+	}
+
+	// The wizard step is satisfied by the acceptance, and only the current
+	// version of it.
+	c := ready()
+	c.Encryption = platform.StatusUnencrypted
+	c.UnencryptedAccepted = UnencryptedAcceptanceVersion
+	if got := Next(c); got != StepComplete {
+		t.Fatalf("Next() = %q, want acceptance to satisfy the encryption step", got)
+	}
+	c.UnencryptedAccepted = "0"
+	if got := Next(c); got != StepEncryption {
+		t.Fatalf("Next() = %q, want an old acceptance to count for nothing", got)
 	}
 }

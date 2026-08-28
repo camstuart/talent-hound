@@ -93,3 +93,30 @@ func TestNoUnrecognisedOutputIsEverEncrypted(t *testing.T) {
 		}
 	}
 }
+
+// The Shell property is the probe that answers without elevation. Only "on"
+// is encrypted; encrypting, suspended, off, and a machine with no BitLocker
+// are all readable by whoever has the computer.
+func TestTheShellProbeReadsOnlyProtectionOnAsEncrypted(t *testing.T) {
+	broken := errors.New("exit status 1")
+	for _, c := range []struct {
+		name string
+		out  string
+		err  error
+		want EncryptionStatus
+	}{
+		{"on", "1\n", nil, StatusEncrypted},
+		{"on and locked", "6", nil, StatusEncrypted},
+		{"no bitlocker", "0\r\n", nil, StatusUnencrypted},
+		{"off", "2", nil, StatusUnencrypted},
+		{"encrypting", "3", nil, StatusUnencrypted},
+		{"suspended", "5", nil, StatusUnencrypted},
+		{"denied", "Access is denied.", broken, StatusPermissionDenied},
+		{"silent", "", nil, StatusUnavailable},
+		{"unrecognised", "True", nil, StatusUnavailable},
+	} {
+		if got := readShellProtection(c.out, c.err); got != c.want {
+			t.Errorf("%s: %q gave %q, want %q", c.name, c.out, got, c.want)
+		}
+	}
+}

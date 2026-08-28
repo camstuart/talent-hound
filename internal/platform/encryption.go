@@ -97,6 +97,26 @@ func readCIM(out string, err error) EncryptionStatus {
 	}
 }
 
+// readShellProtection interprets the Shell property System.Volume.BitLockerProtection,
+// which is readable without elevation when manage-bde and CIM are not. Its
+// values: 1 on, 2 off, 3 encrypting, 4 decrypting, 5 suspended, 6 on and
+// locked. Only fully on counts as encrypted; a volume still encrypting, or
+// suspended, is one an attacker can read. 0 is what a machine with no
+// BitLocker at all reports, and is unencrypted for the same reason.
+func readShellProtection(out string, err error) EncryptionStatus {
+	if s := denialOrEmpty(out, err); s != "" {
+		return s
+	}
+	switch strings.TrimSpace(out) {
+	case "1", "6":
+		return StatusEncrypted
+	case "0", "2", "3", "4", "5":
+		return StatusUnencrypted
+	default:
+		return StatusUnavailable
+	}
+}
+
 func runSystemTool(ctx context.Context, name string, args ...string) (string, error) {
 	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
 	defer cancel()

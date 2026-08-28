@@ -13,15 +13,27 @@ func VolumeEncryption(ctx context.Context, path string) EncryptionStatus {
 	if vol == "" {
 		vol = "C:"
 	}
-	if s := manageBDEStatus(ctx, vol); s != StatusUnavailable {
+	// Most authoritative first. Both of the first two need elevation on most
+	// machines; the Shell property does not, and turns "could not check" into
+	// an answer for the recruiter who is not an administrator.
+	if s := manageBDEStatus(ctx, vol); s != StatusUnavailable && s != StatusPermissionDenied {
 		return s
 	}
-	return cimStatus(ctx, vol)
+	if s := cimStatus(ctx, vol); s != StatusUnavailable && s != StatusPermissionDenied {
+		return s
+	}
+	return shellStatus(ctx, vol)
 }
 
 func manageBDEStatus(ctx context.Context, vol string) EncryptionStatus {
 	out, err := runSystemTool(ctx, "manage-bde", "-status", vol, "-protectors")
 	return readManageBDE(out, err)
+}
+
+func shellStatus(ctx context.Context, vol string) EncryptionStatus {
+	query := `(New-Object -ComObject Shell.Application).NameSpace('` + vol + `\').Self.ExtendedProperty('System.Volume.BitLockerProtection')`
+	out, err := runSystemTool(ctx, "powershell", "-NoProfile", "-NonInteractive", "-Command", query)
+	return readShellProtection(out, err)
 }
 
 func cimStatus(ctx context.Context, vol string) EncryptionStatus {

@@ -102,12 +102,12 @@ func (s *SetupService) Recheck() {
 // is: there is nothing to pass that says yes.
 func (s *SetupService) AllowRealData() error {
 	s.mu.RLock()
-	scope, status := s.settings.Scope, s.encryption
+	scope, status, accepted := s.settings.Scope, s.encryption, s.unencryptedAccepted()
 	s.mu.RUnlock()
-	if ok, _ := setup.RealDataAllowed(scope, status); ok {
+	if ok, _ := setup.RealDataAllowed(scope, status, accepted); ok {
 		return nil
 	}
-	_, why := setup.RealDataAllowed(scope, status)
+	_, why := setup.RealDataAllowed(scope, status, accepted)
 	return fmt.Errorf("this installation cannot hold candidate data: %s", why)
 }
 
@@ -119,19 +119,26 @@ type ScopeState struct {
 	Encryption  platform.EncryptionStatus `json:"encryption"`
 	RealData    bool                      `json:"realData"`
 	RealDataWhy string                    `json:"realDataWhy"`
-	Version     string                    `json:"version"`
+	// UnencryptedAccepted says the recruiter chose to hold data without
+	// encryption; Warning is the reminder shown while that is what is happening.
+	UnencryptedAccepted bool   `json:"unencryptedAccepted"`
+	Warning             string `json:"warning"`
+	Version             string `json:"version"`
 }
 
 // Scope reports the current scope and what it permits, without running a check.
 func (s *SetupService) Scope() *ScopeState {
 	s.mu.RLock()
-	scope, status := s.settings.Scope, s.encryption
+	scope, status, accepted := s.settings.Scope, s.encryption, s.unencryptedAccepted()
 	s.mu.RUnlock()
-	allowed, why := setup.RealDataAllowed(scope, status)
-	return &ScopeState{
-		Scope: scope, Encryption: status, RealData: allowed,
-		RealDataWhy: why, Version: Version,
+	allowed, why := setup.RealDataAllowed(scope, status, accepted)
+	out := &ScopeState{Scope: scope, Encryption: status, RealData: allowed, Version: Version, UnencryptedAccepted: accepted}
+	if allowed {
+		out.Warning = why
+	} else {
+		out.RealDataWhy = why
 	}
+	return out
 }
 
 // StepView is one step and whether it is satisfied, with the reason when not.
@@ -162,13 +169,17 @@ type SetupStatus struct {
 	// FolderInUse is where this process actually opened the database, which is
 	// not the chosen folder until the application restarts. The encryption
 	// status below is about this one, because this is where the records go.
-	FolderInUse  string                    `json:"folderInUse"`
-	Scope        setup.Scope               `json:"scope"`
-	Encryption   platform.EncryptionStatus `json:"encryption"`
-	RealData     bool                      `json:"realData"`
-	RealDataWhy  string                    `json:"realDataWhy"`
-	Version      string                    `json:"version"`
-	Acknowledged bool                      `json:"acknowledged"`
+	FolderInUse string                    `json:"folderInUse"`
+	Scope       setup.Scope               `json:"scope"`
+	Encryption  platform.EncryptionStatus `json:"encryption"`
+	RealData    bool                      `json:"realData"`
+	RealDataWhy string                    `json:"realDataWhy"`
+	// UnencryptedAccepted says the recruiter chose to hold data without
+	// encryption; Warning is the reminder shown while that is in force.
+	UnencryptedAccepted bool   `json:"unencryptedAccepted"`
+	Warning             string `json:"warning"`
+	Version             string `json:"version"`
+	Acknowledged        bool   `json:"acknowledged"`
 }
 
 // State gathers what is true and reports the first unsatisfied step.
@@ -194,33 +205,41 @@ func (s *SetupService) State() (*SetupStatus, error) {
 		present[m.Role] = present[m.Role] || m.Installed
 	}
 	checks := setup.Checks{
-		DataFolder:   settings.DataFolder,
-		Scope:        settings.Scope,
-		Encryption:   status,
-		Sidecar:      sidecarOK,
-		SidecarWhy:   sidecarWhy,
-		Ollama:       ollamaOK,
-		OllamaWhy:    ollamaWhy,
-		Models:       present,
-		Acknowledged: settings.Acknowledged,
-		Initiatives:  initiatives,
+		DataFolder:          settings.DataFolder,
+		Scope:               settings.Scope,
+		Encryption:          status,
+		Sidecar:             sidecarOK,
+		UnencryptedAccepted: settings.UnencryptedAccepted,
+		SidecarWhy:          sidecarWhy,
+		Ollama:              ollamaOK,
+		OllamaWhy:           ollamaWhy,
+		Models:              present,
+		Acknowledged:        settings.Acknowledged,
+		Initiatives:         initiatives,
 	}
 	next := setup.Next(checks)
-	allowed, why := setup.RealDataAllowed(settings.Scope, status)
+	accepted := settings.UnencryptedAccepted == setup.UnencryptedAcceptanceVersion
+	allowed, why := setup.RealDataAllowed(settings.Scope, status, accepted)
+	warning, refusal := "", why
+	if allowed {
+		warning, refusal = why, ""
+	}
 
 	return &SetupStatus{
-		Next:         next,
-		Complete:     next == setup.StepComplete,
-		Steps:        stepViews(checks, next),
-		Models:       modelViews,
-		DataFolder:   settings.DataFolder,
-		FolderInUse:  s.dataDir,
-		Scope:        settings.Scope,
-		Encryption:   status,
-		RealData:     allowed,
-		RealDataWhy:  why,
-		Version:      Version,
-		Acknowledged: settings.Acknowledged == setup.AcknowledgementVersion,
+		Next:                next,
+		Complete:            next == setup.StepComplete,
+		Steps:               stepViews(checks, next),
+		Models:              modelViews,
+		DataFolder:          settings.DataFolder,
+		FolderInUse:         s.dataDir,
+		Scope:               settings.Scope,
+		Encryption:          status,
+		RealData:            allowed,
+		RealDataWhy:         refusal,
+		UnencryptedAccepted: accepted,
+		Warning:             warning,
+		Version:             Version,
+		Acknowledged:        settings.Acknowledged == setup.AcknowledgementVersion,
 	}, nil
 }
 
@@ -248,7 +267,7 @@ func detailFor(step setup.Step, c setup.Checks) string {
 	case setup.StepDataFolder:
 		return "choose the folder that will hold every record, document, and index"
 	case setup.StepEncryption:
-		_, why := setup.RealDataAllowed(setup.ScopeReal, c.Encryption)
+		_, why := setup.RealDataAllowed(setup.ScopeReal, c.Encryption, false)
 		return why
 	case setup.StepSidecar:
 		return c.SidecarWhy
@@ -390,6 +409,28 @@ func (s *SetupService) SetScope(scope setup.Scope) error {
 	}
 	s.mu.Lock()
 	s.settings.Scope = scope
+	settings := s.settings
+	s.mu.Unlock()
+	return setup.Save(s.confDir, settings)
+}
+
+// unencryptedAccepted reports whether the current acceptance is on record.
+// Callers hold the lock.
+func (s *SetupService) unencryptedAccepted() bool {
+	return s.settings.UnencryptedAccepted == setup.UnencryptedAcceptanceVersion
+}
+
+// AcceptUnencrypted records — or withdraws — the recruiter's choice to hold
+// candidate data on a volume that is not, or cannot be shown to be,
+// encrypted. It is a setting, not a bypass: the state strip and the
+// diagnostics report say it is in force for as long as it is.
+func (s *SetupService) AcceptUnencrypted(accept bool) error {
+	s.mu.Lock()
+	if accept {
+		s.settings.UnencryptedAccepted = setup.UnencryptedAcceptanceVersion
+	} else {
+		s.settings.UnencryptedAccepted = ""
+	}
 	settings := s.settings
 	s.mu.Unlock()
 	return setup.Save(s.confDir, settings)

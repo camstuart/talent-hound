@@ -25,6 +25,7 @@ const { state, setupMocks, modelMocks } = vi.hoisted(() => {
         if (state.chooseError) throw new Error(state.chooseError);
       }),
       SetScope: vi.fn(async () => undefined),
+      AcceptUnencrypted: vi.fn(async () => undefined),
       Recheck: vi.fn(async () => "unencrypted"),
       Acknowledge: vi.fn(async () => undefined),
       PullModel: vi.fn(async () => ({ id: 1 })),
@@ -62,6 +63,8 @@ const aStatus = (next: string, over: Record<string, unknown> = {}) => ({
   encryption: "encrypted",
   realData: true,
   realDataWhy: "",
+  unencryptedAccepted: false,
+  warning: "",
   version: "0.1.0-poc",
   acknowledged: false,
   ...over,
@@ -144,6 +147,32 @@ describe("FirstRunWizard", () => {
     // Still real scope: nothing switched it.
     expect(await screen.findByLabelText("Data scope")).toHaveTextContent("real");
     expect(setupMocks.SetScope).not.toHaveBeenCalled();
+  });
+
+  it("offers to store without disk encryption, as a recorded choice", async () => {
+    state.status = aStatus("encryption", {
+      realData: false,
+      realDataWhy: "the encryption state of the volume could not be checked, so it is not treated as encrypted",
+      encryption: "unavailable",
+    });
+    render(() => <FirstRunWizard />);
+    await clickWhenReady("Store candidate data without disk encryption");
+    await waitFor(() => expect(setupMocks.AcceptUnencrypted).toHaveBeenCalledWith(true));
+    expect(setupMocks.SetScope).not.toHaveBeenCalled();
+  });
+
+  it("says the choice back while it is in force, and lets it be withdrawn", async () => {
+    state.status = aStatus("sidecar", {
+      encryption: "unencrypted",
+      unencryptedAccepted: true,
+      warning: "candidate data is stored without disk encryption, by your choice",
+    });
+    render(() => <FirstRunWizard />);
+    expect(await screen.findByLabelText("Unencrypted storage warning")).toHaveTextContent("by your choice");
+    expect(screen.queryByLabelText("Store candidate data without disk encryption")).toBeNull();
+    expect(screen.queryByLabelText("Why real data is blocked")).toBeNull();
+    await clickWhenReady("Require disk encryption again");
+    await waitFor(() => expect(setupMocks.AcceptUnencrypted).toHaveBeenCalledWith(false));
   });
 
   it("distinguishes a volume that could not be checked from one that is not encrypted", async () => {

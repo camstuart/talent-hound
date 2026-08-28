@@ -45,19 +45,21 @@ type Count struct {
 
 // Report is the whole diagnostic picture.
 type Report struct {
-	Version       string  `json:"version"`
-	SchemaVersion int     `json:"schemaVersion"`
-	BuildSchema   int     `json:"buildSchema"`
-	Platform      string  `json:"platform"`
-	DataFolder    string  `json:"dataFolder"`
-	LogsFolder    string  `json:"logsFolder"`
-	Encryption    string  `json:"encryption"`
-	Scope         string  `json:"scope"`
-	RealData      bool    `json:"realData"`
-	Sidecar       string  `json:"sidecar"`
-	Ollama        string  `json:"ollama"`
-	Models        []Count `json:"models"`
-	Counts        []Count `json:"counts"`
+	Version       string `json:"version"`
+	SchemaVersion int    `json:"schemaVersion"`
+	BuildSchema   int    `json:"buildSchema"`
+	Platform      string `json:"platform"`
+	DataFolder    string `json:"dataFolder"`
+	LogsFolder    string `json:"logsFolder"`
+	Encryption    string `json:"encryption"`
+	Scope         string `json:"scope"`
+	RealData      bool   `json:"realData"`
+	// UnencryptedAccepted says data is held without disk encryption by choice.
+	UnencryptedAccepted bool    `json:"unencryptedAccepted"`
+	Sidecar             string  `json:"sidecar"`
+	Ollama              string  `json:"ollama"`
+	Models              []Count `json:"models"`
+	Counts              []Count `json:"counts"`
 	// Jobs are outcomes as codes: the failure_reason column is a short code by
 	// construction, so nothing a job touched can reach this report through it.
 	Jobs []Count `json:"jobs"`
@@ -111,6 +113,7 @@ func (s *DiagnosticsService) Diagnostics() (*Report, error) {
 		report.Encryption = string(state.Encryption)
 		report.Scope = string(state.Scope)
 		report.RealData = state.RealData
+		report.UnencryptedAccepted = state.UnencryptedAccepted
 		report.Sidecar = availability(stepSatisfied(state, "sidecar"))
 		report.Ollama = availability(stepSatisfied(state, "ollama"))
 		for _, m := range state.Models {
