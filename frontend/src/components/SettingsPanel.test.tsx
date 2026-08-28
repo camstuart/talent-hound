@@ -40,6 +40,9 @@ const { state, modelMocks, credentialMocks } = vi.hoisted(() => {
 vi.mock("../../bindings/camstuart/talent-hound", () => ({
   ModelService: modelMocks,
   CredentialService: credentialMocks,
+  // The system check and wizard read setup state; here they only need to
+  // render quietly. Their own tests cover their behaviour.
+  SetupService: { State: vi.fn(async () => null), Acknowledgements: vi.fn(async () => []) },
 }));
 
 const resolution = (role: string, over: Record<string, unknown> = {}) => ({

@@ -67,7 +67,7 @@ export default function FirstRunWizard() {
   });
 
   return (
-    <section class="record-section" aria-label="Setup">
+    <section class="record-section" id="setup" aria-label="Setup">
       <h3>Setup</h3>
       <Show when={status()}>
         {(st) => (

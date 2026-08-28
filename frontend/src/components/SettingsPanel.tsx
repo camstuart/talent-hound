@@ -7,6 +7,7 @@ import RolePicker from "./RolePicker";
 import type { PickerOption } from "./RolePicker";
 import ModelLibrary from "./ModelLibrary";
 import DiagnosticsPanel from "./DiagnosticsPanel";
+import SystemCheck from "./SystemCheck";
 
 // What each availability state means, in the recruiter's terms. They are
 // separate states because the thing to do about each one is different.
@@ -111,7 +112,8 @@ export default function SettingsPanel() {
 
   return (
     <div class="settings">
-      <section class="record-section" aria-label="Model roles">
+      <SystemCheck />
+      <section class="record-section" id="model-roles" aria-label="Model roles">
         <h3>Model roles</h3>
         <p class="muted">All three roles run locally. Candidate content is never sent anywhere else.</p>
         <ul class="record-list">
@@ -157,7 +159,7 @@ export default function SettingsPanel() {
         onPull={(model) => act(() => ModelService.PullModel(model))}
       />
 
-      <section class="record-section" aria-label="Provider keys">
+      <section class="record-section" id="provider-keys" aria-label="Provider keys">
         <h3>Provider keys</h3>
         <p class="muted">
           <Show when={credentialStore} fallback={<>Provider key storage is unavailable on {osName}.</>}>
