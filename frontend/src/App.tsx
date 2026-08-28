@@ -1,5 +1,5 @@
 import { bumpWorkspace } from "./workspaceRevision";
-import { createSignal, onMount, Show } from "solid-js";
+import { createSignal, For, onMount, Show } from "solid-js";
 import { InitiativeService } from "../bindings/camstuart/talent-hound";
 import { InitiativeStatus } from "../bindings/camstuart/talent-hound/internal/models";
 import type { Initiative, InitiativeType } from "../bindings/camstuart/talent-hound/internal/models";
@@ -159,19 +159,31 @@ export default function App() {
                 <FirstRunWizard />
               </div>
             </Show>
-            <Show when={!needsSetup() && activeId() === "help"}>
-              <HelpPanel />
-            </Show>
-            <Show when={!needsSetup() && activeId() === "settings"}>
-              <SettingsPanel />
-            </Show>
-            <Show when={!needsSetup() && activeId() === "crm"}>
-              <CrmPanel />
-            </Show>
-            <Show when={!needsSetup() && typeof activeId() !== "string"}>
-            <Show when={activeInitiative()} fallback={<Welcome />}>
-              {(initiative) => (
-                <section class="initiative-panel">
+            {/* Every open tab stays mounted and is hidden rather than torn down,
+                so a half-typed form is found as it was left. This is a desktop
+                application: switching tabs is looking elsewhere, not leaving.
+                Closing a tab is what discards it. */}
+            <Show when={!needsSetup()}>
+              <Show when={openTabIds().includes("help")}>
+                <div hidden={activeId() !== "help"}>
+                  <HelpPanel />
+                </div>
+              </Show>
+              <Show when={openTabIds().includes("settings")}>
+                <div hidden={activeId() !== "settings"}>
+                  <SettingsPanel />
+                </div>
+              </Show>
+              <Show when={openTabIds().includes("crm")}>
+                <div hidden={activeId() !== "crm"}>
+                  <CrmPanel />
+                </div>
+              </Show>
+              <For each={openTabIds().filter((id): id is number => typeof id === "number")}>
+                {(id) => (
+                  <Show when={byId(id)}>
+                    {(initiative) => (
+                      <section class="initiative-panel" hidden={activeId() !== id}>
                   <header class="initiative-panel-header">
                     <InitiativeIcon type={initiative().type} />
                     <Show
@@ -213,9 +225,14 @@ export default function App() {
                     <p class="modal-error">{error()}</p>
                   </Show>
                   <WorkspaceAreas initiativeId={initiative().id} type={initiative().type} />
-                </section>
-              )}
-            </Show>
+                      </section>
+                    )}
+                  </Show>
+                )}
+              </For>
+              <Show when={typeof activeId() !== "string" && !activeInitiative()}>
+                <Welcome />
+              </Show>
             </Show>
           </div>
           <StatusStrip initiativeId={activeInitiative()?.id} initiativeName={activeInitiative()?.name} />

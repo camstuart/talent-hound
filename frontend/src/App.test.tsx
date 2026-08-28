@@ -66,6 +66,9 @@ vi.mock("../bindings/camstuart/talent-hound", () => ({
     ListCompanies: mocks.ListCompanies,
     ListRoles: mocks.ListRoles,
     CreateCandidate: mocks.CreateCandidate,
+    SearchCandidates: vi.fn(async () => []),
+    SearchCompanies: vi.fn(async () => []),
+    SearchContacts: vi.fn(async () => []),
   },
   ArtifactService: {
     ListForTarget: mocks.ListForTarget,
@@ -257,7 +260,7 @@ describe("App", () => {
     // The initiative tab is still there; clicking it brings the workspace back.
     fireEvent.click(screen.getByRole("tab", { name: /Hire Go devs/ }));
     expect(screen.getByRole("tablist", { name: "Initiative areas" })).toBeInTheDocument();
-    expect(screen.queryByText("Model roles")).not.toBeInTheDocument();
+    expect(screen.getByText("Model roles")).not.toBeVisible();
   });
 
   it("closing the Settings tab returns to the neighbouring tab", async () => {
@@ -290,6 +293,24 @@ describe("App", () => {
     fireEvent.click(screen.getByLabelText("Help"));
 
     expect(screen.getByRole("tab", { name: /Help/ })).toHaveAttribute("aria-selected", "true");
+  });
+
+  // A desktop application: switching tabs is looking elsewhere, not leaving.
+  // Whatever was half-typed is found as it was left.
+  it("keeps a half-typed CRM filter while other tabs are visited", async () => {
+    render(() => <App />);
+    fireEvent.click(screen.getByLabelText("CRM"));
+    const filter = (await screen.findByLabelText("Filter")) as HTMLInputElement;
+    fireEvent.input(filter, { target: { value: "quokka" } });
+
+    fireEvent.click(screen.getByLabelText("Settings"));
+    expect(await screen.findByText("Model roles")).toBeVisible();
+    expect(filter).not.toBeVisible();
+
+    fireEvent.click(screen.getByRole("tab", { name: /CRM/ }));
+    expect(filter).toBeVisible();
+    expect(filter.value).toBe("quokka");
+    expect(screen.getByText("Model roles")).not.toBeVisible();
   });
 
   it("asks the backend for archived initiatives only when the filter is on", async () => {
