@@ -16,7 +16,7 @@ test("shows the ordered setup steps with the one to be on", async ({ page }) => 
 
   const steps = setup.getByRole("list", { name: "Setup steps" });
   await expect(steps).toContainText("Choose the data folder");
-  await expect(steps).toContainText("Verify the volume is encrypted");
+  await expect(steps).toContainText("Check the volume's encryption");
   await expect(steps).toContainText("Create the first initiative");
 
   // The backend decides the position; the interface only shows it.
