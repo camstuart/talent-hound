@@ -93,7 +93,7 @@ export function checklist(
 
   items.push({
     key: "exa",
-    title: "Exa key",
+    title: "Exa API key",
     state: credentials.exa ? "ready" : "attention",
     detail: credentials.exa ? "stored" : hasStore ? "needed to find roles and people — no key stored" : "key storage is unavailable on this platform",
     target: "provider-keys",
@@ -168,9 +168,7 @@ export default function SystemCheck() {
           {(item) => (
             <li class="setting-row" aria-label={`Check ${item.title}`} data-state={item.state}>
               <span class="artifact-name">
-                <span aria-label={`${item.title} state`}>
-                  {item.state === "ready" ? "✓" : item.state === "optional" ? "○" : "!"}
-                </span>{" "}
+                <span aria-hidden="true">{item.state === "ready" ? "✓" : item.state === "optional" ? "○" : "!"}</span>{" "}
                 {item.title}
                 <span class="muted"> — {item.detail}</span>
               </span>

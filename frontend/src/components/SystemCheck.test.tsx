@@ -96,7 +96,7 @@ describe("SystemCheck", () => {
     // Ollama, the generation model, and the Exa key.
     await waitFor(() => expect(summary).toHaveTextContent("3 items need attention"));
 
-    const exa = screen.getByLabelText("Check Exa key");
+    const exa = screen.getByLabelText("Check Exa API key");
     expect(exa).toHaveAttribute("data-state", "attention");
     expect(exa).toHaveTextContent("no key stored");
     // Ready rows offer no link; the GitHub row is optional, not a problem.
@@ -106,7 +106,7 @@ describe("SystemCheck", () => {
     const target = screen.getByLabelText("Provider keys");
     const scrolled = vi.fn();
     (target as HTMLElement).scrollIntoView = scrolled;
-    fireEvent.click(screen.getByLabelText("Go to provider keys for Exa key"));
+    fireEvent.click(screen.getByLabelText("Go to provider keys for Exa API key"));
     expect(scrolled).toHaveBeenCalled();
     expect(document.activeElement).toBe(target);
   });
