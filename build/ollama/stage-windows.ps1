@@ -30,10 +30,10 @@ if (Test-Path (Join-Path $work 'lib')) {
     Copy-Item (Join-Path $work 'lib') $dir -Recurse -Force
 }
 # The release zip carries no licence file; it is fetched from the same tag.
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/ollama/ollama/v/LICENSE" -OutFile (Join-Path  'LICENSE')
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/ollama/ollama/v$version/LICENSE" -OutFile (Join-Path $dir 'LICENSE')
 
-Write-Host "staged "
+Write-Host "staged $dir"
 # Asked with no server to answer, so it reports its own version rather than
 # that of whatever Ollama happens to be running on this machine.
-:OLLAMA_HOST = '127.0.0.1:1'
-& (Join-Path  'ollama.exe') --version 2>
+$env:OLLAMA_HOST = '127.0.0.1:1'
+& (Join-Path $dir 'ollama.exe') --version 2>$null
