@@ -90,6 +90,9 @@ func TestChoosingAFolderRecordsItAndItSurvivesARestart(t *testing.T) {
 }
 
 func TestAnUnwritableFolderIsRefusedBeforeAnythingIsRecorded(t *testing.T) {
+	if runtimeIsWindows() {
+		t.Skip("POSIX permission bits; the Windows ACL proof is a gate test")
+	}
 	e := newSetupEnv(t)
 	dir := filepath.Join(t.TempDir(), "read-only")
 	if err := os.Mkdir(dir, 0o500); err != nil { //nolint:gosec // deliberately read-only
@@ -432,6 +435,7 @@ func TestTheEncryptionGateJudgesTheFolderInUse(t *testing.T) {
 // in the database was an open field for typing a real name into.
 func TestEveryPersonalRecordIsRefusedWhenTheGateIsClosed(t *testing.T) {
 	e := newSetupEnv(t)
+	e.encrypted(platform.StatusEncrypted) // open the gate deliberately, not by this machine's disk
 	records := NewRecordService(e.db)
 	records.Guard = e.setup
 
@@ -556,6 +560,7 @@ func TestChoosingACopiedFolderSaysWhetherItCanBeOpened(t *testing.T) {
 		if err != nil {
 			t.Fatalf("creating a data folder: %v", err)
 		}
+		closeOnCleanup(t, gdb)
 		if raw, err := gdb.DB(); err == nil {
 			_ = raw.Close()
 		}

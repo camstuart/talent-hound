@@ -292,6 +292,9 @@ func TestAFolderIsRefusedByItsOwnReason(t *testing.T) {
 	})
 
 	t.Run("read-only", func(t *testing.T) {
+		if runtimeIsWindows() {
+			t.Skip("POSIX permission bits; the Windows ACL proof is a gate test")
+		}
 		dir := filepath.Join(t.TempDir(), "ro")
 		if err := os.Mkdir(dir, 0o500); err != nil { //nolint:gosec // deliberately read-only
 			t.Fatalf("creating the folder: %v", err)
@@ -308,6 +311,7 @@ func TestAFolderIsRefusedByItsOwnReason(t *testing.T) {
 		if err != nil {
 			t.Fatalf("opening: %v", err)
 		}
+		closeOnCleanup(t, gdb)
 		sqlDB, _ := gdb.DB()
 		_ = sqlDB.Close()
 		if err := db.CheckFolder(dir); err != nil {
@@ -324,6 +328,7 @@ func TestACopiedFolderOpensWithItsData(t *testing.T) {
 	if err != nil {
 		t.Fatalf("opening: %v", err)
 	}
+	closeOnCleanup(t, gdb)
 	if err := gdb.Create(&models.Candidate{FullName: "Nadia Frost"}).Error; err != nil {
 		t.Fatalf("creating a candidate: %v", err)
 	}
@@ -351,6 +356,7 @@ func TestACopiedFolderOpensWithItsData(t *testing.T) {
 	if err != nil {
 		t.Fatalf("opening the copy: %v", err)
 	}
+	closeOnCleanup(t, reopened)
 	var n int64
 	if err := reopened.Model(&models.Candidate{}).Count(&n).Error; err != nil {
 		t.Fatalf("counting: %v", err)

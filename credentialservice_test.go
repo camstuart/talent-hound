@@ -177,6 +177,7 @@ func TestASecretReachesNoDatabaseNoLogAndNoError(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	closeOnCleanup(t, gdb)
 	svc, _ := newCredentialService()
 
 	var errorText strings.Builder

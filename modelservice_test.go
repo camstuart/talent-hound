@@ -126,6 +126,7 @@ func newModelEnv(t *testing.T, installed ...string) *modelEnv {
 	if err != nil {
 		t.Fatalf("opening db: %v", err)
 	}
+	closeOnCleanup(t, gdb)
 	fake := newFakeOllama(t, installed...)
 	jobs := NewJobService(gdb)
 	ollama := &platform.Ollama{BaseURL: fake.server.URL, Client: &http.Client{Timeout: 2 * time.Second}}

@@ -68,6 +68,7 @@ func TestGateCredentialIsAbsentFromTheDataFolder(t *testing.T) {
 	if err != nil {
 		t.Fatalf("opening db: %v", err)
 	}
+	closeOnCleanup(t, gdb)
 	if err := gdb.Create(&models.Initiative{
 		Name: "Gate", Type: models.InitiativeTypeTalentSearch,
 	}).Error; err != nil {

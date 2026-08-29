@@ -55,8 +55,12 @@ func TestGateCredentialRoundTrip(t *testing.T) {
 
 	// The secret must not reach the database file or the logs.
 	dbPath := filepath.Join(t.TempDir(), "credgate.db")
-	if _, err := db.Open(dbPath); err != nil {
+	gdb, err := db.Open(dbPath)
+	if err != nil {
 		t.Fatalf("opening db: %v", err)
+	}
+	if raw, err := gdb.DB(); err == nil {
+		_ = raw.Close() // Windows will not delete an open database file
 	}
 	raw, err := os.ReadFile(dbPath) // #nosec G304 -- test-owned temp path
 	if err != nil {

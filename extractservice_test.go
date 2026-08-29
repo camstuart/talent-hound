@@ -67,6 +67,7 @@ func newExtractService(t *testing.T, sidecarPath string) (*ExtractService, *Arti
 	if err != nil {
 		t.Fatalf("opening db: %v", err)
 	}
+	closeOnCleanup(t, gdb)
 	t.Setenv(extract.SidecarPathEnv, sidecarPath)
 	jobs := NewJobService(gdb)
 	return NewExtractService(gdb, jobs, dir), NewArtifactService(gdb), dir
@@ -411,6 +412,7 @@ func TestStartupSweepsWhatACrashLeft(t *testing.T) {
 	if err != nil {
 		t.Fatalf("opening db: %v", err)
 	}
+	closeOnCleanup(t, gdb)
 	abandoned := filepath.Join(dir, "extract", "abandoned")
 	if err := os.MkdirAll(abandoned, 0o700); err != nil {
 		t.Fatalf("faking a crash: %v", err)

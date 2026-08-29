@@ -26,6 +26,7 @@ func newJobDB(t *testing.T) *gorm.DB {
 	if err != nil {
 		t.Fatalf("opening db: %v", err)
 	}
+	closeOnCleanup(t, gdb)
 	return gdb
 }
 

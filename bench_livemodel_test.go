@@ -465,6 +465,7 @@ func coldStart(t *testing.T) bench.Measurement {
 	if err != nil {
 		t.Fatalf("opening a database: %v", err)
 	}
+	closeOnCleanup(t, opened)
 	elapsed := time.Since(started)
 	if raw, err := opened.DB(); err == nil {
 		_ = raw.Close()

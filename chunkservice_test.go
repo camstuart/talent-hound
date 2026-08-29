@@ -41,6 +41,7 @@ func newIndexEnvAt(t *testing.T, path string) *indexEnv {
 	if err != nil {
 		t.Fatalf("opening db: %v", err)
 	}
+	closeOnCleanup(t, gdb)
 	jobs := NewJobService(gdb)
 	inits := NewInitiativeService(gdb)
 	init, err := inits.Create("Retrieval "+t.Name(), models.InitiativeTypeTalentSearch, nil)
